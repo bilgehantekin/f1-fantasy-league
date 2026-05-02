@@ -35,8 +35,11 @@ class _PodiumPos extends StatelessWidget {
   final Driver? driver;
   final int place;
   final double height;
-  const _PodiumPos(
-      {required this.driver, required this.place, required this.height});
+  const _PodiumPos({
+    required this.driver,
+    required this.place,
+    required this.height,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +72,8 @@ class _PodiumPos extends StatelessWidget {
                 ],
               ),
               borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(8)),
+                top: Radius.circular(8),
+              ),
               border: Border(
                 top: BorderSide(color: medalColor, width: 2),
                 left: BorderSide(color: medalColor.withValues(alpha: 0.4)),
@@ -77,11 +81,13 @@ class _PodiumPos extends StatelessWidget {
               ),
             ),
             child: Center(
-              child: Text('P$place',
-                  style: tt.displayMedium?.copyWith(
-                    color: medalColor,
-                    fontSize: 32,
-                  )),
+              child: Text(
+                'P$place',
+                style: tt.displayMedium?.copyWith(
+                  color: medalColor,
+                  fontSize: 32,
+                ),
+              ),
             ),
           ),
         ],
@@ -115,9 +121,7 @@ class PointsBreakdownTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceLow,
         borderRadius: BorderRadius.circular(10),
-        border: Border(
-          left: BorderSide(color: color, width: 3),
-        ),
+        border: Border(left: BorderSide(color: color, width: 3)),
       ),
       child: Row(
         children: [
@@ -125,25 +129,31 @@ class PointsBreakdownTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    style: tt.labelSmall
-                        ?.copyWith(color: Colors.white54, fontSize: 10)),
-                Text(value,
-                    style: tt.titleMedium?.copyWith(letterSpacing: 0)),
+                Text(
+                  label,
+                  style: tt.labelSmall?.copyWith(
+                    color: Colors.white54,
+                    fontSize: 10,
+                  ),
+                ),
+                Text(value, style: tt.titleMedium?.copyWith(letterSpacing: 0)),
               ],
             ),
           ),
           if (points != null && points! > 0)
             Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: AppColors.f1Red,
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: Text('+$points',
-                  style: tt.labelLarge
-                      ?.copyWith(fontSize: 12, fontWeight: FontWeight.w900)),
+              child: Text(
+                '+$points',
+                style: tt.labelLarge?.copyWith(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             ),
         ],
       ),

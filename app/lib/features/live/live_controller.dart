@@ -16,16 +16,18 @@ class LivePosition {
     required this.updatedAt,
   });
   factory LivePosition.fromJson(Map<String, dynamic> j) => LivePosition(
-        driverId: j['driver_id'] as String,
-        position: j['position'] as int?,
-        status: j['status'] as String,
-        updatedAt: DateTime.parse(j['updated_at'] as String),
-      );
+    driverId: j['driver_id'] as String,
+    position: j['position'] as int?,
+    status: j['status'] as String,
+    updatedAt: DateTime.parse(j['updated_at'] as String),
+  );
 }
 
 /// Initial fetch + realtime subscription kombine eder.
-final livePositionsProvider =
-    StreamProvider.family<List<LivePosition>, String>((ref, raceId) async* {
+final livePositionsProvider = StreamProvider.family<List<LivePosition>, String>((
+  ref,
+  raceId,
+) async* {
   // İlk yükleme
   final initial = await supabase
       .from('live_positions')
@@ -108,26 +110,28 @@ List<LiveComparison> buildComparisons({
   if (prediction == null) {
     return [
       LiveComparison(
-          label: 'P1 ŞU AN',
-          predicted: null,
-          actual: byPosition[1],
-          matches: null),
+        label: 'P1 ŞU AN',
+        predicted: null,
+        actual: byPosition[1],
+        matches: null,
+      ),
       LiveComparison(
-          label: 'P2 ŞU AN',
-          predicted: null,
-          actual: byPosition[2],
-          matches: null),
+        label: 'P2 ŞU AN',
+        predicted: null,
+        actual: byPosition[2],
+        matches: null,
+      ),
       LiveComparison(
-          label: 'P3 ŞU AN',
-          predicted: null,
-          actual: byPosition[3],
-          matches: null),
+        label: 'P3 ŞU AN',
+        predicted: null,
+        actual: byPosition[3],
+        matches: null,
+      ),
     ];
   }
 
   return [
-    _cmp('KAZANAN',
-        predictedDriver(prediction.winnerDriverId), byPosition[1]),
+    _cmp('KAZANAN', predictedDriver(prediction.winnerDriverId), byPosition[1]),
     _cmp('P1', predictedDriver(prediction.p1Id), byPosition[1]),
     _cmp('P2', predictedDriver(prediction.p2Id), byPosition[2]),
     _cmp('P3', predictedDriver(prediction.p3Id), byPosition[3]),

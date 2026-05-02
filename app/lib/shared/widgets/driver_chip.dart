@@ -27,7 +27,9 @@ class DriverChip extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     return Container(
       padding: EdgeInsets.symmetric(
-          horizontal: dense ? 10 : 14, vertical: dense ? 8 : 12),
+        horizontal: dense ? 10 : 14,
+        vertical: dense ? 8 : 12,
+      ),
       decoration: BoxDecoration(
         color: selected
             ? color.withValues(alpha: 0.18)
@@ -57,26 +59,34 @@ class DriverChip extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(driver.code,
-                      style: tt.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.2,
-                        fontSize: dense ? 14 : 17,
-                      )),
+                  Text(
+                    driver.code,
+                    style: tt.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.2,
+                      fontSize: dense ? 14 : 17,
+                    ),
+                  ),
                   if (driver.number != null) ...[
                     const SizedBox(width: 6),
-                    Text('#${driver.number}',
-                        style: tt.labelSmall?.copyWith(
-                          color: Colors.white54,
-                          fontSize: dense ? 10 : 11,
-                        )),
+                    Text(
+                      '#${driver.number}',
+                      style: tt.labelSmall?.copyWith(
+                        color: Colors.white54,
+                        fontSize: dense ? 10 : 11,
+                      ),
+                    ),
                   ],
                 ],
               ),
               if (!dense)
-                Text(driver.fullName,
-                    style: tt.bodySmall
-                        ?.copyWith(color: Colors.white60, fontSize: 11)),
+                Text(
+                  driver.fullName,
+                  style: tt.bodySmall?.copyWith(
+                    color: Colors.white60,
+                    fontSize: 11,
+                  ),
+                ),
             ],
           ),
         ],
@@ -125,9 +135,13 @@ class DriverChipSlot extends StatelessWidget {
           children: [
             const Icon(Icons.add, color: Colors.white54, size: 20),
             const SizedBox(width: 10),
-            Text(hint,
-                style: const TextStyle(
-                    color: Colors.white60, fontWeight: FontWeight.w600)),
+            Text(
+              hint,
+              style: const TextStyle(
+                color: Colors.white60,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),

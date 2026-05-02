@@ -69,8 +69,10 @@ class _DriverPickerSheet extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(title,
-                      style: Theme.of(context).textTheme.headlineMedium),
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -96,9 +98,7 @@ class _DriverPickerSheet extends StatelessWidget {
                         padding: const EdgeInsets.only(left: 4, bottom: 8),
                         child: Text(
                           list.first.teamName ?? key,
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelLarge
+                          style: Theme.of(context).textTheme.labelLarge
                               ?.copyWith(color: Colors.white70),
                         ),
                       ),

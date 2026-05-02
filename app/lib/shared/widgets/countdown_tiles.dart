@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 class CountdownTiles extends StatelessWidget {
   final Duration remaining;
   final bool locked;
-  const CountdownTiles({super.key, required this.remaining, this.locked = false});
+  const CountdownTiles({
+    super.key,
+    required this.remaining,
+    this.locked = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,9 +25,10 @@ class CountdownTiles extends StatelessWidget {
           children: [
             const Icon(Icons.lock, color: Color(0xFFFF9F1C), size: 18),
             const SizedBox(width: 8),
-            Text('KİLİTLİ',
-                style: tt.labelLarge
-                    ?.copyWith(color: const Color(0xFFFF9F1C))),
+            Text(
+              'KİLİTLİ',
+              style: tt.labelLarge?.copyWith(color: const Color(0xFFFF9F1C)),
+            ),
           ],
         ),
       );
@@ -81,19 +86,23 @@ class _Tile extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(v,
-              style: tt.headlineLarge?.copyWith(
-                color: color,
-                fontWeight: FontWeight.w900,
-                fontSize: 28,
-                letterSpacing: -1,
-              )),
-          Text(label,
-              style: tt.labelSmall?.copyWith(
-                color: Colors.white60,
-                fontSize: 9,
-                letterSpacing: 1.2,
-              )),
+          Text(
+            v,
+            style: tt.headlineLarge?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w900,
+              fontSize: 28,
+              letterSpacing: -1,
+            ),
+          ),
+          Text(
+            label,
+            style: tt.labelSmall?.copyWith(
+              color: Colors.white60,
+              fontSize: 9,
+              letterSpacing: 1.2,
+            ),
+          ),
         ],
       ),
     );

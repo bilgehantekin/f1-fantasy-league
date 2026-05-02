@@ -17,13 +17,10 @@ Future<void> main() async {
     runApp(const ProviderScope(child: PitWallApp()));
     return;
   }
-  await SentryFlutter.init(
-    (options) {
-      options.dsn = Env.sentryDsn;
-      options.tracesSampleRate = 0.2;
-    },
-    appRunner: () => runApp(const ProviderScope(child: PitWallApp())),
-  );
+  await SentryFlutter.init((options) {
+    options.dsn = Env.sentryDsn;
+    options.tracesSampleRate = 0.2;
+  }, appRunner: () => runApp(const ProviderScope(child: PitWallApp())));
 }
 
 class PitWallApp extends ConsumerWidget {

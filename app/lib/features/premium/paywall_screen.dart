@@ -41,9 +41,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     final tt = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('PITWALL PREMIUM'),
-      ),
+      appBar: AppBar(title: const Text('PITWALL PREMIUM')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -61,16 +59,19 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('🏆',
-                    style: TextStyle(fontSize: 56)),
+                const Text('🏆', style: TextStyle(fontSize: 56)),
                 const SizedBox(height: 8),
-                Text('PitWall Premium',
-                    style: tt.displayMedium?.copyWith(fontSize: 32)),
+                Text(
+                  'PitWall Premium',
+                  style: tt.displayMedium?.copyWith(fontSize: 32),
+                ),
                 const SizedBox(height: 4),
                 Text(
-                    'Tahminlerini bir üst seviyeye taşı',
-                    style: tt.bodyMedium
-                        ?.copyWith(color: Colors.white.withValues(alpha: 0.9))),
+                  'Tahminlerini bir üst seviyeye taşı',
+                  style: tt.bodyMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
               ],
             ),
           ),
@@ -101,8 +102,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: Text(_error!,
-                  style: const TextStyle(color: AppColors.liveRed)),
+              child: Text(
+                _error!,
+                style: const TextStyle(color: AppColors.liveRed),
+              ),
             ),
           if (isPremium)
             Container(
@@ -110,17 +113,20 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               decoration: BoxDecoration(
                 color: AppColors.lockGreen.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
-                border:
-                    Border.all(color: AppColors.lockGreen.withValues(alpha: 0.4)),
+                border: Border.all(
+                  color: AppColors.lockGreen.withValues(alpha: 0.4),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle,
-                      color: AppColors.lockGreen),
+                  const Icon(Icons.check_circle, color: AppColors.lockGreen),
                   const SizedBox(width: 8),
                   Expanded(
-                      child: Text('Premium üyeliğin aktif',
-                          style: tt.titleMedium)),
+                    child: Text(
+                      'Premium üyeliğin aktif',
+                      style: tt.titleMedium,
+                    ),
+                  ),
                 ],
               ),
             )
@@ -177,8 +183,10 @@ class _Feature extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: tt.titleMedium),
-                Text(description,
-                    style: tt.bodySmall?.copyWith(color: Colors.white60)),
+                Text(
+                  description,
+                  style: tt.bodySmall?.copyWith(color: Colors.white60),
+                ),
               ],
             ),
           ),

@@ -31,13 +31,22 @@ Deno.serve(async (req) => {
   );
 
   const resendKey = Deno.env.get("RESEND_API_KEY");
-  const fromAddr = Deno.env.get("REMINDER_FROM") ?? "PitWall <noreply@pitwall.local>";
+  const fromAddr = Deno.env.get("REMINDER_FROM") ??
+    "PitWall <noreply@pitwall.local>";
   const dryRun = !resendKey;
 
   // Pencerelere giren yarışlar
   const now = Date.now();
-  const races6h = await racesInWindow(c, now + 5.5 * 3600_000, now + 6.5 * 3600_000);
-  const races1h = await racesInWindow(c, now + 0.5 * 3600_000, now + 1.5 * 3600_000);
+  const races6h = await racesInWindow(
+    c,
+    now + 5.5 * 3600_000,
+    now + 6.5 * 3600_000,
+  );
+  const races1h = await racesInWindow(
+    c,
+    now + 0.5 * 3600_000,
+    now + 1.5 * 3600_000,
+  );
 
   const summary = {
     dry_run: dryRun,
@@ -46,10 +55,24 @@ Deno.serve(async (req) => {
   };
 
   for (const race of races6h) {
-    await processRace(c, race, "reminder_6h", fromAddr, resendKey, summary.reminder_6h);
+    await processRace(
+      c,
+      race,
+      "reminder_6h",
+      fromAddr,
+      resendKey,
+      summary.reminder_6h,
+    );
   }
   for (const race of races1h) {
-    await processRace(c, race, "reminder_1h", fromAddr, resendKey, summary.reminder_1h);
+    await processRace(
+      c,
+      race,
+      "reminder_1h",
+      fromAddr,
+      resendKey,
+      summary.reminder_1h,
+    );
   }
 
   return jsonResponse(summary);
@@ -73,6 +96,8 @@ interface UserToRemind {
   id: string;
   email: string;
   username: string;
+  league_id: string;
+  league_name: string;
 }
 
 async function findUsersMissingPrediction(
@@ -80,64 +105,84 @@ async function findUsersMissingPrediction(
   raceId: string,
   kind: string,
 ): Promise<UserToRemind[]> {
-  // Daha önce en az bir tahmin yapmış (engaged) kullanıcılar
-  const { data: engaged } = await c
-    .from("predictions")
-    .select("user_id")
-    .neq("race_id", "00000000-0000-0000-0000-000000000000");
-  const engagedIds = Array.from(
-    new Set((engaged ?? []).map((r) => r.user_id as string)),
-  );
-  if (engagedIds.length === 0) return [];
+  const { data: raceRows, error: raceErr } = await c
+    .from("races")
+    .select("season_id")
+    .eq("id", raceId)
+    .limit(1);
+  if (raceErr) throw raceErr;
+  const seasonId = raceRows?.[0]?.season_id;
+  if (!seasonId) return [];
 
-  // Bu yarışa zaten tahmin yapanlar
-  const { data: predicted } = await c
+  const { data: memberships, error: membershipErr } = await c
+    .from("league_memberships")
+    .select("user_id, league_id, league:leagues!inner(name, season_id)")
+    .eq("league.season_id", seasonId);
+  if (membershipErr) throw membershipErr;
+  const pairs = (memberships ?? []).map((m) => ({
+    user_id: m.user_id as string,
+    league_id: m.league_id as string,
+    league_name:
+      ((m.league as { name?: string } | null)?.name ?? "Lig") as string,
+  }));
+  if (pairs.length === 0) return [];
+
+  const { data: predicted, error: predErr } = await c
     .from("predictions")
-    .select("user_id")
+    .select("user_id, league_id")
     .eq("race_id", raceId);
+  if (predErr) throw predErr;
   const predictedSet = new Set(
-    (predicted ?? []).map((r) => r.user_id as string),
+    (predicted ?? []).map((r) => `${r.user_id}:${r.league_id}`),
   );
 
-  // Bu kind için zaten gönderilmiş olanlar
-  const { data: alreadySent } = await c
+  const { data: alreadySent, error: sentErr } = await c
     .from("notifications_log")
-    .select("user_id")
+    .select("user_id, league_id")
     .eq("race_id", raceId)
     .eq("kind", kind)
     .eq("channel", "email");
+  if (sentErr) throw sentErr;
   const sentSet = new Set(
-    (alreadySent ?? []).map((r) => r.user_id as string),
+    (alreadySent ?? []).map((r) => `${r.user_id}:${r.league_id}`),
   );
 
-  const targets = engagedIds.filter(
-    (id) => !predictedSet.has(id) && !sentSet.has(id),
+  const targets = pairs.filter((p) =>
+    !predictedSet.has(`${p.user_id}:${p.league_id}`) &&
+    !sentSet.has(`${p.user_id}:${p.league_id}`)
   );
   if (targets.length === 0) return [];
 
   const { data: profiles } = await c
     .from("profiles")
     .select("id, username")
-    .in("id", targets);
+    .in("id", Array.from(new Set(targets.map((t) => t.user_id))));
   if (!profiles || profiles.length === 0) return [];
+  const profileMap = new Map(
+    profiles.map((p) => [p.id as string, p.username as string]),
+  );
 
   // auth.users email'lerini RPC ile (admin API yerine) çek
   const { data: emailRows, error: emailErr } = await c.rpc("get_user_emails", {
-    p_ids: targets,
+    p_ids: Array.from(new Set(targets.map((t) => t.user_id))),
   });
   if (emailErr) throw emailErr;
   const emailMap = new Map<string, string>(
-    (emailRows ?? []).map((r: { id: string; email: string }) => [r.id, r.email]),
+    (emailRows ?? []).map((
+      r: { id: string; email: string },
+    ) => [r.id, r.email]),
   );
 
   const result: UserToRemind[] = [];
-  for (const p of profiles) {
-    const email = emailMap.get(p.id as string);
+  for (const target of targets) {
+    const email = emailMap.get(target.user_id);
     if (email) {
       result.push({
-        id: p.id as string,
+        id: target.user_id,
         email,
-        username: p.username as string,
+        username: profileMap.get(target.user_id) ?? "Pilot",
+        league_id: target.league_id,
+        league_name: target.league_name,
       });
     }
   }
@@ -161,6 +206,7 @@ async function processRace(
       const { error } = await c.from("notifications_log").insert({
         user_id: u.id,
         race_id: race.id,
+        league_id: u.league_id,
         kind,
         channel: "email",
       });
@@ -191,7 +237,7 @@ async function sendEmail(
   const subject = `${race.name} — tahminin için son ${minsLeft}`;
   const body = `
     <p>Merhaba ${user.username},</p>
-    <p><b>${race.name}</b> için tahminlerin kilide kadar yaklaşık ${minsLeft} kaldı.</p>
+    <p><b>${user.league_name}</b> liginde <b>${race.name}</b> için tahminlerin kilide kadar yaklaşık ${minsLeft} kaldı.</p>
     <p>Uygulamayı aç ve seçimlerini yap — kilit zamanı: ${race.lock_at}.</p>
     <p>— PitWall</p>
   `.trim();

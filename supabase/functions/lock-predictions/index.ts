@@ -16,7 +16,6 @@ Deno.serve(async (req) => {
   );
 
   const { data, error } = await client.rpc("advance_race_statuses");
-
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
@@ -24,8 +23,21 @@ Deno.serve(async (req) => {
     });
   }
 
+  const { data: sprintData, error: sprintErr } = await client.rpc(
+    "advance_sprint_statuses",
+  );
+  if (sprintErr) {
+    return new Response(JSON.stringify({ error: sprintErr.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   return new Response(
-    JSON.stringify({ transitions: data ?? [] }),
+    JSON.stringify({
+      transitions: data ?? [],
+      sprint_transitions: sprintData ?? [],
+    }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
 });

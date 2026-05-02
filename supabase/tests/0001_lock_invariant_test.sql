@@ -1,6 +1,6 @@
 -- pgTAP — kilit invariant'ı ve RLS politika testleri
 begin;
-select plan(8);
+select plan(9);
 
 -- Setup: bir test sezonu, yarış, sürücü
 insert into public.seasons (id, is_active) values (9999, true);
@@ -24,19 +24,41 @@ insert into auth.users (id, email) values ('00000000-0000-0000-0000-000000000001
   on conflict (id) do nothing;
 insert into public.profiles (id, username) values ('00000000-0000-0000-0000-000000000001', 'tester1')
   on conflict (id) do nothing;
+insert into public.leagues (id, name, owner_id, invite_code, season_id)
+values (
+  '00000000-0000-0000-0000-000000009999',
+  'Test League',
+  '00000000-0000-0000-0000-000000000001',
+  'TST001',
+  9999
+)
+on conflict (id) do nothing;
+insert into public.leagues (id, name, owner_id, invite_code, season_id)
+values (
+  '00000000-0000-0000-0000-000000009998',
+  'Second Test League',
+  '00000000-0000-0000-0000-000000000001',
+  'TST002',
+  9999
+)
+on conflict (id) do nothing;
 
 -- 1) lock_at geçmiş yarışa tahmin yazma yasağı
 prepare past_pred as
-  insert into public.predictions (user_id, race_id, winner_driver_id)
-  select '00000000-0000-0000-0000-000000000001', id,
+  insert into public.predictions (user_id, league_id, race_id, winner_driver_id)
+  select '00000000-0000-0000-0000-000000000001',
+         '00000000-0000-0000-0000-000000009999',
+         id,
          (select id from public.drivers where code='TD1' and season_id=9999)
   from public.races where season_id=9999 and round=1;
 select throws_ok('past_pred', 'P0001', null, 'Past race rejects predictions');
 
 -- 2) Gelecek yarışa tahmin yazılabilir
 prepare future_pred as
-  insert into public.predictions (user_id, race_id, winner_driver_id, p1_id, p2_id, p3_id, dnf_count)
-  select '00000000-0000-0000-0000-000000000001', id,
+  insert into public.predictions (user_id, league_id, race_id, winner_driver_id, p1_id, p2_id, p3_id, dnf_count)
+  select '00000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000009999',
+    id,
     (select id from public.drivers where code='TD1' and season_id=9999),
     (select id from public.drivers where code='TD1' and season_id=9999),
     (select id from public.drivers where code='TD2' and season_id=9999),
@@ -47,13 +69,25 @@ select lives_ok('future_pred', 'Future race accepts predictions');
 
 -- 3) Aynı (user, race) için ikinci insert UNIQUE patlatır
 prepare dup_pred as
-  insert into public.predictions (user_id, race_id, winner_driver_id)
-  select '00000000-0000-0000-0000-000000000001', id,
+  insert into public.predictions (user_id, league_id, race_id, winner_driver_id)
+  select '00000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000009999',
+    id,
     (select id from public.drivers where code='TD1' and season_id=9999)
   from public.races where season_id=9999 and round=2;
 select throws_ok('dup_pred', '23505', null, 'Duplicate prediction rejected');
 
--- 4) p1=p2 yasağı
+-- 4) Aynı (user, race) başka ligde ayrı tahmin olarak yazılabilir
+prepare other_league_pred as
+  insert into public.predictions (user_id, league_id, race_id, winner_driver_id)
+  select '00000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000009998',
+    id,
+    (select id from public.drivers where code='TD2' and season_id=9999)
+  from public.races where season_id=9999 and round=2;
+select lives_ok('other_league_pred', 'Same race accepts separate prediction per league');
+
+-- 5) p1=p2 yasağı
 prepare same_p1p2 as
   update public.predictions
   set p1_id = (select id from public.drivers where code='TD1' and season_id=9999),
@@ -63,20 +97,21 @@ prepare same_p1p2 as
     and race_id = (select id from public.races where season_id=9999 and round=2);
 select throws_like('same_p1p2', '%P1 and P2 must be different%', 'p1==p2 yasak');
 
--- 5) Skor formülü (immutable, rule-by-rule)
+-- 6) Skor formülü (immutable, rule-by-rule)
 -- Tam podium + winner + pole + fastest_lap + dnf doğru + joker doğru = 10+15+3*5+8+6+6+12 = 72
 do $$
 declare
   v_pred public.predictions;
   v_res  public.race_results;
   v_d1 uuid; v_d2 uuid;
+  v_league uuid := '00000000-0000-0000-0000-000000009999';
 begin
   select id into v_d1 from public.drivers where code='TD1' and season_id=9999;
   select id into v_d2 from public.drivers where code='TD2' and season_id=9999;
   v_pred := row(
     gen_random_uuid(), '00000000-0000-0000-0000-000000000001', gen_random_uuid(),
     v_d1, v_d1, v_d2, v_d1, v_d1, v_d1, 3, 'Yes',
-    null, null, now(), now()
+    null, null, now(), now(), v_league
   )::public.predictions;
   v_res := row(
     gen_random_uuid(), v_d1, v_d2, v_d1, v_d1, v_d1, 3, 'Yes', now()
@@ -86,7 +121,7 @@ begin
 end$$;
 select is(current_setting('test.score_perfect')::int, 72, 'Perfect prediction = 72 (10+15+15+8+6+6+12)');
 
--- 6) Hiç doğru yoksa 0
+-- 7) Hiç doğru yoksa 0
 -- Pred her şeyi v_d2 tahmin ediyor, sonuçlar tamamı v_d1.
 -- Pred dnf=0, gerçek dnf=5 (>1 fark), joker mismatch.
 do $$
@@ -94,13 +129,14 @@ declare
   v_pred public.predictions;
   v_res  public.race_results;
   v_d1 uuid; v_d2 uuid;
+  v_league uuid := '00000000-0000-0000-0000-000000009999';
 begin
   select id into v_d1 from public.drivers where code='TD1' and season_id=9999;
   select id into v_d2 from public.drivers where code='TD2' and season_id=9999;
   v_pred := row(
     gen_random_uuid(), '00000000-0000-0000-0000-000000000001', gen_random_uuid(),
     v_d2, v_d2, v_d2, v_d2, v_d2, v_d2, 0, 'No',
-    null, null, now(), now()
+    null, null, now(), now(), v_league
   )::public.predictions;
   v_res := row(
     gen_random_uuid(), v_d1, v_d1, v_d1, v_d1, v_d1, 5, 'Yes', now()
@@ -110,7 +146,7 @@ begin
 end$$;
 select is(current_setting('test.score_zero')::int, 0, 'No correct picks = 0');
 
--- 7) score_race fonksiyonu race_results insert'i ile auto-tetikleniyor mu?
+-- 8) score_race fonksiyonu race_results insert'i ile auto-tetikleniyor mu?
 update public.races set qualifying_at = now() + interval '5 minutes',
                        race_at = now() + interval '6 minutes'
   where season_id=9999 and round=2;
@@ -127,12 +163,13 @@ from public.races r where season_id=9999 and round=2;
 
 select isnt(
   (select score from public.predictions where user_id='00000000-0000-0000-0000-000000000001'
+     and league_id='00000000-0000-0000-0000-000000009999'
      and race_id=(select id from public.races where season_id=9999 and round=2)),
   null,
   'score auto-set after race_results insert'
 );
 
--- 8) Yarış status finished'a geçti mi
+-- 9) Yarış status finished'a geçti mi
 select is(
   (select status::text from public.races where season_id=9999 and round=2),
   'finished',

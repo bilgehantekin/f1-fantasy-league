@@ -1,12 +1,11 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/notifications.dart';
 import '../../core/supabase.dart';
 import '../../core/theme.dart';
 import '../../shared/models.dart';
+import '../league/league_controller.dart';
 import 'profile_controller.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -18,20 +17,35 @@ class ProfileScreen extends ConsumerWidget {
     final statsAsync = ref.watch(profileStatsProvider);
     final allBadgesAsync = ref.watch(allBadgesProvider);
     final myBadgesAsync = ref.watch(myBadgesProvider);
-    final categoriesAsync = ref.watch(categoryAccuracyProvider);
-    final trendAsync = ref.watch(seasonTrendProvider);
-    final driverAccAsync = ref.watch(driverAccuracyProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.carbon,
       appBar: AppBar(
-        title: const Text('PROFİL'),
+        backgroundColor: AppColors.carbon,
+        elevation: 0,
+        toolbarHeight: 56,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'PROFİL',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.3,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Çıkış',
-            onPressed: () => supabase.auth.signOut(),
+            icon: const Icon(Icons.settings, size: 20),
+            onPressed: () => context.push('/settings/notifications'),
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: const Color(0xFF1F1F2E)),
+        ),
       ),
       body: profileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -40,121 +54,34 @@ class ProfileScreen extends ConsumerWidget {
           if (p == null) return const Center(child: Text('Giriş gerekli'));
           final isPremium = p.isPremium;
           return ListView(
-            padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
+            padding: EdgeInsets.zero,
             children: [
-              _Header(profile: p),
-              if (!isPremium)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: InkWell(
-                    onTap: () => context.push('/premium'),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: [
-                          AppColors.f1Red,
-                          AppColors.f1Red.withValues(alpha: 0.7),
-                        ]),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          const Text('🏆', style: TextStyle(fontSize: 22)),
-                          const SizedBox(width: 10),
-                          Expanded(
-                              child: Text('Premium\'a yükselt',
-                                  style: Theme.of(context).textTheme.titleMedium)),
-                          const Icon(Icons.chevron_right),
-                        ],
+              Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFF1A1A26), Color(0xFF15151E)],
+                  ),
+                  border: Border(
+                    bottom: BorderSide(color: Color(0xFF1F1F2E), width: 1),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    _HeroProfile(profile: p),
+                    statsAsync.when(
+                      loading: () => const SizedBox.shrink(),
+                      error: (e, _) => Text('Stats hata: $e'),
+                      data: (s) => Padding(
+                        padding: const EdgeInsets.only(bottom: 24),
+                        child: _StatsCards(stats: s),
                       ),
                     ),
-                  ),
-                ),
-              if (isPremium)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFD700).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color: const Color(0xFFFFD700).withValues(alpha: 0.5)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Text('⭐', style: TextStyle(fontSize: 18)),
-                        const SizedBox(width: 8),
-                        Text('PREMIUM',
-                            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                  color: const Color(0xFFFFD700),
-                                  letterSpacing: 2,
-                                )),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: () => context.push('/premium'),
-                          child: const Text('Yönet'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              statsAsync.when(
-                loading: () => const SizedBox.shrink(),
-                error: (e, _) => Text('Stats hata: $e'),
-                data: (s) => _StatsRow(stats: s),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.notifications_active_outlined),
-                    label: const Text('Test bildirimi gönder'),
-                    onPressed: () async {
-                      final granted =
-                          await NotificationService.instance.requestPermissions();
-                      final perms =
-                          await NotificationService.instance.checkPermissions();
-                      await NotificationService.instance.showTest();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text(
-                                  'granted=$granted alert=${perms?.isAlertEnabled} sound=${perms?.isSoundEnabled}'),
-                              duration: const Duration(seconds: 6)),
-                        );
-                      }
-                    },
-                  ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-
-              _SectionTitle(label: 'KATEGORİ DOĞRULUĞU'),
-              categoriesAsync.when(
-                loading: () => const _Loading(),
-                error: (e, _) => _Error(e),
-                data: (cats) => _CategoryBars(categories: cats),
-              ),
-
-              const SizedBox(height: 12),
-              _SectionTitle(label: 'SEZON TRENDİ'),
-              trendAsync.when(
-                loading: () => const _Loading(),
-                error: (e, _) => _Error(e),
-                data: (trend) => _SeasonTrendChart(trend: trend),
-              ),
-
-              const SizedBox(height: 12),
-              _SectionTitle(label: 'EN ÇOK SEÇİLEN SÜRÜCÜLER'),
-              driverAccAsync.when(
-                loading: () => const _Loading(),
-                error: (e, _) => _Error(e),
-                data: (rows) => _DriverHits(rows: rows),
-              ),
-
-              const SizedBox(height: 12),
+              const SizedBox(height: 24),
               _SectionTitle(label: 'ROZETLER'),
               allBadgesAsync.when(
                 loading: () => const _Loading(),
@@ -163,30 +90,73 @@ class ProfileScreen extends ConsumerWidget {
                   loading: () => const SizedBox.shrink(),
                   error: (e, _) => _Error(e),
                   data: (myBadges) {
-                    final earnedSet =
-                        myBadges.map((u) => u.badgeId).toSet();
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                          childAspectRatio: 0.85,
+                    final earnedSet = myBadges.map((u) => u.badgeId).toSet();
+                    final displayBadges = allBadges.take(6).toList();
+                    return Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  mainAxisSpacing: 12,
+                                  crossAxisSpacing: 12,
+                                  childAspectRatio: 1,
+                                ),
+                            itemCount: displayBadges.length,
+                            itemBuilder: (_, i) => _BadgeTile(
+                              badge: displayBadges[i],
+                              earned: earnedSet.contains(displayBadges[i].id),
+                            ),
+                          ),
                         ),
-                        itemCount: allBadges.length,
-                        itemBuilder: (_, i) => _BadgeTile(
-                          badge: allBadges[i],
-                          earned: earnedSet.contains(allBadges[i].id),
-                        ),
-                      ),
+                        if (allBadges.length > 6)
+                          TextButton(
+                            onPressed: () {},
+                            child: Text(
+                              '+${allBadges.length - 6} daha...',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFFE10600),
+                              ),
+                            ),
+                          ),
+                      ],
                     );
                   },
                 ),
               ),
+              const SizedBox(height: 24),
+              _SectionTitle(label: 'SEZON İSTATİSTİKLERİ'),
+              statsAsync.when(
+                loading: () => const _Loading(),
+                error: (e, _) => _Error(e),
+                data: (s) => _SeasonStats(stats: s),
+              ),
+              const SizedBox(height: 24),
+              _SectionTitle(label: 'LİGLER'),
+              const _LeaguesList(),
+              const SizedBox(height: 24),
+              if (!isPremium) _PremiumUpsell(),
+              const SizedBox(height: 24),
+              Center(
+                child: TextButton(
+                  onPressed: () => supabase.auth.signOut(),
+                  child: const Text(
+                    'Çıkış Yap',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFFF2D55),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
             ],
           );
         },
@@ -195,72 +165,84 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
-class _Header extends StatelessWidget {
+class _HeroProfile extends StatelessWidget {
   final Profile profile;
-  const _Header({required this.profile});
+  const _HeroProfile({required this.profile});
 
   @override
   Widget build(BuildContext context) {
-    final tt = Theme.of(context).textTheme;
     final initial = profile.username.isNotEmpty
         ? profile.username[0].toUpperCase()
         : '?';
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF1A1A26), Color(0xFF0B0B12)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
       child: Column(
         children: [
           Container(
-            width: 88,
-            height: 88,
+            width: 80,
+            height: 80,
             alignment: Alignment.center,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.f1Red,
-                  AppColors.f1Red.withValues(alpha: 0.6),
-                ],
-              ),
+              color: Color(0xFFE10600),
             ),
-            child: Text(initial,
-                style: tt.displayLarge?.copyWith(fontSize: 40)),
+            child: Text(
+              initial,
+              style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900),
+            ),
           ),
           const SizedBox(height: 12),
-          Text(profile.username,
-              style: tt.headlineLarge?.copyWith(letterSpacing: 0)),
+          Text(
+            profile.username,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            profile.isPremium ? 'Premium üye' : 'Free üye',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white.withValues(alpha: 0.6),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Stats grid would go here but we'll use _StatsCards separately
         ],
       ),
     );
   }
 }
 
-class _StatsRow extends StatelessWidget {
+class _StatsCards extends StatelessWidget {
   final ProfileStats stats;
-  const _StatsRow({required this.stats});
+  const _StatsCards({required this.stats});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       child: Row(
         children: [
           Expanded(
-              child:
-                  _StatCard(label: 'PUAN', value: '${stats.totalScore}')),
-          const SizedBox(width: 8),
+            child: _StatCard(
+              label: 'Toplam Puan',
+              value: '${stats.totalScore}',
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
-              child: _StatCard(
-                  label: 'YARIŞ', value: '${stats.racesPredicted}')),
-          const SizedBox(width: 8),
+            child: _StatCard(
+              label: 'En Yüksek Skor',
+              value: '${stats.bestScore}',
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
-              child: _StatCard(label: 'ROZET', value: '${stats.badgeCount}')),
+            child: _StatCard(
+              label: 'Yarış Sayısı',
+              value: '${stats.racesPredicted}',
+            ),
+          ),
         ],
       ),
     );
@@ -274,23 +256,26 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tt = Theme.of(context).textTheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLow,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        children: [
-          Text(value,
-              style: tt.displayMedium
-                  ?.copyWith(color: AppColors.f1Red, fontSize: 28)),
-          Text(label,
-              style: tt.labelSmall?.copyWith(
-                  color: Colors.white60, letterSpacing: 1.5, fontSize: 10)),
-        ],
-      ),
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFFE10600),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 10,
+            color: Colors.white.withValues(alpha: 0.6),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -298,295 +283,30 @@ class _StatCard extends StatelessWidget {
 class _SectionTitle extends StatelessWidget {
   final String label;
   const _SectionTitle({required this.label});
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Row(
         children: [
-          Container(width: 4, height: 18, color: AppColors.f1Red),
+          Container(
+            width: 4,
+            height: 16,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE10600),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
           const SizedBox(width: 8),
-          Text(label, style: Theme.of(context).textTheme.labelLarge),
-        ],
-      ),
-    );
-  }
-}
-
-class _Loading extends StatelessWidget {
-  const _Loading();
-  @override
-  Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.all(20),
-        child: Center(child: CircularProgressIndicator()),
-      );
-}
-
-class _Error extends StatelessWidget {
-  final Object error;
-  const _Error(this.error);
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Text('Hata: $error'),
-      );
-}
-
-class _CategoryBars extends StatelessWidget {
-  final List<CategoryAccuracy> categories;
-  const _CategoryBars({required this.categories});
-
-  String _label(String code) => switch (code) {
-        'winner' => 'Kazanan',
-        'podium_exact' => 'Podium (sıralı)',
-        'pole' => 'Pole',
-        'fastest_lap' => 'En hızlı tur',
-        'dnf_exact' => 'DNF (tam)',
-        'joker' => 'Joker',
-        _ => code,
-      };
-
-  @override
-  Widget build(BuildContext context) {
-    final hasData = categories.any((c) => c.total > 0);
-    if (!hasData) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20),
-        child: Text('Henüz puanlanmış tahmin yok.',
-            style: TextStyle(color: Colors.white54)),
-      );
-    }
-    final tt = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          for (final c in categories)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 110,
-                    child: Text(_label(c.category),
-                        style: tt.bodySmall
-                            ?.copyWith(color: Colors.white70)),
-                  ),
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        Container(
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceLow,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                        FractionallySizedBox(
-                          widthFactor: c.rate.clamp(0, 1),
-                          child: Container(
-                            height: 16,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(colors: [
-                                AppColors.f1Red,
-                                AppColors.f1Red.withValues(alpha: 0.5),
-                              ]),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    width: 56,
-                    child: Text('${c.correct}/${c.total}',
-                        textAlign: TextAlign.right,
-                        style: tt.labelSmall?.copyWith(
-                          color: Colors.white60,
-                          fontFeatures: const [
-                            FontFeature.tabularFigures(),
-                          ],
-                        )),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SeasonTrendChart extends StatelessWidget {
-  final List<TrendPoint> trend;
-  const _SeasonTrendChart({required this.trend});
-
-  @override
-  Widget build(BuildContext context) {
-    if (trend.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20),
-        child: Text('Sezon verisi yok.',
-            style: TextStyle(color: Colors.white54)),
-      );
-    }
-    final spots = trend
-        .map((t) => FlSpot(t.round.toDouble(), t.score.toDouble()))
-        .toList();
-    final maxY =
-        (trend.map((t) => t.score).fold<int>(0, (a, b) => a > b ? a : b)) + 10;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(12),
-      height: 200,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLow,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: LineChart(
-        LineChartData(
-          minY: 0,
-          maxY: maxY.toDouble(),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            getDrawingHorizontalLine: (_) => FlLine(
-              color: Colors.white12,
-              strokeWidth: 1,
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
             ),
           ),
-          borderData: FlBorderData(show: false),
-          titlesData: FlTitlesData(
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 32,
-                getTitlesWidget: (v, _) => Text(v.toInt().toString(),
-                    style: const TextStyle(
-                        color: Colors.white54, fontSize: 10)),
-              ),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 22,
-                interval: 4,
-                getTitlesWidget: (v, _) => Text('R${v.toInt()}',
-                    style: const TextStyle(
-                        color: Colors.white54, fontSize: 10)),
-              ),
-            ),
-            rightTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          ),
-          lineBarsData: [
-            LineChartBarData(
-              spots: spots,
-              color: AppColors.f1Red,
-              isCurved: true,
-              curveSmoothness: 0.25,
-              barWidth: 3,
-              dotData: FlDotData(
-                show: true,
-                getDotPainter: (s, _, _, _) => FlDotCirclePainter(
-                  radius: 3,
-                  color: AppColors.f1Red,
-                  strokeWidth: 0,
-                ),
-              ),
-              belowBarData: BarAreaData(
-                show: true,
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.f1Red.withValues(alpha: 0.3),
-                    AppColors.f1Red.withValues(alpha: 0),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-Color _parseHex(String? hex) {
-  if (hex == null || hex.isEmpty) return const Color(0xFF6E6E80);
-  final s = hex.replaceAll('#', '');
-  final v = int.tryParse(s, radix: 16);
-  if (v == null) return const Color(0xFF6E6E80);
-  return s.length == 6 ? Color(0xFFFF000000 | v) : Color(v);
-}
-
-class _DriverHits extends StatelessWidget {
-  final List<DriverAccuracy> rows;
-  const _DriverHits({required this.rows});
-
-  @override
-  Widget build(BuildContext context) {
-    if (rows.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20),
-        child: Text('Henüz tahmin yok.',
-            style: TextStyle(color: Colors.white54)),
-      );
-    }
-    final tt = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          for (final d in rows)
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 3),
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceLow,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 4,
-                    height: 28,
-                    color: _parseHex(d.color),
-                  ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    width: 50,
-                    child: Text(d.code,
-                        style: tt.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.0)),
-                  ),
-                  Expanded(
-                    child: Text(d.fullName,
-                        style: tt.bodySmall
-                            ?.copyWith(color: Colors.white70),
-                        overflow: TextOverflow.ellipsis),
-                  ),
-                  Text('${d.correct}/${d.predicted}',
-                      style: tt.labelLarge?.copyWith(
-                          color: AppColors.f1Red,
-                          fontFeatures: const [
-                            FontFeature.tabularFigures(),
-                          ])),
-                  const SizedBox(width: 4),
-                  Text('${(d.rate * 100).toStringAsFixed(0)}%',
-                      style: tt.labelSmall?.copyWith(
-                          color: Colors.white54, fontSize: 10)),
-                ],
-              ),
-            ),
         ],
       ),
     );
@@ -598,52 +318,271 @@ class _BadgeTile extends StatelessWidget {
   final bool earned;
   const _BadgeTile({required this.badge, required this.earned});
 
-  Color _rarityColor() => switch (badge.rarity) {
-        'legendary' => const Color(0xFFFFD700),
-        'epic' => const Color(0xFFB45CFF),
-        'rare' => const Color(0xFF40A9FF),
-        _ => const Color(0xFF8E8E99),
-      };
-
   @override
   Widget build(BuildContext context) {
-    final tt = Theme.of(context).textTheme;
-    final rarity = _rarityColor();
-    return Tooltip(
-      message: badge.description,
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: earned
-              ? rarity.withValues(alpha: 0.12)
-              : AppColors.surfaceLow,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: earned ? rarity : Colors.white12,
-            width: earned ? 1.5 : 1,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A26),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Opacity(
+            opacity: earned ? 1.0 : 0.3,
+            child: Text(badge.icon, style: const TextStyle(fontSize: 30)),
           ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Opacity(
-              opacity: earned ? 1.0 : 0.3,
-              child: Text(badge.icon,
-                  style: const TextStyle(fontSize: 32)),
+          const SizedBox(height: 8),
+          Text(
+            badge.name,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: earned
+                  ? Colors.white
+                  : Colors.white.withValues(alpha: 0.3),
             ),
-            const SizedBox(height: 4),
-            Text(badge.name,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: tt.labelSmall?.copyWith(
-                  color: earned ? Colors.white : Colors.white38,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                )),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _SeasonStats extends StatelessWidget {
+  final ProfileStats stats;
+  const _SeasonStats({required this.stats});
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = [
+      ('Ortalama puan', stats.averageScore.toStringAsFixed(1)),
+      ('En iyi skor', '${stats.bestScore}'),
+      ('Skorlanan yarış', '${stats.racesPredicted}'),
+      ('Rozet', '${stats.badgeCount}'),
+    ];
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A26),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          for (var i = 0; i < rows.length; i++)
+            Padding(
+              padding: EdgeInsets.only(bottom: i < rows.length - 1 ? 12 : 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${rows[i].$1}:',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  Text(
+                    rows[i].$2,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LeaguesList extends StatelessWidget {
+  const _LeaguesList();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer(
+      builder: (context, ref, _) {
+        final leaguesAsync = ref.watch(myLeaguesProvider);
+        return leaguesAsync.when(
+          loading: () => const _Loading(),
+          error: (e, _) => _Error(e),
+          data: (leagues) {
+            if (leagues.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Henüz bir lige katılmadın.',
+                  style: TextStyle(color: Color(0x99FFFFFF)),
+                ),
+              );
+            }
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  for (final league in leagues)
+                    InkWell(
+                      onTap: () => context.push('/leagues/${league.id}'),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1A1A26),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    league.name,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Davet kodu: ${league.inviteCode}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.6,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              '#${league.myRank ?? '-'}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFFE10600),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _PremiumUpsell extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFE10600), Color(0xFFA00500)],
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.workspace_premium, size: 24),
+              SizedBox(width: 8),
+              Text(
+                'PREMİUM\'A GEÇ',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _UpsellItem(text: 'Gelişmiş istatistikler'),
+          const SizedBox(height: 8),
+          _UpsellItem(text: 'Sınırsız lig katılımı'),
+          const SizedBox(height: 8),
+          _UpsellItem(text: 'Özel rozetler'),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => context.push('/premium'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFFE10600),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'HEMEN BAŞLA',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UpsellItem extends StatelessWidget {
+  final String text;
+  const _UpsellItem({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          '•',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.white.withValues(alpha: 0.8),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(text, style: const TextStyle(fontSize: 14)),
+      ],
+    );
+  }
+}
+
+class _Loading extends StatelessWidget {
+  const _Loading();
+  @override
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.all(20),
+    child: Center(child: CircularProgressIndicator()),
+  );
+}
+
+class _Error extends StatelessWidget {
+  final Object error;
+  const _Error(this.error);
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 20),
+    child: Text('Hata: $error'),
+  );
 }

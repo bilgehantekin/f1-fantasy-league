@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/env.dart';
 import '../../core/supabase.dart';
 import '../../core/theme.dart';
 
@@ -54,6 +56,28 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     }
   }
 
+  Future<void> _signInWithOAuth(OAuthProvider provider) async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await supabase.auth.signInWithOAuth(
+        provider,
+        redirectTo: kIsWeb ? null : Env.oauthRedirectUrl,
+        queryParams: provider == OAuthProvider.google
+            ? {'access_type': 'offline', 'prompt': 'consent'}
+            : null,
+      );
+    } on AuthException catch (e) {
+      setState(() => _error = e.message);
+    } catch (e) {
+      setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
@@ -71,28 +95,33 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
-                        width: 6,
-                        height: 48,
-                        color: AppColors.f1Red,
-                      ),
+                      Container(width: 6, height: 48, color: AppColors.f1Red),
                       const SizedBox(width: 12),
-                      Text('PIT WALL',
-                          style: tt.displayLarge?.copyWith(
-                              letterSpacing: 2, fontSize: 44)),
+                      Text(
+                        'PIT WALL',
+                        style: tt.displayLarge?.copyWith(
+                          letterSpacing: 2,
+                          fontSize: 44,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Text('F1 tahmin ligin, cebinde.',
-                      textAlign: TextAlign.center,
-                      style: tt.bodyMedium
-                          ?.copyWith(letterSpacing: 1.5, color: Colors.white60)),
+                  Text(
+                    'F1 tahmin ligin, cebinde.',
+                    textAlign: TextAlign.center,
+                    style: tt.bodyMedium?.copyWith(
+                      letterSpacing: 1.5,
+                      color: Colors.white60,
+                    ),
+                  ),
                   const SizedBox(height: 48),
                   if (_isSignUp) ...[
                     TextField(
                       controller: _username,
-                      decoration:
-                          const InputDecoration(labelText: 'Kullanıcı adı'),
+                      decoration: const InputDecoration(
+                        labelText: 'Kullanıcı adı',
+                      ),
                     ),
                     const SizedBox(height: 12),
                   ],
@@ -109,16 +138,34 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 12),
-                    Text(_error!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: AppColors.liveRed)),
+                    Text(
+                      _error!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: AppColors.liveRed),
+                    ),
                   ],
                   const SizedBox(height: 24),
                   FilledButton(
                     onPressed: _busy ? null : _submit,
-                    child: Text(_busy
-                        ? '...'
-                        : (_isSignUp ? 'KAYIT OL' : 'GIRIŞ YAP')),
+                    child: Text(
+                      _busy ? '...' : (_isSignUp ? 'KAYIT OL' : 'GIRIŞ YAP'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _OAuthButton(
+                    label: 'Google ile devam et',
+                    icon: Icons.g_mobiledata,
+                    onPressed: _busy
+                        ? null
+                        : () => _signInWithOAuth(OAuthProvider.google),
+                  ),
+                  const SizedBox(height: 8),
+                  _OAuthButton(
+                    label: 'Apple ile devam et',
+                    icon: Icons.apple,
+                    onPressed: _busy
+                        ? null
+                        : () => _signInWithOAuth(OAuthProvider.apple),
                   ),
                   TextButton(
                     onPressed: _busy
@@ -136,6 +183,34 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _OAuthButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  const _OAuthButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 22),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.white,
+        side: const BorderSide(color: Color(0xFF2A2A3A)),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }

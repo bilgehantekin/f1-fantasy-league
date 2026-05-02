@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
   static const f1Red = Color(0xFFE10600);
@@ -24,69 +23,106 @@ ThemeData buildTheme() {
     onSecondary: Colors.black,
   );
 
-  TextTheme tt(TextTheme src) => GoogleFonts.titilliumWebTextTheme(src).copyWith(
-        // Display - massive, condensed, F1 style
-        displayLarge: GoogleFonts.titilliumWeb(
-          fontSize: 48,
-          fontWeight: FontWeight.w900,
-          letterSpacing: -1.0,
-          color: Colors.white,
-        ),
-        displayMedium: GoogleFonts.titilliumWeb(
-          fontSize: 36,
-          fontWeight: FontWeight.w900,
-          letterSpacing: -0.5,
-          color: Colors.white,
-        ),
-        // Headlines - card titles, race name
-        headlineLarge: GoogleFonts.titilliumWeb(
-          fontSize: 24,
-          fontWeight: FontWeight.w900,
-          color: Colors.white,
-        ),
-        headlineMedium: GoogleFonts.titilliumWeb(
-          fontSize: 20,
-          fontWeight: FontWeight.w800,
-          color: Colors.white,
-        ),
-        // Titles - section headers
-        titleLarge: GoogleFonts.titilliumWeb(
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          color: Colors.white,
-        ),
-        titleMedium: GoogleFonts.titilliumWeb(
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
-          color: Colors.white,
-        ),
-        labelLarge: GoogleFonts.titilliumWeb(
-          fontSize: 13,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 1.2,
-          color: Colors.white,
-        ),
-        bodyLarge: GoogleFonts.titilliumWeb(
-          fontSize: 15,
-          color: Colors.white,
-        ),
-        bodyMedium: GoogleFonts.titilliumWeb(
-          fontSize: 14,
-          color: Colors.white70,
-        ),
-      );
+  const titilliumFamily = 'TitilliumWeb';
+
+  TextTheme tt(TextTheme src) => src.copyWith(
+    // Display - massive, condensed, F1 style (font-black = 900)
+    displayLarge: TextStyle(
+      fontFamily: titilliumFamily,
+      fontSize: 48,
+      fontWeight: FontWeight.w900,
+      letterSpacing: -1.0,
+      color: Colors.white,
+      height: 1.0,
+    ),
+    displayMedium: TextStyle(
+      fontFamily: titilliumFamily,
+      fontSize: 36,
+      fontWeight: FontWeight.w900,
+      letterSpacing: -0.5,
+      color: Colors.white,
+      height: 1.0,
+    ),
+    // Headlines - card titles, race name (font-black = 900)
+    headlineLarge: TextStyle(
+      fontFamily: titilliumFamily,
+      fontSize: 24,
+      fontWeight: FontWeight.w900,
+      color: Colors.white,
+    ),
+    headlineMedium: TextStyle(
+      fontFamily: titilliumFamily,
+      fontSize: 20,
+      fontWeight: FontWeight.w900,
+      color: Colors.white,
+    ),
+    // Titles - section headers (font-bold = 700)
+    titleLarge: TextStyle(
+      fontFamily: titilliumFamily,
+      fontSize: 18,
+      fontWeight: FontWeight.w700,
+      color: Colors.white,
+    ),
+    titleMedium: TextStyle(
+      fontFamily: titilliumFamily,
+      fontSize: 14,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0.5,
+      color: Colors.white,
+    ),
+    // Labels (font-black = 900)
+    labelLarge: TextStyle(
+      fontFamily: titilliumFamily,
+      fontSize: 13,
+      fontWeight: FontWeight.w900,
+      letterSpacing: 1.2,
+      color: Colors.white,
+    ),
+    labelMedium: TextStyle(
+      fontFamily: titilliumFamily,
+      fontSize: 12,
+      fontWeight: FontWeight.w700,
+      color: Colors.white,
+    ),
+    labelSmall: TextStyle(
+      fontFamily: titilliumFamily,
+      fontSize: 11,
+      fontWeight: FontWeight.w700,
+      color: Colors.white,
+    ),
+    // Body text (normal weight = 400)
+    bodyLarge: TextStyle(
+      fontFamily: titilliumFamily,
+      fontSize: 15,
+      fontWeight: FontWeight.w400,
+      color: Colors.white,
+    ),
+    bodyMedium: TextStyle(
+      fontFamily: titilliumFamily,
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
+      color: Colors.white70,
+    ),
+    bodySmall: TextStyle(
+      fontFamily: titilliumFamily,
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
+      color: Colors.white70,
+    ),
+  );
 
   return ThemeData(
     colorScheme: base,
     scaffoldBackgroundColor: AppColors.carbon,
     useMaterial3: true,
     textTheme: tt(ThemeData.dark().textTheme),
+    fontFamily: titilliumFamily,
     appBarTheme: AppBarTheme(
       backgroundColor: AppColors.carbon,
       elevation: 0,
       scrolledUnderElevation: 0,
-      titleTextStyle: GoogleFonts.titilliumWeb(
+      titleTextStyle: TextStyle(
+        fontFamily: titilliumFamily,
         fontWeight: FontWeight.w900,
         fontSize: 22,
         letterSpacing: -0.3,
@@ -105,13 +141,22 @@ ThemeData buildTheme() {
         backgroundColor: AppColors.f1Red,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        textStyle: GoogleFonts.titilliumWeb(
-          fontWeight: FontWeight.w800,
+        textStyle: TextStyle(
+          fontFamily: titilliumFamily,
+          fontWeight: FontWeight.w900,
           fontSize: 15,
           letterSpacing: 0.5,
         ),
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        textStyle: TextStyle(
+          fontFamily: titilliumFamily,
+          fontWeight: FontWeight.w900,
+          fontSize: 15,
+        ),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
@@ -134,10 +179,12 @@ ThemeData buildTheme() {
     chipTheme: ChipThemeData(
       backgroundColor: AppColors.surfaceHi,
       selectedColor: AppColors.f1Red,
-      labelStyle: GoogleFonts.titilliumWeb(fontWeight: FontWeight.w700),
+      labelStyle: TextStyle(
+        fontFamily: titilliumFamily,
+        fontWeight: FontWeight.w700,
+      ),
       side: BorderSide.none,
-      shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     ),
     dividerTheme: const DividerThemeData(color: AppColors.surfaceHi),
   );

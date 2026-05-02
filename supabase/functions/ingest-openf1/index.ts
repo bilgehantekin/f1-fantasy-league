@@ -125,18 +125,29 @@ async function ingestRace(
   const meeting = await findMeeting(race.season_id, new Date(race.race_at));
   if (!meeting) throw new Error("OpenF1 meeting not found within 14 days");
 
-  // OpenF1 rate-limit'ten kaçınmak için sıralı çağrı.
-  const raceSession = await findSession(meeting.meeting_key, "Race");
+  // Sprint weekend kontrolü
+  const { sprintQuali, sprintRace } = await findSprintSessions(
+    meeting.meeting_key,
+  );
+  const hasSprint = !!(sprintQuali && sprintRace);
+
+  // Ana yarış sessions (sprint adlarını filtreliyor)
+  const { mainQuali, mainRace } = await findMainQualifyingAndRace(
+    meeting.meeting_key,
+  );
+  const raceSession = mainRace ??
+    await findSession(meeting.meeting_key, "Race");
   if (!raceSession) throw new Error("Race session not found");
-  const qualSession = await findSession(meeting.meeting_key, "Qualifying");
+  const qualSession = mainQuali ??
+    await findSession(meeting.meeting_key, "Qualifying");
 
   const raceResults = await fetchJson<OpenF1Result[]>(
     `${OPENF1}/session_result?session_key=${raceSession.session_key}`,
   );
   const qualResults: OpenF1Result[] = qualSession
     ? await fetchJson<OpenF1Result[]>(
-        `${OPENF1}/session_result?session_key=${qualSession.session_key}`,
-      )
+      `${OPENF1}/session_result?session_key=${qualSession.session_key}`,
+    )
     : [];
   const fastestLap = await findFastestLap(raceSession.session_key);
 
@@ -161,7 +172,22 @@ async function ingestRace(
   const p3 = byNumber.get(sortedRace[2]?.driver_number);
   const pole = byNumber.get(sortedQual[0]?.driver_number);
   const fl = fastestLap ? byNumber.get(fastestLap.driver_number) : undefined;
-  const dnfCount = raceResults.filter((r) => r.dnf || r.dns || r.dsq).length;
+  const dnfCount = countDnfResults(raceResults);
+
+  // Tam klasman: her sürücü için satır (DNF/DSQ/DNS dahil).
+  const classification = raceResults
+    .map((r) => {
+      const drv = byNumber.get(r.driver_number);
+      if (!drv) return null;
+      const status = r.dsq ? "dsq" : r.dns ? "dns" : r.dnf ? "dnf" : "finished";
+      return {
+        race_id: raceId,
+        driver_id: drv.id,
+        position: r.position ?? null,
+        status,
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
 
   const missing: string[] = [];
   if (!p1) missing.push(`p1#${sortedRace[0]?.driver_number}`);
@@ -189,27 +215,145 @@ async function ingestRace(
       payload,
     };
   }
+  // ---- Sprint sonuçları (sprint weekend ise) ----
+  let sprintPayload: {
+    race_id: string;
+    p1: string;
+    p2: string;
+    p3: string;
+    pole: string;
+    dnf_count: number;
+  } | null = null;
+  let sprintClassification: Array<{
+    race_id: string;
+    driver_id: string;
+    position: number | null;
+    status: string;
+  }> = [];
+  let sprintMissing: string[] = [];
+
+  if (hasSprint && sprintRace && sprintQuali) {
+    const sprintResults = await fetchJson<OpenF1Result[]>(
+      `${OPENF1}/session_result?session_key=${sprintRace.session_key}`,
+    );
+    const sprintQualResults = await fetchJson<OpenF1Result[]>(
+      `${OPENF1}/session_result?session_key=${sprintQuali.session_key}`,
+    );
+    const sprintRaceSorted = sprintResults
+      .filter((r) => r.position != null)
+      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+    const sprintQualSorted = sprintQualResults
+      .filter((r) => r.position != null)
+      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+
+    const sp1 = byNumber.get(sprintRaceSorted[0]?.driver_number);
+    const sp2 = byNumber.get(sprintRaceSorted[1]?.driver_number);
+    const sp3 = byNumber.get(sprintRaceSorted[2]?.driver_number);
+    const sPole = byNumber.get(sprintQualSorted[0]?.driver_number);
+    const sDnfCount = countDnfResults(sprintResults);
+
+    if (!sp1) sprintMissing.push(`sp1#${sprintRaceSorted[0]?.driver_number}`);
+    if (!sp2) sprintMissing.push(`sp2#${sprintRaceSorted[1]?.driver_number}`);
+    if (!sp3) sprintMissing.push(`sp3#${sprintRaceSorted[2]?.driver_number}`);
+    if (!sPole) {
+      sprintMissing.push(`sprint_pole#${sprintQualSorted[0]?.driver_number}`);
+    }
+
+    if (sp1 && sp2 && sp3 && sPole) {
+      sprintPayload = {
+        race_id: raceId,
+        p1: sp1.id,
+        p2: sp2.id,
+        p3: sp3.id,
+        pole: sPole.id,
+        dnf_count: sDnfCount,
+      };
+    }
+
+    sprintClassification = sprintResults
+      .map((r) => {
+        const drv = byNumber.get(r.driver_number);
+        if (!drv) return null;
+        const status = r.dsq
+          ? "dsq"
+          : r.dns
+          ? "dns"
+          : r.dnf
+          ? "dnf"
+          : "finished";
+        return {
+          race_id: raceId,
+          driver_id: drv.id,
+          position: r.position ?? null,
+          status,
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+  }
+
   if (dryRun) {
     return {
       race_id: raceId,
       dry_run: true,
       meeting: meeting.meeting_name,
       payload,
+      classification_rows: classification.length,
+      has_sprint: hasSprint,
+      sprint_payload: sprintPayload,
+      sprint_classification_rows: sprintClassification.length,
+      sprint_missing: sprintMissing,
     };
   }
 
   const { error: upErr } = await c.from("race_results").upsert(payload);
   if (upErr) throw upErr;
 
+  // Eski klasman satırlarını temizle, yenisini yaz (idempotent re-ingest).
+  const { error: delErr } = await c
+    .from("race_classifications")
+    .delete()
+    .eq("race_id", raceId);
+  if (delErr) throw delErr;
+  if (classification.length > 0) {
+    const { error: clsErr } = await c
+      .from("race_classifications")
+      .insert(classification);
+    if (clsErr) throw clsErr;
+  }
+
+  // Sprint sonuçları
+  if (sprintPayload) {
+    const { error: spErr } = await c.from("sprint_results").upsert(
+      sprintPayload,
+    );
+    if (spErr) throw spErr;
+  }
+  if (hasSprint) {
+    await c.from("sprint_classifications").delete().eq("race_id", raceId);
+    if (sprintClassification.length > 0) {
+      const { error: scErr } = await c
+        .from("sprint_classifications")
+        .insert(sprintClassification);
+      if (scErr) throw scErr;
+    }
+  }
+
   return {
     race_id: raceId,
     ok: true,
     meeting: meeting.meeting_name,
     dnf_count: dnfCount,
+    classification_rows: classification.length,
+    sprint_ingested: !!sprintPayload,
+    sprint_classification_rows: sprintClassification.length,
+    sprint_missing: sprintMissing,
   };
 }
 
-async function findMeeting(year: number, raceAt: Date): Promise<OpenF1Meeting | null> {
+async function findMeeting(
+  year: number,
+  raceAt: Date,
+): Promise<OpenF1Meeting | null> {
   const meetings = await fetchJson<OpenF1Meeting[]>(
     `${OPENF1}/meetings?year=${year}`,
   );
@@ -237,6 +381,44 @@ async function findSession(
   return sessions[0] ?? null;
 }
 
+// Sprint weekend tespit: aynı meeting içinde Sprint / Sprint Qualifying var mı?
+async function findSprintSessions(
+  meetingKey: number,
+): Promise<
+  { sprintQuali: OpenF1Session | null; sprintRace: OpenF1Session | null }
+> {
+  const all = await fetchJson<(OpenF1Session & { session_name?: string })[]>(
+    `${OPENF1}/sessions?meeting_key=${meetingKey}`,
+  );
+  const byName = (re: RegExp) =>
+    all.find((s) =>
+      re.test(s.session_name ?? "") || re.test(s.session_type ?? "")
+    ) ?? null;
+  return {
+    sprintQuali: byName(/Sprint\s*(Qualifying|Shootout)/i),
+    sprintRace: byName(/^Sprint$/i) ?? byName(/Sprint\s*Race/i),
+  };
+}
+
+// Ana yarış sessions: sprint weekend'de "Qualifying" ve "Race" sessionları
+// Sprint Qualifying / Sprint Race ile karışmasın diye name filtresi.
+async function findMainQualifyingAndRace(meetingKey: number): Promise<{
+  mainQuali: OpenF1Session | null;
+  mainRace: OpenF1Session | null;
+}> {
+  const all = await fetchJson<(OpenF1Session & { session_name?: string })[]>(
+    `${OPENF1}/sessions?meeting_key=${meetingKey}`,
+  );
+  const isSprintNamed = (s: OpenF1Session & { session_name?: string }) =>
+    /sprint/i.test(s.session_name ?? "");
+  const mainQuali = all.find(
+    (s) => s.session_type === "Qualifying" && !isSprintNamed(s),
+  ) ?? null;
+  const mainRace =
+    all.find((s) => s.session_type === "Race" && !isSprintNamed(s)) ?? null;
+  return { mainQuali, mainRace };
+}
+
 async function findFastestLap(sessionKey: number): Promise<OpenF1Lap | null> {
   const laps = await fetchJson<OpenF1Lap[]>(
     `${OPENF1}/laps?session_key=${sessionKey}`,
@@ -255,6 +437,10 @@ async function findFastestLap(sessionKey: number): Promise<OpenF1Lap | null> {
     }
   }
   return best;
+}
+
+function countDnfResults(results: OpenF1Result[]): number {
+  return results.filter((r) => r.dnf || r.dns || r.dsq).length;
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
@@ -378,17 +564,22 @@ async function bootstrapSeason(c: SupabaseClient, year: number) {
     .sort((a, b) => a.date_start.localeCompare(b.date_start));
 
   let raceCount = 0;
+  let sprintCount = 0;
   for (let i = 0; i < meetings.length; i++) {
     const m = meetings[i];
-    // Rate-limit'e karşı her iterasyondan önce 400ms bekle
     if (i > 0) await new Promise((r) => setTimeout(r, 400));
-    const raceSession = await findSession(m.meeting_key, "Race");
+
+    const { mainQuali, mainRace } = await findMainQualifyingAndRace(
+      m.meeting_key,
+    );
     await new Promise((r) => setTimeout(r, 200));
-    const qualSession = await findSession(m.meeting_key, "Qualifying");
-    const raceAt = raceSession?.date_start ?? m.date_start;
-    // Qualifying genelde yarıştan 1 gün önce; OpenF1 vermezse yedek
-    const qualAt = qualSession?.date_start ??
+    const { sprintQuali, sprintRace } = await findSprintSessions(m.meeting_key);
+
+    const raceAt = mainRace?.date_start ?? m.date_start;
+    const qualAt = mainQuali?.date_start ??
       new Date(new Date(raceAt).getTime() - 24 * 3600 * 1000).toISOString();
+
+    const hasSprint = !!(sprintQuali && sprintRace);
 
     const { error: rErr } = await c.from("races").upsert(
       {
@@ -398,11 +589,15 @@ async function bootstrapSeason(c: SupabaseClient, year: number) {
         circuit: m.location,
         qualifying_at: qualAt,
         race_at: raceAt,
+        has_sprint: hasSprint,
+        sprint_qualifying_at: sprintQuali?.date_start ?? null,
+        sprint_race_at: sprintRace?.date_start ?? null,
       },
       { onConflict: "season_id,round" },
     );
     if (rErr) throw rErr;
     raceCount++;
+    if (hasSprint) sprintCount++;
   }
 
   return {
@@ -410,5 +605,6 @@ async function bootstrapSeason(c: SupabaseClient, year: number) {
     teams: teamRows.size,
     drivers: driverRows.length,
     races: raceCount,
+    sprints: sprintCount,
   };
 }

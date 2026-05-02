@@ -4,7 +4,10 @@ import '../../core/env.dart';
 import '../../core/supabase.dart';
 import '../../shared/models.dart';
 
-final raceProvider = FutureProvider.family<Race, String>((ref, id) async {
+final raceProvider = FutureProvider.autoDispose.family<Race, String>((
+  ref,
+  id,
+) async {
   final row = await supabase.from('races').select().eq('id', id).single();
   return Race.fromJson(row);
 });
@@ -18,8 +21,10 @@ final driversProvider = FutureProvider<List<Driver>>((ref) async {
   return rows.map((e) => Driver.fromJson(e)).toList();
 });
 
-final jokerProvider =
-    FutureProvider.family<JokerQuestion?, String>((ref, raceId) async {
+final jokerProvider = FutureProvider.family<JokerQuestion?, String>((
+  ref,
+  raceId,
+) async {
   final rows = await supabase
       .from('joker_questions')
       .select()
@@ -29,24 +34,102 @@ final jokerProvider =
   return JokerQuestion.fromJson(rows.first);
 });
 
-final predictionProvider =
-    FutureProvider.family<Prediction?, String>((ref, raceId) async {
+class PredictionKey {
+  final String raceId;
+  final String? leagueId;
+
+  const PredictionKey({required this.raceId, this.leagueId});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PredictionKey &&
+          raceId == other.raceId &&
+          leagueId == other.leagueId;
+
+  @override
+  int get hashCode => Object.hash(raceId, leagueId);
+}
+
+final predictionProvider = FutureProvider.family<Prediction?, PredictionKey>((
+  ref,
+  key,
+) async {
   final user = supabase.auth.currentUser;
-  if (user == null) return null;
+  if (user == null || key.leagueId == null) return null;
   final rows = await supabase
       .from('predictions')
       .select()
       .eq('user_id', user.id)
-      .eq('race_id', raceId)
+      .eq('race_id', key.raceId)
+      .eq('league_id', key.leagueId!)
       .limit(1);
   if (rows.isEmpty) return null;
   return Prediction.fromJson(rows.first);
 });
 
-Future<void> upsertPrediction(Prediction p) async {
+Future<void> upsertPrediction(Prediction p, {required String leagueId}) async {
   final user = supabase.auth.currentUser;
   if (user == null) throw 'Auth required';
   await supabase
       .from('predictions')
-      .upsert(p.toUpsertJson(user.id), onConflict: 'user_id,race_id');
+      .upsert(
+        p.toUpsertJson(user.id, leagueId: leagueId),
+        onConflict: 'user_id,race_id,league_id',
+      );
+}
+
+final sprintPredictionProvider =
+    FutureProvider.family<SprintPrediction?, PredictionKey>((ref, key) async {
+      final user = supabase.auth.currentUser;
+      if (user == null || key.leagueId == null) return null;
+      final rows = await supabase
+          .from('sprint_predictions')
+          .select()
+          .eq('user_id', user.id)
+          .eq('race_id', key.raceId)
+          .eq('league_id', key.leagueId!)
+          .limit(1);
+      if (rows.isEmpty) return null;
+      return SprintPrediction.fromJson(rows.first);
+    });
+
+Future<void> upsertSprintPrediction(
+  SprintPrediction p, {
+  required String leagueId,
+}) async {
+  final user = supabase.auth.currentUser;
+  if (user == null) throw 'Auth required';
+  await supabase
+      .from('sprint_predictions')
+      .upsert(
+        p.toUpsertJson(user.id, leagueId: leagueId),
+        onConflict: 'user_id,race_id,league_id',
+      );
+}
+
+Future<void> copyPredictionToLeagues({
+  Prediction? main,
+  SprintPrediction? sprint,
+  required Iterable<String> leagueIds,
+}) async {
+  final user = supabase.auth.currentUser;
+  if (user == null) throw 'Auth required';
+
+  final targetIds = leagueIds.toSet();
+  if (targetIds.isEmpty) return;
+
+  if (main != null) {
+    await supabase.from('predictions').upsert([
+      for (final leagueId in targetIds)
+        main.toUpsertJson(user.id, leagueId: leagueId),
+    ], onConflict: 'user_id,race_id,league_id');
+  }
+
+  if (sprint != null) {
+    await supabase.from('sprint_predictions').upsert([
+      for (final leagueId in targetIds)
+        sprint.toUpsertJson(user.id, leagueId: leagueId),
+    ], onConflict: 'user_id,race_id,league_id');
+  }
 }
