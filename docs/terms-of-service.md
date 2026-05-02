@@ -328,19 +328,19 @@ You agree to indemnify and hold us harmless from:
 
 ### 12.1 Governing Law
 
-These Terms are governed by the laws of [Your Country/State], without regard to conflict of law principles.
+These Terms are governed by the laws of United States, without regard to conflict of law principles.
 
 ### 12.2 Dispute Resolution
 
 **Before Litigation**:
-- Contact us first: [your-email@gmail.com]
+- Contact us first: privacy@pitwall.app
 - Allow 30 days for resolution attempts
 - Both parties agree to negotiate in good faith
 
 **Binding Arbitration** (if applicable in your jurisdiction):
 - Any dispute shall be resolved by binding arbitration
-- Arbitration held in [Your City]
-- Rules: [e.g., AAA Arbitration Rules]
+- Arbitration held in New York
+- Rules: AAA Arbitration Rules
 - Costs: Each party bears own costs (except where law requires otherwise)
 
 **Exceptions**: IP infringement claims and injunctive relief may be pursued in court.
@@ -372,16 +372,15 @@ If there's any conflict between these Terms and other documents, these Terms con
 ### 15.1 Customer Support
 
 For questions or support:
-- **Email**: [your-email@gmail.com]
+- **Email**: privacy@pitwall.app
 - **Response Time**: 5-7 business days
 
 ### 15.2 Legal Notices
 
 Formal legal notices can be sent to:
-- **Email**: [your-email@gmail.com]
-- **Mailing Address**: [Your Address]
+- **Email**: privacy@pitwall.app
 
-Notice is effective when email is sent or mail is received.
+Notice is effective when email is sent.
 
 ---
 
@@ -445,7 +444,7 @@ Status: ✅ App Store Ready | ✅ Legally Compliant
 
 **By downloading and using PitWall, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.**
 
-If you have questions, please contact: [your-email@gmail.com]
+If you have questions, please contact: privacy@pitwall.app
 
 ---
 

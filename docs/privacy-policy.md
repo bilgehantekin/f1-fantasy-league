@@ -10,8 +10,8 @@ PitWall ("**we**," "**us**," "**our**," or "**Company**") is committed to protec
 Please read this Privacy Policy carefully. If you do not agree with our policies and practices, please do not use our Service.
 
 **Contact Information**:
-- Email: [your-email@gmail.com] (replace with actual contact email)
-- Address: [Your Address] (optional)
+- Email: privacy@pitwall.app
+- Address: Contact via email (preferred)
 
 ---
 
@@ -195,7 +195,7 @@ We comply with privacy laws in your jurisdiction. Please contact us for jurisdic
 
 ### 6.4 How to Submit Rights Requests
 
-To exercise any of these rights, email us at: **[your-email@gmail.com]**
+To exercise any of these rights, email us at: **privacy@pitwall.app**
 
 Please include:
 - "Privacy Request" in the subject line
@@ -320,7 +320,7 @@ We may update this Privacy Policy from time to time. When we do:
 
 For privacy-related questions, please contact:
 
-**Email**: [your-email@gmail.com]  
+**Email**: privacy@pitwall.app  
 **Response Time**: 5-7 business days  
 
 ### 13.2 GDPR Data Protection Authority
@@ -332,8 +332,7 @@ EU residents can lodge complaints with their national data protection authority:
 ### 13.3 California Privacy Rights
 
 California residents can submit requests via:
-- Email: [your-email@gmail.com]
-- Mail: [Your Address]
+- Email: privacy@pitwall.app
 
 ---
 
