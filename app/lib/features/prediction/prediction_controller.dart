@@ -3,53 +3,33 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/env.dart';
 import '../../core/supabase.dart';
 import '../../shared/models.dart';
+import 'data/prediction_repository.dart';
+export 'domain/prediction_rules.dart';
+import 'domain/prediction_rules.dart';
+
+final predictionRepositoryProvider = Provider<PredictionRepository>(
+  (_) => PredictionRepository(supabase),
+);
 
 final raceProvider = FutureProvider.autoDispose.family<Race, String>((
   ref,
   id,
 ) async {
-  final row = await supabase.from('races').select().eq('id', id).single();
-  return Race.fromJson(row);
+  return ref.read(predictionRepositoryProvider).fetchRace(id);
 });
 
 final driversProvider = FutureProvider<List<Driver>>((ref) async {
-  final rows = await supabase
-      .from('drivers')
-      .select('*, team:teams(code, name, color)')
-      .eq('season_id', Env.seasonId)
-      .order('full_name');
-  return rows.map((e) => Driver.fromJson(e)).toList();
+  return ref
+      .read(predictionRepositoryProvider)
+      .fetchDrivers(seasonId: Env.seasonId);
 });
 
 final jokerProvider = FutureProvider.family<JokerQuestion?, String>((
   ref,
   raceId,
 ) async {
-  final rows = await supabase
-      .from('joker_questions')
-      .select()
-      .eq('race_id', raceId)
-      .limit(1);
-  if (rows.isEmpty) return null;
-  return JokerQuestion.fromJson(rows.first);
+  return ref.read(predictionRepositoryProvider).fetchJoker(raceId);
 });
-
-class PredictionKey {
-  final String raceId;
-  final String? leagueId;
-
-  const PredictionKey({required this.raceId, this.leagueId});
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is PredictionKey &&
-          raceId == other.raceId &&
-          leagueId == other.leagueId;
-
-  @override
-  int get hashCode => Object.hash(raceId, leagueId);
-}
 
 final predictionProvider = FutureProvider.family<Prediction?, PredictionKey>((
   ref,
@@ -57,41 +37,26 @@ final predictionProvider = FutureProvider.family<Prediction?, PredictionKey>((
 ) async {
   final user = ref.watch(currentUserProvider);
   if (user == null || key.leagueId == null) return null;
-  final rows = await supabase
-      .from('predictions')
-      .select()
-      .eq('user_id', user.id)
-      .eq('race_id', key.raceId)
-      .eq('league_id', key.leagueId!)
-      .limit(1);
-  if (rows.isEmpty) return null;
-  return Prediction.fromJson(rows.first);
+  return ref
+      .read(predictionRepositoryProvider)
+      .fetchPrediction(userId: user.id, key: key);
 });
 
 Future<void> upsertPrediction(Prediction p, {required String leagueId}) async {
   final user = supabase.auth.currentUser;
   if (user == null) throw 'Auth required';
-  await supabase
-      .from('predictions')
-      .upsert(
-        p.toUpsertJson(user.id, leagueId: leagueId),
-        onConflict: 'user_id,race_id,league_id',
-      );
+  await PredictionRepository(
+    supabase,
+  ).upsertPrediction(userId: user.id, prediction: p, leagueId: leagueId);
 }
 
 final sprintPredictionProvider =
     FutureProvider.family<SprintPrediction?, PredictionKey>((ref, key) async {
       final user = ref.watch(currentUserProvider);
       if (user == null || key.leagueId == null) return null;
-      final rows = await supabase
-          .from('sprint_predictions')
-          .select()
-          .eq('user_id', user.id)
-          .eq('race_id', key.raceId)
-          .eq('league_id', key.leagueId!)
-          .limit(1);
-      if (rows.isEmpty) return null;
-      return SprintPrediction.fromJson(rows.first);
+      return ref
+          .read(predictionRepositoryProvider)
+          .fetchSprintPrediction(userId: user.id, key: key);
     });
 
 Future<void> upsertSprintPrediction(
@@ -100,12 +65,9 @@ Future<void> upsertSprintPrediction(
 }) async {
   final user = supabase.auth.currentUser;
   if (user == null) throw 'Auth required';
-  await supabase
-      .from('sprint_predictions')
-      .upsert(
-        p.toUpsertJson(user.id, leagueId: leagueId),
-        onConflict: 'user_id,race_id,league_id',
-      );
+  await PredictionRepository(
+    supabase,
+  ).upsertSprintPrediction(userId: user.id, prediction: p, leagueId: leagueId);
 }
 
 Future<void> copyPredictionToLeagues({
@@ -116,20 +78,10 @@ Future<void> copyPredictionToLeagues({
   final user = supabase.auth.currentUser;
   if (user == null) throw 'Auth required';
 
-  final targetIds = leagueIds.toSet();
-  if (targetIds.isEmpty) return;
-
-  if (main != null) {
-    await supabase.from('predictions').upsert([
-      for (final leagueId in targetIds)
-        main.toUpsertJson(user.id, leagueId: leagueId),
-    ], onConflict: 'user_id,race_id,league_id');
-  }
-
-  if (sprint != null) {
-    await supabase.from('sprint_predictions').upsert([
-      for (final leagueId in targetIds)
-        sprint.toUpsertJson(user.id, leagueId: leagueId),
-    ], onConflict: 'user_id,race_id,league_id');
-  }
+  await PredictionRepository(supabase).copyPredictionToLeagues(
+    userId: user.id,
+    main: main,
+    sprint: sprint,
+    leagueIds: leagueIds,
+  );
 }

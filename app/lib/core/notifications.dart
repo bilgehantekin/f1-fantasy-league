@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
@@ -7,6 +8,17 @@ import 'package:timezone/timezone.dart' as tz;
 import 'env.dart';
 import 'supabase.dart';
 import '../shared/models.dart';
+
+const _scheduledReminderIdsKey = 'reminders.scheduledNotificationIds';
+
+int stableNotificationId(String raceId, String leagueId, String kind) {
+  final input = '$raceId:$leagueId:$kind';
+  var hash = 0;
+  for (final codeUnit in input.codeUnits) {
+    hash = (hash * 31 + codeUnit) & 0x7fffffff;
+  }
+  return hash;
+}
 
 class ReminderPreferences {
   final bool enabled;
@@ -92,14 +104,23 @@ class NotificationService {
         .resolvePlatformSpecificImplementation<
           IOSFlutterLocalNotificationsPlugin
         >();
-    if (ios == null) return true; // android veya başka platform
-    final granted = await ios.requestPermissions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-    debugPrint('iOS notification permission granted: $granted');
-    return granted ?? false;
+    if (ios != null) {
+      final granted = await ios.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      debugPrint('iOS notification permission granted: $granted');
+      return granted ?? false;
+    }
+
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      final status = await Permission.notification.request();
+      debugPrint('Android notification permission: $status');
+      return status.isGranted;
+    }
+
+    return true;
   }
 
   Future<NotificationsEnabledOptions?> checkPermissions() async {
@@ -117,7 +138,7 @@ class NotificationService {
   }) async {
     await init();
     final prefs = preferences ?? await ReminderPreferences.load();
-    await _plugin.cancelAll();
+    await _cancelScheduledReminderIds();
     if (!prefs.enabled) return;
 
     final now = DateTime.now();
@@ -126,6 +147,7 @@ class NotificationService {
     final completedKeys = prefs.onlyMissingPrediction
         ? await _completedPredictionKeys(leagueIds)
         : <String>{};
+    final scheduledIds = <int>{};
 
     for (final race in races) {
       for (final leagueId in leagueIds) {
@@ -141,13 +163,15 @@ class NotificationService {
               Duration(hours: prefs.hoursBeforeLock),
             );
             if (lockReminder.isAfter(now)) {
-              await _scheduleAt(
-                id: _idFor(race.id, leagueId, 'main'),
+              final id = _idFor(race.id, leagueId, 'main');
+              final scheduled = await _scheduleAt(
+                id: id,
                 title: '${race.name} yarış tahmini yaklaşıyor',
                 body:
                     'Ana yarış tahminlerin kilitlenmek üzere. Aç ve seçimlerini yap.',
                 when: lockReminder,
               );
+              if (scheduled) scheduledIds.add(id);
             }
           }
         }
@@ -166,18 +190,21 @@ class NotificationService {
               Duration(hours: prefs.hoursBeforeLock),
             );
             if (sprintReminder.isAfter(now)) {
-              await _scheduleAt(
-                id: _idFor(race.id, leagueId, 'sprint'),
+              final id = _idFor(race.id, leagueId, 'sprint');
+              final scheduled = await _scheduleAt(
+                id: id,
                 title: '${race.name} sprint tahmini yaklaşıyor',
                 body:
                     'Sprint tahminlerin kilitlenmek üzere. Aç ve seçimlerini yap.',
                 when: sprintReminder,
               );
+              if (scheduled) scheduledIds.add(id);
             }
           }
         }
       }
     }
+    await _saveScheduledReminderIds(scheduledIds);
   }
 
   Future<void> cancelForRace(String raceId) async {
@@ -223,7 +250,7 @@ class NotificationService {
     );
   }
 
-  Future<void> _scheduleAt({
+  Future<bool> _scheduleAt({
     required int id,
     required String title,
     required String body,
@@ -252,19 +279,38 @@ class NotificationService {
         ),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       );
+      return true;
     } catch (e) {
       // Permission yoksa veya past time - sessizce geç
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('schedule failed: $e');
-      }
+      debugPrint('Notification schedule failed: $e');
+      return false;
     }
   }
 
   // race_id + league_id + kind → 32-bit int (notification id)
-  int _idFor(String raceId, String leagueId, String kind) {
-    final hash = '$raceId:$leagueId:$kind'.hashCode;
-    return hash.abs() & 0x7FFFFFFF;
+  int _idFor(String raceId, String leagueId, String kind) =>
+      stableNotificationId(raceId, leagueId, kind);
+
+  Future<void> _cancelScheduledReminderIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rawIds = prefs.getStringList(_scheduledReminderIdsKey) ?? const [];
+    for (final rawId in rawIds) {
+      final id = int.tryParse(rawId);
+      if (id != null) await _plugin.cancel(id);
+    }
+    await prefs.remove(_scheduledReminderIdsKey);
+  }
+
+  Future<void> _saveScheduledReminderIds(Set<int> ids) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (ids.isEmpty) {
+      await prefs.remove(_scheduledReminderIdsKey);
+      return;
+    }
+    await prefs.setStringList(
+      _scheduledReminderIdsKey,
+      ids.map((id) => id.toString()).toList()..sort(),
+    );
   }
 
   String _predictionKey({

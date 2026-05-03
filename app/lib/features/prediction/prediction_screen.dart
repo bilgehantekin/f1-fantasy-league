@@ -14,6 +14,7 @@ import '../../shared/widgets/countdown_tiles.dart';
 import '../../shared/widgets/driver_chip.dart';
 import '../../shared/widgets/driver_picker.dart';
 import '../league/league_controller.dart';
+import 'domain/prediction_validator.dart';
 import 'prediction_controller.dart';
 
 class PredictionScreen extends ConsumerStatefulWidget {
@@ -81,31 +82,33 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
       _saveMessage = null;
     });
     try {
-      if (leagueId == null) {
-        throw 'Tahmin kaydetmek için lig bağlamı gerekli';
+      final validationError = validatePredictionSave(leagueId: leagueId);
+      if (validationError != null) {
+        throw validationError;
       }
+      final saveLeagueId = leagueId!;
       final predictionKey = PredictionKey(
         raceId: widget.raceId,
-        leagueId: leagueId,
+        leagueId: saveLeagueId,
       );
       if (_mode == _PredictionMode.main) {
         if (_draft == null) return;
-        await upsertPrediction(_draft!, leagueId: leagueId);
+        await upsertPrediction(_draft!, leagueId: saveLeagueId);
         ref.invalidate(predictionProvider(predictionKey));
-        ref.invalidate(leaguePredictionStatusProvider(leagueId));
+        ref.invalidate(leaguePredictionStatusProvider(saveLeagueId));
         await NotificationService.instance.cancelForPrediction(
           raceId: widget.raceId,
-          leagueId: leagueId,
+          leagueId: saveLeagueId,
           sprint: false,
         );
       } else {
         if (_sprintDraft == null) return;
-        await upsertSprintPrediction(_sprintDraft!, leagueId: leagueId);
+        await upsertSprintPrediction(_sprintDraft!, leagueId: saveLeagueId);
         ref.invalidate(sprintPredictionProvider(predictionKey));
-        ref.invalidate(leaguePredictionStatusProvider(leagueId));
+        ref.invalidate(leaguePredictionStatusProvider(saveLeagueId));
         await NotificationService.instance.cancelForPrediction(
           raceId: widget.raceId,
-          leagueId: leagueId,
+          leagueId: saveLeagueId,
           sprint: true,
         );
       }

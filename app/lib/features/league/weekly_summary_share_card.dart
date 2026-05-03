@@ -246,10 +246,7 @@ class WeeklySummaryShareCard extends StatelessWidget {
             ],
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 32,
-                vertical: 24,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(16),

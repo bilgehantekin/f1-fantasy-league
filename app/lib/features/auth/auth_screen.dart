@@ -21,6 +21,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _username = TextEditingController();
   bool _isSignUp = false;
   bool _busy = false;
+  bool _passwordVisible = false;
   String? _error;
   String? _info;
 
@@ -39,6 +40,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       _info = null;
     });
     try {
+      final validationError = _validateForm();
+      if (validationError != null) {
+        setState(() => _error = validationError);
+        return;
+      }
+
       if (_isSignUp) {
         await supabase.auth.signUp(
           email: _email.text.trim(),
@@ -95,6 +102,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       setState(() => _error = 'Şifre sıfırlama için e-posta adresini yaz.');
       return;
     }
+    if (!_isValidEmail(email)) {
+      setState(() => _error = 'Geçerli bir e-posta adresi yaz.');
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
@@ -117,6 +128,31 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       if (mounted) setState(() => _busy = false);
     }
   }
+
+  String? _validateForm() {
+    final email = _email.text.trim();
+    final password = _password.text;
+    final username = _username.text.trim();
+
+    if (!_isValidEmail(email)) {
+      return 'Geçerli bir e-posta adresi yaz.';
+    }
+    if (password.length < 8) {
+      return 'Şifre en az 8 karakter olmalı.';
+    }
+    if (_isSignUp) {
+      if (username.length < 3 || username.length > 24) {
+        return 'Kullanıcı adı 3-24 karakter olmalı.';
+      }
+      if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(username)) {
+        return 'Kullanıcı adında sadece harf, rakam ve alt çizgi kullan.';
+      }
+    }
+    return null;
+  }
+
+  bool _isValidEmail(String value) =>
+      RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value);
 
   @override
   Widget build(BuildContext context) {
@@ -159,8 +195,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   if (_isSignUp) ...[
                     TextField(
                       controller: _username,
+                      autofillHints: const [AutofillHints.username],
+                      textInputAction: TextInputAction.next,
                       decoration: const InputDecoration(
                         labelText: 'Kullanıcı adı',
+                        helperText: '3-24 karakter, harf/rakam/_',
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -168,13 +207,35 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   TextField(
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.email],
+                    textInputAction: TextInputAction.next,
                     decoration: const InputDecoration(labelText: 'E-posta'),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _password,
-                    obscureText: true,
-                    decoration: const InputDecoration(labelText: 'Şifre'),
+                    obscureText: !_passwordVisible,
+                    autofillHints: _isSignUp
+                        ? const [AutofillHints.newPassword]
+                        : const [AutofillHints.password],
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) {
+                      if (!_busy) _submit();
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Şifre',
+                      helperText: _isSignUp ? 'En az 8 karakter' : null,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _passwordVisible
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () => setState(
+                          () => _passwordVisible = !_passwordVisible,
+                        ),
+                      ),
+                    ),
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 12),
