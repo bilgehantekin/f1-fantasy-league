@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/env.dart';
+import '../../core/error_messages.dart';
+import '../../core/navigation.dart';
 import '../../core/theme.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets/live_pulse_dot.dart';
@@ -29,7 +31,7 @@ class LiveRaceScreen extends ConsumerWidget {
         toolbarHeight: 56,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => safeBack(context),
         ),
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -59,13 +61,13 @@ class LiveRaceScreen extends ConsumerWidget {
       ),
       body: raceAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: $e')),
+        error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
         data: (race) => driversAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Hata: $e')),
+          error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
           data: (drivers) => positionsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Hata: $e')),
+            error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
             data: (positions) {
               final prediction = predictionAsync.asData?.value;
               final comparisons = buildComparisons(

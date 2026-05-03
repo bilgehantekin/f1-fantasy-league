@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import '../../core/error_messages.dart';
+import '../../core/navigation.dart';
 import '../../core/supabase.dart';
 import '../../core/theme.dart';
 import '../../shared/models.dart';
@@ -81,26 +82,36 @@ class ResultsScreen extends ConsumerWidget {
         backgroundColor: AppColors.carbon,
         elevation: 0,
         toolbarHeight: 56,
+        centerTitle: true,
+        titleSpacing: 0,
+        leadingWidth: 56,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => safeBack(
+            context,
+            fallbackLocation: leagueId == null
+                ? '/calendar'
+                : '/leagues/$leagueId',
+          ),
         ),
         title: raceAsync.maybeWhen(
           data: (race) => Text(
-            sprintMode
-                ? '${race.name.toUpperCase()} · SPRINT SONUÇLAR'
-                : '${race.name.toUpperCase()} · SONUÇLAR',
+            sprintMode ? '${race.name} - Sprint' : '${race.name} - Sonuçlar',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w900,
               letterSpacing: -0.3,
             ),
           ),
-          orElse: () => Text(sprintMode ? 'SPRINT SONUÇLAR' : 'SONUÇLAR'),
+          orElse: () => Text(
+            sprintMode ? 'SPRINT SONUÇLAR' : 'SONUÇLAR',
+            textAlign: TextAlign.center,
+          ),
         ),
-        actions: [
-          IconButton(icon: const Icon(Icons.share, size: 20), onPressed: () {}),
-        ],
+        actions: const [SizedBox(width: 56)],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(height: 1, color: const Color(0xFF1F1F2E)),
@@ -108,10 +119,10 @@ class ResultsScreen extends ConsumerWidget {
       ),
       body: raceAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: $e')),
+        error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
         data: (race) => driversAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Hata: $e')),
+          error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
           data: (drivers) {
             Driver? byId(String? id) {
               if (id == null) return null;

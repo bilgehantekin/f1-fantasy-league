@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/error_messages.dart';
+import '../../core/legal_links.dart';
+import '../../core/navigation.dart';
 import '../../core/supabase.dart';
 import '../../core/theme.dart';
 import '../../shared/models.dart';
@@ -15,7 +18,6 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(profileProvider);
     final statsAsync = ref.watch(profileStatsProvider);
-    final allBadgesAsync = ref.watch(allBadgesProvider);
     final myBadgesAsync = ref.watch(myBadgesProvider);
 
     return Scaffold(
@@ -26,7 +28,7 @@ class ProfileScreen extends ConsumerWidget {
         toolbarHeight: 56,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => safeBack(context),
         ),
         title: const Text(
           'PROFİL',
@@ -49,10 +51,9 @@ class ProfileScreen extends ConsumerWidget {
       ),
       body: profileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: $e')),
+        error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
         data: (p) {
           if (p == null) return const Center(child: Text('Giriş gerekli'));
-          final isPremium = p.isPremium;
           return ListView(
             padding: EdgeInsets.zero,
             children: [
@@ -72,7 +73,7 @@ class ProfileScreen extends ConsumerWidget {
                     _HeroProfile(profile: p),
                     statsAsync.when(
                       loading: () => const SizedBox.shrink(),
-                      error: (e, _) => Text('Stats hata: $e'),
+                      error: (e, _) => Text('Stats hata: ${friendlyError(e)}'),
                       data: (s) => Padding(
                         padding: const EdgeInsets.only(bottom: 24),
                         child: _StatsCards(stats: s),
@@ -83,52 +84,40 @@ class ProfileScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 24),
               _SectionTitle(label: 'ROZETLER'),
-              allBadgesAsync.when(
+              myBadgesAsync.when(
                 loading: () => const _Loading(),
                 error: (e, _) => _Error(e),
-                data: (allBadges) => myBadgesAsync.when(
-                  loading: () => const SizedBox.shrink(),
-                  error: (e, _) => _Error(e),
-                  data: (myBadges) {
-                    final earnedSet = myBadges.map((u) => u.badgeId).toSet();
-                    final displayBadges = allBadges.take(6).toList();
-                    return Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  mainAxisSpacing: 12,
-                                  crossAxisSpacing: 12,
-                                  childAspectRatio: 1,
-                                ),
-                            itemCount: displayBadges.length,
-                            itemBuilder: (_, i) => _BadgeTile(
-                              badge: displayBadges[i],
-                              earned: earnedSet.contains(displayBadges[i].id),
-                            ),
-                          ),
-                        ),
-                        if (allBadges.length > 6)
-                          TextButton(
-                            onPressed: () {},
-                            child: Text(
-                              '+${allBadges.length - 6} daha...',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFFE10600),
-                              ),
-                            ),
-                          ),
-                      ],
+                data: (myBadges) {
+                  final earnedBadges = myBadges
+                      .where((userBadge) => userBadge.badge != null)
+                      .toList();
+                  if (earnedBadges.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'Henüz kazanılmış rozet yok.',
+                        style: TextStyle(color: Color(0x99FFFFFF)),
+                      ),
                     );
-                  },
-                ),
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            childAspectRatio: 1,
+                          ),
+                      itemCount: earnedBadges.length,
+                      itemBuilder: (_, i) =>
+                          _BadgeTile(badge: earnedBadges[i].badge!),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 24),
               _SectionTitle(label: 'SEZON İSTATİSTİKLERİ'),
@@ -141,8 +130,12 @@ class ProfileScreen extends ConsumerWidget {
               _SectionTitle(label: 'LİGLER'),
               const _LeaguesList(),
               const SizedBox(height: 24),
-              if (!isPremium) _PremiumUpsell(),
+              _SectionTitle(label: 'HESAP VE YASAL'),
+              const _AccountLifecyclePanel(),
               const SizedBox(height: 24),
+              // Premium upsell şimdilik gizli — ileride tekrar açılacak.
+              // if (!isPremium) _PremiumUpsell(),
+              // const SizedBox(height: 24),
               Center(
                 child: TextButton(
                   onPressed: () => supabase.auth.signOut(),
@@ -160,6 +153,161 @@ class ProfileScreen extends ConsumerWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _AccountLifecyclePanel extends StatelessWidget {
+  const _AccountLifecyclePanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A26),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          _AccountRow(
+            icon: Icons.privacy_tip_outlined,
+            title: 'Gizlilik Politikası',
+            onTap: () => _openLegal(context, LegalLinks.privacy),
+          ),
+          const Divider(height: 1, color: Color(0xFF1F1F2E)),
+          _AccountRow(
+            icon: Icons.description_outlined,
+            title: 'Kullanım Şartları',
+            onTap: () => _openLegal(context, LegalLinks.terms),
+          ),
+          const Divider(height: 1, color: Color(0xFF1F1F2E)),
+          _AccountRow(
+            icon: Icons.delete_outline,
+            title: 'Hesabı silme talebi oluştur',
+            destructive: true,
+            onTap: () => _confirmDeletionRequest(context),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccountRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final bool destructive;
+  final VoidCallback onTap;
+
+  const _AccountRow({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.destructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = destructive ? const Color(0xFFFF2D55) : Colors.white;
+    return ListTile(
+      onTap: onTap,
+      leading: Icon(icon, color: color.withValues(alpha: 0.9), size: 20),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
+      ),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: Colors.white.withValues(alpha: 0.35),
+      ),
+    );
+  }
+}
+
+Future<void> _openLegal(BuildContext context, Uri uri) async {
+  try {
+    await openExternalLink(uri);
+  } catch (e) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
+  }
+}
+
+Future<void> _confirmDeletionRequest(BuildContext context) async {
+  final reasonCtrl = TextEditingController();
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Hesap silme talebi'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Talep oluşturduğunda hesabın ve verilerin silinmesi için işlem başlatılır. Bu işlem geri alınamayabilir.',
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: reasonCtrl,
+            minLines: 2,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Not (opsiyonel)',
+              hintText: 'Silme sebebini yazabilirsin',
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, false),
+          child: const Text('Vazgeç'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(dialogContext, true),
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFFFF2D55),
+          ),
+          child: const Text('Talep Oluştur'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed != true) {
+    reasonCtrl.dispose();
+    return;
+  }
+
+  try {
+    await requestAccountDeletion(reason: reasonCtrl.text.trim());
+    reasonCtrl.dispose();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Hesap silme talebin alındı. Çıkış yapılıyor…'),
+        backgroundColor: AppColors.lockGreen,
+        duration: Duration(seconds: 2),
+      ),
+    );
+    // Kullanıcı silinmiş hesapla devam etmesin diye oturumu kapat;
+    // router auth state değişimini görüp /auth'a yönlendirecek.
+    await supabase.auth.signOut();
+  } catch (e) {
+    reasonCtrl.dispose();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Talep oluşturulamadı: ${friendlyError(e)}'),
+        backgroundColor: AppColors.liveRed,
       ),
     );
   }
@@ -224,10 +372,7 @@ class _StatsCards extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: _StatCard(
-              label: 'Toplam Puan',
-              value: '${stats.totalScore}',
-            ),
+            child: _StatCard(label: 'Genel Puan', value: '${stats.totalScore}'),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -239,8 +384,8 @@ class _StatsCards extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: _StatCard(
-              label: 'Yarış Sayısı',
-              value: '${stats.racesPredicted}',
+              label: 'Skorlanan Etkinlik',
+              value: '${stats.eventsPredicted}',
             ),
           ),
         ],
@@ -315,8 +460,7 @@ class _SectionTitle extends StatelessWidget {
 
 class _BadgeTile extends StatelessWidget {
   final AppBadge badge;
-  final bool earned;
-  const _BadgeTile({required this.badge, required this.earned});
+  const _BadgeTile({required this.badge});
 
   @override
   Widget build(BuildContext context) {
@@ -329,10 +473,7 @@ class _BadgeTile extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Opacity(
-            opacity: earned ? 1.0 : 0.3,
-            child: Text(badge.icon, style: const TextStyle(fontSize: 30)),
-          ),
+          Text(badge.icon, style: const TextStyle(fontSize: 30)),
           const SizedBox(height: 8),
           Text(
             badge.name,
@@ -342,9 +483,7 @@ class _BadgeTile extends StatelessWidget {
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
-              color: earned
-                  ? Colors.white
-                  : Colors.white.withValues(alpha: 0.3),
+              color: Colors.white,
             ),
           ),
         ],
@@ -360,9 +499,18 @@ class _SeasonStats extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rows = [
+      ('Ana yarış skoru', '${stats.mainScore}'),
+      ('Sprint skoru', '${stats.sprintScore}'),
       ('Ortalama puan', stats.averageScore.toStringAsFixed(1)),
       ('En iyi skor', '${stats.bestScore}'),
-      ('Skorlanan yarış', '${stats.racesPredicted}'),
+      ('Ana yarış tahmini', '${stats.mainEventsPredicted}'),
+      ('Sprint tahmini', '${stats.sprintEventsPredicted}'),
+      (
+        'En iyi lig',
+        stats.bestLeagueName == null
+            ? '-'
+            : '${stats.bestLeagueName} (${stats.bestLeagueScore})',
+      ),
       ('Rozet', '${stats.badgeCount}'),
     ];
 
@@ -375,6 +523,15 @@ class _SeasonStats extends StatelessWidget {
       ),
       child: Column(
         children: [
+          Text(
+            'Genel puan, aynı etkinlik için farklı liglerdeki en iyi skor üzerinden hesaplanır. Lig performansı ise lig bazlı toplamı gösterir.',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.white.withValues(alpha: 0.55),
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 14),
           for (var i = 0; i < rows.length; i++)
             Padding(
               padding: EdgeInsets.only(bottom: i < rows.length - 1 ? 12 : 0),
@@ -398,6 +555,84 @@ class _SeasonStats extends StatelessWidget {
                 ],
               ),
             ),
+          if (stats.leaguePerformances.isNotEmpty) ...[
+            const Divider(height: 28, color: Color(0xFF1F1F2E)),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'LİG BAZLI PERFORMANS',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white.withValues(alpha: 0.6),
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            for (final league in stats.leaguePerformances)
+              _LeaguePerformanceRow(league: league),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _LeaguePerformanceRow extends StatelessWidget {
+  final LeaguePerformance league;
+
+  const _LeaguePerformanceRow({required this.league});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 34,
+            child: Text(
+              '#${league.rank}',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFFE10600),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  league.leagueName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Yarış ${league.mainScore} · Sprint ${league.sprintScore}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.55),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '${league.totalScore}',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFFE10600),
+            ),
+          ),
         ],
       ),
     );
@@ -462,16 +697,40 @@ class _LeaguesList extends StatelessWidget {
                                       ),
                                     ),
                                   ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${league.memberCount ?? 0} üye',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.6,
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
-                            Text(
-                              '#${league.myRank ?? '-'}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFFE10600),
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '#${league.myRank ?? '-'}',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFFE10600),
+                                  ),
+                                ),
+                                Text(
+                                  'SIRALAMA',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 1.2,
+                                    color: Colors.white.withValues(alpha: 0.5),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -487,6 +746,7 @@ class _LeaguesList extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _PremiumUpsell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -583,6 +843,6 @@ class _Error extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 20),
-    child: Text('Hata: $error'),
+    child: Text('Hata: ${friendlyError(error)}'),
   );
 }

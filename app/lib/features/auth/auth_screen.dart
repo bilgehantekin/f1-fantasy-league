@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/env.dart';
+import '../../core/error_messages.dart';
+import '../../core/legal_links.dart';
 import '../../core/supabase.dart';
 import '../../core/theme.dart';
 
@@ -20,6 +22,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   bool _isSignUp = false;
   bool _busy = false;
   String? _error;
+  String? _info;
 
   @override
   void dispose() {
@@ -33,6 +36,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     setState(() {
       _busy = true;
       _error = null;
+      _info = null;
     });
     try {
       if (_isSignUp) {
@@ -40,7 +44,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           email: _email.text.trim(),
           password: _password.text,
           data: {'username': _username.text.trim()},
+          emailRedirectTo: kIsWeb ? null : Env.oauthRedirectUrl,
         );
+        if (!mounted) return;
+        setState(() {
+          _info =
+              'Kayıt alındı. E-posta doğrulaması açıksa gelen kutundaki bağlantıyla hesabını onayla.';
+        });
       } else {
         await supabase.auth.signInWithPassword(
           email: _email.text.trim(),
@@ -50,7 +60,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     } on AuthException catch (e) {
       setState(() => _error = e.message);
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -60,6 +70,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     setState(() {
       _busy = true;
       _error = null;
+      _info = null;
     });
     try {
       await supabase.auth.signInWithOAuth(
@@ -72,7 +83,36 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     } on AuthException catch (e) {
       setState(() => _error = e.message);
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = friendlyError(e));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _resetPassword() async {
+    final email = _email.text.trim();
+    if (email.isEmpty) {
+      setState(() => _error = 'Şifre sıfırlama için e-posta adresini yaz.');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+      _info = null;
+    });
+    try {
+      await supabase.auth.resetPasswordForEmail(
+        email,
+        redirectTo: kIsWeb ? null : Env.oauthRedirectUrl,
+      );
+      if (!mounted) return;
+      setState(() {
+        _info = 'Şifre sıfırlama bağlantısı e-posta adresine gönderildi.';
+      });
+    } on AuthException catch (e) {
+      setState(() => _error = e.message);
+    } catch (e) {
+      setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -144,6 +184,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       style: const TextStyle(color: AppColors.liveRed),
                     ),
                   ],
+                  if (_info != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      _info!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: AppColors.lockGreen),
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   FilledButton(
                     onPressed: _busy ? null : _submit,
@@ -178,10 +226,88 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       style: const TextStyle(color: Colors.white70),
                     ),
                   ),
+                  if (!_isSignUp)
+                    TextButton(
+                      onPressed: _busy ? null : _resetPassword,
+                      child: const Text(
+                        'Şifremi unuttum',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                  const SizedBox(height: 12),
+                  const _AuthLegalNotice(),
                 ],
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AuthLegalNotice extends StatelessWidget {
+  const _AuthLegalNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(
+          'Devam ederek ',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.white.withValues(alpha: 0.55),
+          ),
+        ),
+        _LegalTextButton(label: 'Kullanım Şartları', uri: LegalLinks.terms),
+        Text(
+          ' ve ',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.white.withValues(alpha: 0.55),
+          ),
+        ),
+        _LegalTextButton(label: 'Gizlilik Politikası', uri: LegalLinks.privacy),
+        Text(
+          'nı kabul etmiş olursun.',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.white.withValues(alpha: 0.55),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LegalTextButton extends StatelessWidget {
+  final String label;
+  final Uri uri;
+
+  const _LegalTextButton({required this.label, required this.uri});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () async {
+        try {
+          await openExternalLink(uri);
+        } catch (e) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
+        }
+      },
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          color: AppColors.f1Red,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );

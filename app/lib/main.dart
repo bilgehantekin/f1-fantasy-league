@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'core/env.dart';
@@ -10,6 +12,9 @@ import 'core/theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  Env.validate();
+  await initializeDateFormatting('tr_TR', null);
+  Intl.defaultLocale = 'tr_TR';
   await initSupabase();
   await NotificationService.instance.init();
 
@@ -19,6 +24,7 @@ Future<void> main() async {
   }
   await SentryFlutter.init((options) {
     options.dsn = Env.sentryDsn;
+    options.environment = Env.appEnv;
     options.tracesSampleRate = 0.2;
   }, appRunner: () => runApp(const ProviderScope(child: PitWallApp())));
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/error_messages.dart';
 import '../../core/supabase.dart';
 import '../../core/theme.dart';
 import 'league_controller.dart';
@@ -21,7 +22,7 @@ class LeagueSettingsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('LİG AYARLARI')),
       body: leagueAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: $e')),
+        error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
         data: (league) {
           final currentUserId = supabase.auth.currentUser?.id;
           final isOwner = league.ownerId == currentUserId;
@@ -76,7 +77,7 @@ class LeagueSettingsScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               membersAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Text('Hata: $e'),
+                error: (e, _) => Text('Hata: ${friendlyError(e)}'),
                 data: (members) => Column(
                   children: [
                     for (final member in members)
@@ -152,7 +153,9 @@ class LeagueSettingsScreen extends ConsumerWidget {
     if (!ok) return;
     await leaveLeague(leagueId);
     ref.invalidate(myLeaguesProvider);
-    if (context.mounted) context.go('/leagues');
+    ref.invalidate(seasonStandingsProvider(leagueId));
+    ref.invalidate(leagueMembersProvider(leagueId));
+    if (context.mounted) context.go('/calendar');
   }
 
   Future<void> _removeMember(
@@ -168,6 +171,8 @@ class LeagueSettingsScreen extends ConsumerWidget {
     if (!ok) return;
     await removeLeagueMember(leagueId, member.userId);
     ref.invalidate(leagueMembersProvider(leagueId));
+    ref.invalidate(seasonStandingsProvider(leagueId));
+    ref.invalidate(myLeaguesProvider);
   }
 
   Future<void> _transferOwnership(

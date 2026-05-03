@@ -55,7 +55,7 @@ final predictionProvider = FutureProvider.family<Prediction?, PredictionKey>((
   ref,
   key,
 ) async {
-  final user = supabase.auth.currentUser;
+  final user = ref.watch(currentUserProvider);
   if (user == null || key.leagueId == null) return null;
   final rows = await supabase
       .from('predictions')
@@ -81,7 +81,7 @@ Future<void> upsertPrediction(Prediction p, {required String leagueId}) async {
 
 final sprintPredictionProvider =
     FutureProvider.family<SprintPrediction?, PredictionKey>((ref, key) async {
-      final user = supabase.auth.currentUser;
+      final user = ref.watch(currentUserProvider);
       if (user == null || key.leagueId == null) return null;
       final rows = await supabase
           .from('sprint_predictions')

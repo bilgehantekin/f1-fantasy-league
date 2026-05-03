@@ -11,45 +11,73 @@ enum RaceCardKind { main, sprint }
 
 typedef RaceCardEntry = ({Race race, RaceCardKind kind});
 
-/// Bir Race listesini, sprint olanları ayırarak ve istenen sırada
-/// (1) bu haftaki etkinlikler, (2) bitmiş/iptal yarışlar (eski → yeni),
-/// (3) gelecek yarışlar (yakın → uzak) şeklinde döndürür.
+/// Bir Race listesini sprint kartlarını da üreterek sıralar.
+///
+/// `pinFeaturedRace = false` (ana ekran): tüm kartlar kronolojik (eski → yeni).
+///
+/// `pinFeaturedRace = true` (lig detayı): "featured race weekend" en üstte
+/// kalır (sprint + ana yarış, sprint daima ana yarıştan önce). Featured =
+/// ana yarış bitiminden 24 saat geçmemiş ilk yarış. Bu sayede:
+///   - Yarış haftası boyunca (sprint bitse bile) iki kart da üstte kalır.
+///   - Ana yarış bitiminden 24 saat sonra featured otomatik olarak bir
+///     sonraki yarışa kayar; eski yarış kronolojik sırasına düşer.
+///   - Bu hafta yarış yoksa en yakın gelecek yarış featured olur.
 List<RaceCardEntry> buildOrderedRaceCards(
   List<Race> races, {
   DateTime? now,
-  Duration thisWeek = const Duration(days: 7),
+  bool pinFeaturedRace = false,
+  Duration featuredCooldown = const Duration(hours: 24),
 }) {
+  final t = now ?? DateTime.now();
   final entries = <RaceCardEntry>[];
   for (final r in races) {
     if (r.hasSprint) entries.add((race: r, kind: RaceCardKind.sprint));
     entries.add((race: r, kind: RaceCardKind.main));
   }
-  final t = now ?? DateTime.now();
-  final weekEnd = t.add(thisWeek);
 
   DateTime keyDate(RaceCardEntry e) => e.kind == RaceCardKind.sprint
       ? (e.race.sprintRaceAt ?? e.race.sprintQualifyingAt ?? e.race.raceAt)
       : e.race.raceAt;
 
-  RaceStatus statusOf(RaceCardEntry e) =>
-      e.kind == RaceCardKind.sprint ? e.race.sprintStatus : e.race.status;
+  entries.sort((a, b) => keyDate(a).compareTo(keyDate(b)));
 
-  bool isDone(RaceCardEntry e) {
-    final s = statusOf(e);
-    return s == RaceStatus.finished || s == RaceStatus.cancelled;
+  if (!pinFeaturedRace) return entries;
+
+  final sortedRaces = [...races]..sort((a, b) => a.raceAt.compareTo(b.raceAt));
+  Race? featured;
+  for (final r in sortedRaces) {
+    if (r.raceAt.add(featuredCooldown).isAfter(t)) {
+      featured = r;
+      break;
+    }
   }
+  if (featured == null) return entries;
 
-  int group(RaceCardEntry e) {
-    if (isDone(e)) return 1;
-    return keyDate(e).isBefore(weekEnd) ? 0 : 2;
+  final featuredEntries = <RaceCardEntry>[];
+  final rest = <RaceCardEntry>[];
+  for (final e in entries) {
+    if (e.race.id == featured.id) {
+      featuredEntries.add(e);
+    } else {
+      rest.add(e);
+    }
   }
+  return [...featuredEntries, ...rest];
+}
 
-  entries.sort((a, b) {
-    final ga = group(a), gb = group(b);
-    if (ga != gb) return ga.compareTo(gb);
-    return keyDate(a).compareTo(keyDate(b));
-  });
-  return entries;
+RaceStatus effectiveRaceCardStatus(RaceCardEntry entry, {DateTime? now}) {
+  final rawStatus = entry.kind == RaceCardKind.sprint
+      ? entry.race.sprintStatus
+      : entry.race.status;
+  if (rawStatus != RaceStatus.upcoming) return rawStatus;
+
+  final lockAt = entry.kind == RaceCardKind.sprint
+      ? entry.race.sprintLockAt
+      : entry.race.lockAt;
+  if (lockAt == null) return RaceStatus.locked;
+  return (now ?? DateTime.now()).isAfter(lockAt)
+      ? RaceStatus.locked
+      : RaceStatus.upcoming;
 }
 
 class RaceCardNew extends StatelessWidget {
@@ -57,6 +85,8 @@ class RaceCardNew extends StatelessWidget {
   final VoidCallback onTap;
   final RaceCardKind kind;
   final bool? predictionSaved;
+  final String? actionLabel;
+  final IconData? actionIcon;
 
   /// Lig bağlamında mı gösteriliyor? Calendar (ana ekran) için false:
   /// biten yarışlarda kullanıcının skor/sıralamasını gizler, canlı yarışlarda
@@ -68,13 +98,15 @@ class RaceCardNew extends StatelessWidget {
     required this.race,
     required this.onTap,
     this.predictionSaved,
+    this.actionLabel,
+    this.actionIcon,
     this.showLeagueContext = true,
     this.kind = RaceCardKind.main,
   });
 
   bool get _isSprint => kind == RaceCardKind.sprint;
 
-  RaceStatus get _status => _isSprint ? race.sprintStatus : race.status;
+  RaceStatus get _status => effectiveRaceCardStatus((race: race, kind: kind));
 
   DateTime? get _qualifyingAt =>
       _isSprint ? race.sprintQualifyingAt : race.qualifyingAt;
@@ -165,13 +197,9 @@ class RaceCardNew extends StatelessWidget {
                         letterSpacing: 1.5,
                       ),
                     ),
-                    if (_isSprint) ...[
-                      const SizedBox(width: 8),
-                      _SprintBadge(color: AppColors.lockOrange),
-                    ],
-                    if (showLeagueContext && predictionSaved != null) ...[
+                    if (showLeagueContext && predictionSaved == true) ...[
                       const Spacer(),
-                      _PredictionBadge(saved: predictionSaved!),
+                      const _PredictionBadge(),
                     ],
                   ],
                 ),
@@ -198,7 +226,7 @@ class RaceCardNew extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _isSprint ? '${race.name} · SPRINT' : race.name,
+                  _isSprint ? '${race.name} · Sprint' : race.name,
                   style: tt.headlineMedium?.copyWith(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
@@ -219,10 +247,12 @@ class RaceCardNew extends StatelessWidget {
                 if (status == RaceStatus.upcoming ||
                     status == RaceStatus.locked)
                   _buildUpcomingContent(context)
-                else if (status == RaceStatus.live)
-                  _buildLiveContent(context)
-                else if (status == RaceStatus.finished && showLeagueContext)
-                  _buildFinishedContent(context),
+                else ...[
+                  if (status == RaceStatus.live) _buildLiveContent(context),
+                  if (status == RaceStatus.finished && showLeagueContext)
+                    _buildFinishedContent(context),
+                  _buildScheduleRow(context),
+                ],
               ],
             ),
           ),
@@ -232,25 +262,11 @@ class RaceCardNew extends StatelessWidget {
   }
 
   Widget _buildUpcomingContent(BuildContext context) {
-    final tt = Theme.of(context).textTheme;
-    final qAt = _qualifyingAt;
-    final rAt = _raceAt;
     final lockAt = _lockAt;
-    if (qAt == null || rAt == null) {
-      return const SizedBox.shrink();
-    }
-    final qDate = DateFormat('d MMM').format(qAt.toLocal());
-    final qTime = DateFormat('HH:mm').format(qAt.toLocal());
-    final rDate = DateFormat('d MMM').format(rAt.toLocal());
-    final rTime = DateFormat('HH:mm').format(rAt.toLocal());
-
     final now = DateTime.now();
     final diff = lockAt != null
         ? lockAt.difference(now)
         : const Duration(seconds: -1);
-
-    final qLabel = _isSprint ? 'SQ:' : 'Q:';
-    final rLabel = _isSprint ? 'SR:' : 'R:';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,51 +281,68 @@ class RaceCardNew extends StatelessWidget {
               seconds: diff.inSeconds % 60,
             ),
           ),
-
-        // Schedule
-        Container(
-          padding: const EdgeInsets.only(top: 12),
-          margin: const EdgeInsets.only(top: 12),
-          decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: Color(0xFF1F1F2E), width: 1)),
-          ),
-          child: Row(
-            children: [
-              Text(
-                '$qLabel ',
-                style: tt.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xB3FFFFFF),
-                  fontSize: 12,
-                ),
-              ),
-              Text(
-                '$qDate $qTime',
-                style: tt.bodySmall?.copyWith(
-                  color: const Color(0xB3FFFFFF),
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Text(
-                '$rLabel ',
-                style: tt.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xB3FFFFFF),
-                  fontSize: 12,
-                ),
-              ),
-              Text(
-                '$rDate $rTime',
-                style: tt.bodySmall?.copyWith(
-                  color: const Color(0xB3FFFFFF),
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ),
+        _buildScheduleRow(context),
+        if (actionLabel != null) ...[
+          const SizedBox(height: 12),
+          _CardAction(label: actionLabel!, icon: actionIcon),
+        ],
       ],
+    );
+  }
+
+  Widget _buildScheduleRow(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+    final qAt = _qualifyingAt;
+    final rAt = _raceAt;
+    if (qAt == null || rAt == null) {
+      return const SizedBox.shrink();
+    }
+    final qDate = DateFormat('d MMM', 'tr_TR').format(qAt.toLocal());
+    final qTime = DateFormat('HH:mm', 'tr_TR').format(qAt.toLocal());
+    final rDate = DateFormat('d MMM', 'tr_TR').format(rAt.toLocal());
+    final rTime = DateFormat('HH:mm', 'tr_TR').format(rAt.toLocal());
+
+    return Container(
+      padding: const EdgeInsets.only(top: 12),
+      margin: const EdgeInsets.only(top: 12),
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: Color(0xFF1F1F2E), width: 1)),
+      ),
+      child: Row(
+        children: [
+          Text(
+            'Sıralama: ',
+            style: tt.bodySmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: const Color(0xB3FFFFFF),
+              fontSize: 12,
+            ),
+          ),
+          Text(
+            '$qDate $qTime',
+            style: tt.bodySmall?.copyWith(
+              color: const Color(0xB3FFFFFF),
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Text(
+            'Yarış: ',
+            style: tt.bodySmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: const Color(0xB3FFFFFF),
+              fontSize: 12,
+            ),
+          ),
+          Text(
+            '$rDate $rTime',
+            style: tt.bodySmall?.copyWith(
+              color: const Color(0xB3FFFFFF),
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -372,7 +405,7 @@ class RaceCardNew extends StatelessWidget {
 
     if (!Env.enableDemoContent) {
       return Text(
-        _isSprint ? 'Sprint sonuçlarını gör' : 'Haftalık özeti gör',
+        'Haftalık özeti gör',
         style: tt.bodyMedium?.copyWith(
           color: const Color(0x99FFFFFF),
           fontSize: 14,
@@ -457,39 +490,47 @@ class RaceCardNew extends StatelessWidget {
   }
 }
 
-class _SprintBadge extends StatelessWidget {
-  final Color color;
-  const _SprintBadge({required this.color});
+class _CardAction extends StatelessWidget {
+  final String label;
+  final IconData? icon;
+
+  const _CardAction({required this.label, this.icon});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color, width: 1),
+        color: AppColors.f1Red,
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(
-        'SPRINT',
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
-          color: color,
-          letterSpacing: 1,
-        ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon ?? Icons.edit_outlined, size: 16, color: Colors.white),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 class _PredictionBadge extends StatelessWidget {
-  final bool saved;
-  const _PredictionBadge({required this.saved});
+  const _PredictionBadge();
 
   @override
   Widget build(BuildContext context) {
-    final color = saved ? AppColors.lockGreen : AppColors.lockOrange;
+    const color = AppColors.lockGreen;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
@@ -497,8 +538,8 @@ class _PredictionBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: color.withValues(alpha: 0.7), width: 1),
       ),
-      child: Text(
-        saved ? 'KAYITLI' : 'EKSİK',
+      child: const Text(
+        'KAYITLI',
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w900,

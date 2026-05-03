@@ -19,6 +19,7 @@ import '../features/profile/notification_settings_screen.dart';
 import '../features/profile/profile_controller.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/results/results_screen.dart';
+import '../shared/models.dart';
 import 'supabase.dart';
 
 class _RouterRefresh extends ChangeNotifier {
@@ -35,34 +36,12 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: refresh,
     initialLocation: '/calendar',
     redirect: (context, state) {
-      final loggedIn = supabase.auth.currentUser != null;
-      final loc = state.matchedLocation;
-      final loggingIn = loc == '/auth';
-      final onboarding = loc == '/onboarding';
-
-      if (!loggedIn) {
-        if (loggingIn) return null;
-        final from = Uri.encodeComponent(state.uri.toString());
-        return '/auth?from=$from';
-      }
-      if (loggingIn) {
-        return state.uri.queryParameters['from'] ?? '/calendar';
-      }
-
-      // Profile yüklendiyse onboarding gate'i uygula.
-      // Henüz yüklenmediyse (loading/error) yönlendirme yapma; yüklenince
-      // refreshListenable ile redirect tekrar çalışır.
-      final profileAsync = ref.read(profileProvider);
-      final profile = profileAsync.asData?.value;
-      if (profile != null) {
-        if (!profile.onboardingCompleted && !onboarding) {
-          return '/onboarding';
-        }
-        if (profile.onboardingCompleted && onboarding) {
-          return '/calendar';
-        }
-      }
-      return null;
+      return resolveAuthRedirect(
+        loggedIn: supabase.auth.currentUser != null,
+        matchedLocation: state.matchedLocation,
+        uri: state.uri,
+        profile: ref.read(profileProvider).asData?.value,
+      );
     },
     routes: [
       GoRoute(path: '/auth', builder: (_, _) => const AuthScreen()),
@@ -127,20 +106,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/leagues/:lid/race/:rid/summary',
-        builder: (_, s) {
-          final sprintMode = s.uri.queryParameters['mode'] == 'sprint';
-          if (sprintMode) {
-            return ResultsScreen(
-              raceId: s.pathParameters['rid']!,
-              leagueId: s.pathParameters['lid']!,
-              sprintMode: true,
-            );
-          }
-          return WeeklySummaryScreen(
-            leagueId: s.pathParameters['lid']!,
-            raceId: s.pathParameters['rid']!,
-          );
-        },
+        builder: (_, s) => WeeklySummaryScreen(
+          leagueId: s.pathParameters['lid']!,
+          raceId: s.pathParameters['rid']!,
+          sprintMode: s.uri.queryParameters['mode'] == 'sprint',
+        ),
       ),
       GoRoute(
         path: '/admin/jokers',
@@ -155,3 +125,36 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+@visibleForTesting
+String? resolveAuthRedirect({
+  required bool loggedIn,
+  required String matchedLocation,
+  required Uri uri,
+  required Profile? profile,
+}) {
+  final loggingIn = matchedLocation == '/auth';
+  final onboarding = matchedLocation == '/onboarding';
+
+  if (!loggedIn) {
+    if (loggingIn) return null;
+    final from = Uri.encodeComponent(uri.toString());
+    return '/auth?from=$from';
+  }
+  if (loggingIn) {
+    return uri.queryParameters['from'] ?? '/calendar';
+  }
+
+  // Profile yüklendiyse onboarding gate'i uygula.
+  // Henüz yüklenmediyse (loading/error) yönlendirme yapma; yüklenince
+  // refreshListenable ile redirect tekrar çalışır.
+  if (profile != null) {
+    if (!profile.onboardingCompleted && !onboarding) {
+      return '/onboarding';
+    }
+    if (profile.onboardingCompleted && onboarding) {
+      return '/calendar';
+    }
+  }
+  return null;
+}

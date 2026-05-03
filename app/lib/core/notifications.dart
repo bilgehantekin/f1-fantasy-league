@@ -121,31 +121,81 @@ class NotificationService {
     if (!prefs.enabled) return;
 
     final now = DateTime.now();
-    final fullyPredictedRaceIds = prefs.onlyMissingPrediction
-        ? await _fullyPredictedRaceIds()
+    final leagueIds = await _seasonLeagueIds();
+    if (leagueIds.isEmpty) return;
+    final completedKeys = prefs.onlyMissingPrediction
+        ? await _completedPredictionKeys(leagueIds)
         : <String>{};
 
     for (final race in races) {
-      if (race.status == RaceStatus.finished) continue;
-      if (fullyPredictedRaceIds.contains(race.id)) continue;
+      for (final leagueId in leagueIds) {
+        if (race.status != RaceStatus.finished &&
+            race.status != RaceStatus.cancelled) {
+          final mainKey = _predictionKey(
+            raceId: race.id,
+            leagueId: leagueId,
+            sprint: false,
+          );
+          if (!completedKeys.contains(mainKey)) {
+            final lockReminder = race.lockAt.subtract(
+              Duration(hours: prefs.hoursBeforeLock),
+            );
+            if (lockReminder.isAfter(now)) {
+              await _scheduleAt(
+                id: _idFor(race.id, leagueId, 'main'),
+                title: '${race.name} yarış tahmini yaklaşıyor',
+                body:
+                    'Ana yarış tahminlerin kilitlenmek üzere. Aç ve seçimlerini yap.',
+                when: lockReminder,
+              );
+            }
+          }
+        }
 
-      final lockReminder = race.lockAt.subtract(
-        Duration(hours: prefs.hoursBeforeLock),
-      );
-      if (lockReminder.isAfter(now)) {
-        await _scheduleAt(
-          id: _idFor(race.id, 'lock'),
-          title: '${race.name} tahminleri yaklaşıyor',
-          body: 'Tahminlerin kilitlenmek üzere. Aç ve seçimlerini yap.',
-          when: lockReminder,
-        );
+        if (race.hasSprint &&
+            race.sprintLockAt != null &&
+            race.sprintStatus != RaceStatus.finished &&
+            race.sprintStatus != RaceStatus.cancelled) {
+          final sprintKey = _predictionKey(
+            raceId: race.id,
+            leagueId: leagueId,
+            sprint: true,
+          );
+          if (!completedKeys.contains(sprintKey)) {
+            final sprintReminder = race.sprintLockAt!.subtract(
+              Duration(hours: prefs.hoursBeforeLock),
+            );
+            if (sprintReminder.isAfter(now)) {
+              await _scheduleAt(
+                id: _idFor(race.id, leagueId, 'sprint'),
+                title: '${race.name} sprint tahmini yaklaşıyor',
+                body:
+                    'Sprint tahminlerin kilitlenmek üzere. Aç ve seçimlerini yap.',
+                when: sprintReminder,
+              );
+            }
+          }
+        }
       }
     }
   }
 
   Future<void> cancelForRace(String raceId) async {
     await init();
-    await _plugin.cancel(_idFor(raceId, 'lock'));
+    final leagueIds = await _seasonLeagueIds();
+    for (final leagueId in leagueIds) {
+      await _plugin.cancel(_idFor(raceId, leagueId, 'main'));
+      await _plugin.cancel(_idFor(raceId, leagueId, 'sprint'));
+    }
+  }
+
+  Future<void> cancelForPrediction({
+    required String raceId,
+    required String leagueId,
+    required bool sprint,
+  }) async {
+    await init();
+    await _plugin.cancel(_idFor(raceId, leagueId, sprint ? 'sprint' : 'main'));
   }
 
   /// Test amaçlı: hemen bir bildirim göster
@@ -211,13 +261,19 @@ class NotificationService {
     }
   }
 
-  // race_id (UUID string) + kind → 32-bit int (notification id)
-  int _idFor(String raceId, String kind) {
-    final hash = (raceId + kind).hashCode;
+  // race_id + league_id + kind → 32-bit int (notification id)
+  int _idFor(String raceId, String leagueId, String kind) {
+    final hash = '$raceId:$leagueId:$kind'.hashCode;
     return hash.abs() & 0x7FFFFFFF;
   }
 
-  Future<Set<String>> _fullyPredictedRaceIds() async {
+  String _predictionKey({
+    required String raceId,
+    required String leagueId,
+    required bool sprint,
+  }) => '${sprint ? 'sprint' : 'main'}:$raceId:$leagueId';
+
+  Future<Set<String>> _seasonLeagueIds() async {
     final user = supabase.auth.currentUser;
     if (user == null) return {};
     final memberships = await supabase
@@ -225,24 +281,45 @@ class NotificationService {
         .select('league_id, league:leagues!inner(season_id)')
         .eq('user_id', user.id)
         .eq('league.season_id', Env.seasonId);
-    final leagueIds = memberships.map((e) => e['league_id'] as String).toSet();
+    return memberships.map((e) => e['league_id'] as String).toSet();
+  }
+
+  Future<Set<String>> _completedPredictionKeys(Set<String> leagueIds) async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return {};
     if (leagueIds.isEmpty) return {};
 
-    final rows = await supabase
+    final mainRows = await supabase
         .from('predictions')
         .select('race_id, league_id')
         .eq('user_id', user.id)
         .inFilter('league_id', leagueIds.toList());
-    final byRace = <String, Set<String>>{};
-    for (final row in rows) {
-      final raceId = row['race_id'] as String;
-      final leagueId = row['league_id'] as String;
-      byRace.putIfAbsent(raceId, () => <String>{}).add(leagueId);
+    final sprintRows = await supabase
+        .from('sprint_predictions')
+        .select('race_id, league_id')
+        .eq('user_id', user.id)
+        .inFilter('league_id', leagueIds.toList());
+
+    final keys = <String>{};
+    for (final row in mainRows) {
+      keys.add(
+        _predictionKey(
+          raceId: row['race_id'] as String,
+          leagueId: row['league_id'] as String,
+          sprint: false,
+        ),
+      );
     }
-    return {
-      for (final entry in byRace.entries)
-        if (entry.value.length >= leagueIds.length) entry.key,
-    };
+    for (final row in sprintRows) {
+      keys.add(
+        _predictionKey(
+          raceId: row['race_id'] as String,
+          leagueId: row['league_id'] as String,
+          sprint: true,
+        ),
+      );
+    }
+    return keys;
   }
 }
 

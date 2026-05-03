@@ -28,6 +28,12 @@ final livePositionsProvider = StreamProvider.family<List<LivePosition>, String>(
   ref,
   raceId,
 ) async* {
+  final session = ref.watch(currentSessionProvider);
+  if (session?.accessToken.isNotEmpty != true) {
+    yield const [];
+    return;
+  }
+
   // İlk yükleme
   final initial = await supabase
       .from('live_positions')

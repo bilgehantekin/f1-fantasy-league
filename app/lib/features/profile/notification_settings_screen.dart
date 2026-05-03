@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/error_messages.dart';
 import '../../core/notifications.dart';
 import '../../core/theme.dart';
 import '../calendar/calendar_controller.dart';
@@ -20,7 +21,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('BİLDİRİMLER')),
       body: prefsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: $e')),
+        error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
         data: (prefs) => ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -98,7 +99,17 @@ class NotificationSettingsScreen extends ConsumerWidget {
   }) async {
     if (requestPermission) {
       final granted = await NotificationService.instance.requestPermissions();
-      if (!granted) return;
+      if (!granted) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Bildirim izni verilmedi. Hatırlatmaları açmak için sistem ayarlarından izin verebilirsin.',
+            ),
+          ),
+        );
+        return;
+      }
     }
     await prefs.save();
     ref.invalidate(reminderPreferencesProvider);

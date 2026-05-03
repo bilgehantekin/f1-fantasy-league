@@ -364,6 +364,17 @@ class League {
     memberCount: (j['member_count'] as num?)?.toInt(),
     myRank: (j['my_rank'] as num?)?.toInt(),
   );
+
+  League copyWith({int? memberCount, int? myRank}) => League(
+    id: id,
+    name: name,
+    type: type,
+    ownerId: ownerId,
+    inviteCode: inviteCode,
+    seasonId: seasonId,
+    memberCount: memberCount ?? this.memberCount,
+    myRank: myRank ?? this.myRank,
+  );
 }
 
 class AppBadge {

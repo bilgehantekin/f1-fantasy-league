@@ -5,7 +5,8 @@ import '../../core/supabase.dart';
 import '../../shared/models.dart';
 
 final isAdminProvider = FutureProvider<bool>((ref) async {
-  if (supabase.auth.currentUser == null) return false;
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return false;
   final res = await supabase.rpc('is_current_user_admin');
   return (res as bool?) ?? false;
 });

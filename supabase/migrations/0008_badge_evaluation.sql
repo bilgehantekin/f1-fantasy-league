@@ -28,38 +28,44 @@ begin
   -- Per-prediction rozetleri
   for v_pred in select * from public.predictions where race_id = p_race_id loop
     -- bullseye_podium: p1/p2/p3 sırasıyla doğru
-    if v_pred.p1_id = v_res.p1 and v_pred.p2_id = v_res.p2 and v_pred.p3_id = v_res.p3 then
+    if v_id_bullseye is not null
+       and v_pred.p1_id = v_res.p1 and v_pred.p2_id = v_res.p2 and v_pred.p3_id = v_res.p3 then
       insert into public.user_badges (user_id, badge_id, race_id)
       values (v_pred.user_id, v_id_bullseye, p_race_id) on conflict do nothing;
       v_award := v_award + 1;
     end if;
     -- joker_master
-    if v_pred.joker_option is not null and v_res.joker_correct is not null
+    if v_id_joker is not null
+       and v_pred.joker_option is not null and v_res.joker_correct is not null
        and v_pred.joker_option = v_res.joker_correct then
       insert into public.user_badges (user_id, badge_id, race_id)
       values (v_pred.user_id, v_id_joker, p_race_id) on conflict do nothing;
       v_award := v_award + 1;
     end if;
     -- dnf_oracle (tam sayı)
-    if v_pred.dnf_count is not null and v_pred.dnf_count = v_res.dnf_count then
+    if v_id_dnf is not null
+       and v_pred.dnf_count is not null and v_pred.dnf_count = v_res.dnf_count then
       insert into public.user_badges (user_id, badge_id, race_id)
       values (v_pred.user_id, v_id_dnf, p_race_id) on conflict do nothing;
       v_award := v_award + 1;
     end if;
     -- pole_caller
-    if v_pred.pole_driver_id = v_res.pole then
+    if v_id_pole is not null
+       and v_pred.pole_driver_id = v_res.pole then
       insert into public.user_badges (user_id, badge_id, race_id)
       values (v_pred.user_id, v_id_pole, p_race_id) on conflict do nothing;
       v_award := v_award + 1;
     end if;
     -- fastest_caller
-    if v_pred.fastest_lap_driver_id = v_res.fastest_lap then
+    if v_id_fl is not null
+       and v_pred.fastest_lap_driver_id = v_res.fastest_lap then
       insert into public.user_badges (user_id, badge_id, race_id)
       values (v_pred.user_id, v_id_fl, p_race_id) on conflict do nothing;
       v_award := v_award + 1;
     end if;
     -- perfect_week: hepsi doğru
-    if v_pred.winner_driver_id = v_res.p1
+    if v_id_perfect is not null
+       and v_pred.winner_driver_id = v_res.p1
        and v_pred.p1_id = v_res.p1 and v_pred.p2_id = v_res.p2 and v_pred.p3_id = v_res.p3
        and v_pred.pole_driver_id = v_res.pole
        and v_pred.fastest_lap_driver_id = v_res.fastest_lap
@@ -75,12 +81,16 @@ begin
   insert into public.user_badges (user_id, badge_id, race_id)
   select distinct p.user_id, v_id_winner, p_race_id
   from public.predictions p
-  join public.league_memberships m on m.user_id = p.user_id
-  where p.race_id = p_race_id and p.score is not null
+  join public.league_memberships m
+    on m.user_id = p.user_id
+   and m.league_id = p.league_id
+  where v_id_winner is not null
+    and p.race_id = p_race_id and p.score is not null
     and p.score = (
       select max(p2.score) from public.predictions p2
-      join public.league_memberships m2 on m2.user_id = p2.user_id
-      where p2.race_id = p_race_id and m2.league_id = m.league_id and p2.score is not null
+      where p2.race_id = p_race_id
+        and p2.league_id = m.league_id
+        and p2.score is not null
     )
   on conflict do nothing;
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/error_messages.dart';
+import '../../core/navigation.dart';
 import '../../core/supabase.dart';
 import '../../core/theme.dart';
 import '../profile/profile_controller.dart';
@@ -26,9 +28,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       // Production'da: purchases_flutter ile Purchases.purchasePackage(...) çağrılır.
       await supabase.rpc('dev_toggle_premium');
       ref.invalidate(profileProvider);
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) safeBack(context);
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

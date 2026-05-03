@@ -5,13 +5,35 @@ import '../../core/supabase.dart';
 import '../../shared/models.dart';
 
 final myLeaguesProvider = FutureProvider<List<League>>((ref) async {
-  final user = supabase.auth.currentUser;
+  final user = ref.watch(currentUserProvider);
   if (user == null) return [];
   final rows = await supabase
       .from('leagues')
       .select('*, league_memberships!inner(user_id)')
       .eq('league_memberships.user_id', user.id);
-  return rows.map((e) => League.fromJson(e)).toList();
+  final leagues = rows.map((e) => League.fromJson(e)).toList();
+
+  return Future.wait(
+    leagues.map((league) async {
+      final members = await supabase
+          .from('league_memberships')
+          .select('user_id')
+          .eq('league_id', league.id);
+      final standings = await supabase.rpc(
+        'league_season_standings',
+        params: {'p_league_id': league.id, 'p_season_id': Env.seasonId},
+      );
+      int? myRank;
+      for (final row in standings as List) {
+        final data = row as Map<String, dynamic>;
+        if (data['user_id'] == user.id) {
+          myRank = (data['rnk'] as num).toInt();
+          break;
+        }
+      }
+      return league.copyWith(memberCount: members.length, myRank: myRank);
+    }),
+  );
 });
 
 final leagueProvider = FutureProvider.family<League, String>((ref, id) async {
@@ -49,7 +71,11 @@ final weeklySummaryProvider =
     ) async {
       final res = await supabase.rpc(
         'league_weekly_summary',
-        params: {'p_league_id': key.leagueId, 'p_race_id': key.raceId},
+        params: {
+          'p_league_id': key.leagueId,
+          'p_race_id': key.raceId,
+          'p_sprint': key.sprint,
+        },
       );
       return LeagueWeeklySummary.fromJson(res as Map<String, dynamic>);
     });
@@ -59,7 +85,7 @@ final leaguePredictionStatusProvider =
       ref,
       leagueId,
     ) async {
-      final user = supabase.auth.currentUser;
+      final user = ref.watch(currentUserProvider);
       if (user == null) return const LeaguePredictionStatus.empty();
 
       final mainRows = await supabase
@@ -90,10 +116,12 @@ Future<String> createLeague(String name) async {
 Future<String> joinLeagueByCode(String code) async {
   final res = await supabase.rpc(
     'join_league_by_code',
-    params: {'p_code': code.toUpperCase()},
+    params: {'p_code': normalizeInviteCode(code)},
   );
   return res as String;
 }
+
+String normalizeInviteCode(String code) => code.trim().toUpperCase();
 
 Future<void> updateLeagueName(String leagueId, String name) async {
   await supabase.rpc(
@@ -152,18 +180,24 @@ class LeagueMember {
 class WeeklySummaryKey {
   final String leagueId;
   final String raceId;
+  final bool sprint;
 
-  const WeeklySummaryKey({required this.leagueId, required this.raceId});
+  const WeeklySummaryKey({
+    required this.leagueId,
+    required this.raceId,
+    this.sprint = false,
+  });
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is WeeklySummaryKey &&
           leagueId == other.leagueId &&
-          raceId == other.raceId;
+          raceId == other.raceId &&
+          sprint == other.sprint;
 
   @override
-  int get hashCode => Object.hash(leagueId, raceId);
+  int get hashCode => Object.hash(leagueId, raceId, sprint);
 }
 
 class LeaguePredictionStatus {

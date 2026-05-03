@@ -20,6 +20,10 @@ Future<void> completeOnboarding({String? username}) async {
   await supabase.rpc('complete_onboarding', params: {'p_username': username});
 }
 
+Future<void> requestAccountDeletion({String? reason}) async {
+  await supabase.rpc('request_account_deletion', params: {'p_reason': reason});
+}
+
 final allBadgesProvider = FutureProvider<List<AppBadge>>((ref) async {
   final rows = await supabase.from('badges').select().order('rarity');
   return rows.map((e) => AppBadge.fromJson(e)).toList();
@@ -38,16 +42,50 @@ final myBadgesProvider = FutureProvider<List<UserBadge>>((ref) async {
 
 class ProfileStats {
   final int totalScore;
+  final int mainScore;
+  final int sprintScore;
   final int badgeCount;
-  final int racesPredicted;
+  final int eventsPredicted;
+  final int mainEventsPredicted;
+  final int sprintEventsPredicted;
   final int bestScore;
+  final String? bestLeagueName;
+  final int bestLeagueScore;
+  final List<LeaguePerformance> leaguePerformances;
   final double averageScore;
   ProfileStats({
     required this.totalScore,
+    required this.mainScore,
+    required this.sprintScore,
     required this.badgeCount,
-    required this.racesPredicted,
+    required this.eventsPredicted,
+    required this.mainEventsPredicted,
+    required this.sprintEventsPredicted,
     required this.bestScore,
+    required this.bestLeagueName,
+    required this.bestLeagueScore,
+    required this.leaguePerformances,
     required this.averageScore,
+  });
+}
+
+class LeaguePerformance {
+  final String leagueId;
+  final String leagueName;
+  final int totalScore;
+  final int mainScore;
+  final int sprintScore;
+  final int scoredEvents;
+  final int rank;
+
+  LeaguePerformance({
+    required this.leagueId,
+    required this.leagueName,
+    required this.totalScore,
+    required this.mainScore,
+    required this.sprintScore,
+    required this.scoredEvents,
+    required this.rank,
   });
 }
 
@@ -155,40 +193,146 @@ final profileStatsProvider = FutureProvider<ProfileStats>((ref) async {
   if (user == null) {
     return ProfileStats(
       totalScore: 0,
+      mainScore: 0,
+      sprintScore: 0,
       badgeCount: 0,
-      racesPredicted: 0,
+      eventsPredicted: 0,
+      mainEventsPredicted: 0,
+      sprintEventsPredicted: 0,
       bestScore: 0,
+      bestLeagueName: null,
+      bestLeagueScore: 0,
+      leaguePerformances: const [],
       averageScore: 0,
     );
   }
-  final preds = await supabase
+  final mainPreds = await supabase
       .from('predictions')
-      .select('race_id, score')
+      .select('race_id, league_id, score, league:leagues(id, name)')
       .eq('user_id', user.id);
-  final bestByRace = <String, int>{};
+  final sprintPreds = await supabase
+      .from('sprint_predictions')
+      .select('race_id, league_id, score, league:leagues(id, name)')
+      .eq('user_id', user.id);
+  final mainBestByEvent = <String, int>{};
+  final sprintBestByEvent = <String, int>{};
+  final leagueTotals = <String, _LeaguePerformanceAccumulator>{};
   int best = 0;
-  for (final p in preds) {
-    if (p['score'] != null) {
-      final score = (p['score'] as num).toInt();
-      final raceId = p['race_id'] as String;
-      final prev = bestByRace[raceId];
+
+  void collectScores(
+    Iterable<dynamic> rows,
+    String mode,
+    Map<String, int> bestByEvent,
+  ) {
+    for (final row in rows) {
+      if (row['score'] == null) continue;
+      final score = (row['score'] as num).toInt();
+      final raceId = row['race_id'] as String;
+      final leagueId = row['league_id'] as String?;
+      final league = row['league'] as Map<String, dynamic>?;
+      final key = '$mode:$raceId';
+      final prev = bestByEvent[key];
       if (prev == null || score > prev) {
-        bestByRace[raceId] = score;
+        bestByEvent[key] = score;
       }
-      if (score > best) best = score;
+      if (leagueId != null) {
+        final current = leagueTotals.putIfAbsent(
+          leagueId,
+          () => _LeaguePerformanceAccumulator(
+            leagueId: leagueId,
+            leagueName: (league?['name'] as String?) ?? 'Lig',
+          ),
+        );
+        if (mode == 'main') {
+          current.mainScore += score;
+        } else {
+          current.sprintScore += score;
+        }
+        current.scoredEvents += 1;
+      }
+      if (score > best) {
+        best = score;
+      }
     }
   }
-  final total = bestByRace.values.fold<int>(0, (sum, score) => sum + score);
-  final scored = bestByRace.length;
+
+  collectScores(mainPreds, 'main', mainBestByEvent);
+  collectScores(sprintPreds, 'sprint', sprintBestByEvent);
+
+  final mainScore = mainBestByEvent.values.fold<int>(
+    0,
+    (sum, score) => sum + score,
+  );
+  final sprintScore = sprintBestByEvent.values.fold<int>(
+    0,
+    (sum, score) => sum + score,
+  );
+  final total = mainScore + sprintScore;
+  final scored = mainBestByEvent.length + sprintBestByEvent.length;
+  final leaguePerformances =
+      leagueTotals.values.map((e) => e.toPerformance()).toList()..sort((a, b) {
+        final score = b.totalScore.compareTo(a.totalScore);
+        if (score != 0) return score;
+        return a.leagueName.compareTo(b.leagueName);
+      });
+  final rankedLeaguePerformances = [
+    for (var i = 0; i < leaguePerformances.length; i++)
+      leaguePerformances[i].copyWith(rank: i + 1),
+  ];
+  final bestLeague = rankedLeaguePerformances.isEmpty
+      ? null
+      : rankedLeaguePerformances.first;
   final badges = await supabase
       .from('user_badges')
       .select('id')
       .eq('user_id', user.id);
   return ProfileStats(
     totalScore: total,
+    mainScore: mainScore,
+    sprintScore: sprintScore,
     badgeCount: badges.length,
-    racesPredicted: scored,
+    eventsPredicted: scored,
+    mainEventsPredicted: mainBestByEvent.length,
+    sprintEventsPredicted: sprintBestByEvent.length,
     bestScore: best,
+    bestLeagueName: bestLeague?.leagueName,
+    bestLeagueScore: bestLeague?.totalScore ?? 0,
+    leaguePerformances: rankedLeaguePerformances,
     averageScore: scored == 0 ? 0 : total / scored,
   );
 });
+
+class _LeaguePerformanceAccumulator {
+  final String leagueId;
+  final String leagueName;
+  int mainScore = 0;
+  int sprintScore = 0;
+  int scoredEvents = 0;
+
+  _LeaguePerformanceAccumulator({
+    required this.leagueId,
+    required this.leagueName,
+  });
+
+  LeaguePerformance toPerformance() => LeaguePerformance(
+    leagueId: leagueId,
+    leagueName: leagueName,
+    totalScore: mainScore + sprintScore,
+    mainScore: mainScore,
+    sprintScore: sprintScore,
+    scoredEvents: scoredEvents,
+    rank: 0,
+  );
+}
+
+extension on LeaguePerformance {
+  LeaguePerformance copyWith({int? rank}) => LeaguePerformance(
+    leagueId: leagueId,
+    leagueName: leagueName,
+    totalScore: totalScore,
+    mainScore: mainScore,
+    sprintScore: sprintScore,
+    scoredEvents: scoredEvents,
+    rank: rank ?? this.rank,
+  );
+}

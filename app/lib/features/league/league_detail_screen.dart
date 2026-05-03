@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../core/error_messages.dart';
 import '../../core/theme.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets/race_card_new.dart';
@@ -60,7 +61,8 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
         toolbarHeight: 56,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go('/calendar'),
         ),
         title: leagueAsync.when(
           data: (l) => Text(
@@ -194,24 +196,21 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
 
       if (!mounted) return;
       final box = context.findRenderObject() as RenderBox?;
-      await SharePlus.instance.share(
-        ShareParams(
-          title: '${league.name} · PitWall',
-          subject: '${league.name} ligine katıl',
-          text:
-              'PitWall ligime katıl: ${_inviteLinkFor(league.inviteCode)}\nDavet kodu: ${league.inviteCode}',
-          files: [XFile.fromData(bytes, mimeType: 'image/png', name: fileName)],
-          fileNameOverrides: [fileName],
-          sharePositionOrigin: box == null
-              ? null
-              : box.localToGlobal(Offset.zero) & box.size,
-        ),
+      await Share.shareXFiles(
+        [XFile.fromData(bytes, mimeType: 'image/png', name: fileName)],
+        subject: '${league.name} ligine katıl',
+        text:
+            'PitWall ligime katıl: ${_inviteLinkFor(league.inviteCode)}\nDavet kodu: ${league.inviteCode}',
+        fileNameOverrides: [fileName],
+        sharePositionOrigin: box == null
+            ? null
+            : box.localToGlobal(Offset.zero) & box.size,
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Paylaşım hatası: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Paylaşım hatası: ${friendlyError(e)}')),
+      );
     } finally {
       if (mounted) setState(() => _sharing = false);
     }
@@ -247,7 +246,7 @@ class _StandingsTab extends StatelessWidget {
       ),
       error: (e, _) => Padding(
         padding: const EdgeInsets.all(16),
-        child: Center(child: Text('Hata: $e')),
+        child: Center(child: Text('Hata: ${friendlyError(e)}')),
       ),
       data: (rows) {
         if (rows.isEmpty) {
@@ -287,7 +286,7 @@ class _RacesTab extends StatelessWidget {
       ),
       error: (e, _) => Padding(
         padding: const EdgeInsets.all(16),
-        child: Center(child: Text('Hata: $e')),
+        child: Center(child: Text('Hata: ${friendlyError(e)}')),
       ),
       data: (races) {
         if (races.isEmpty) {
@@ -299,9 +298,9 @@ class _RacesTab extends StatelessWidget {
             ),
           );
         }
-        // Sıra: bu haftaki etkinlikler üstte → bitmiş/iptal eski → yeni →
-        // gelecek yarışlar yakın → uzak.
-        final cards = buildOrderedRaceCards(races);
+        // Featured weekend (sprint + main) en üstte, kalanlar kronolojik.
+        // Ana yarıştan 24 saat sonra featured kayar.
+        final cards = buildOrderedRaceCards(races, pinFeaturedRace: true);
         final predictionStatus =
             predictionStatusAsync.asData?.value ??
             const LeaguePredictionStatus.empty();
@@ -313,26 +312,34 @@ class _RacesTab extends StatelessWidget {
                   final entry = cards[i];
                   final race = entry.race;
                   final isSprint = entry.kind == RaceCardKind.sprint;
-                  final status = isSprint ? race.sprintStatus : race.status;
+                  final status = effectiveRaceCardStatus(entry);
                   final modeQp = isSprint ? '?mode=sprint' : '';
+                  final predictionSaved = predictionStatus.savedFor(
+                    race.id,
+                    sprint: isSprint,
+                  );
+                  final predictionActionLabel = status == RaceStatus.locked
+                      ? 'Tahmini Gör'
+                      : predictionSaved
+                      ? 'Tahmini Düzenle'
+                      : 'Tahmin Yap';
                   return RaceCardNew(
                     race: race,
                     kind: entry.kind,
-                    predictionSaved: predictionStatus.savedFor(
-                      race.id,
-                      sprint: isSprint,
-                    ),
+                    predictionSaved: predictionSaved,
+                    actionLabel:
+                        status == RaceStatus.upcoming ||
+                            status == RaceStatus.locked
+                        ? predictionActionLabel
+                        : null,
+                    actionIcon: predictionSaved
+                        ? Icons.edit_outlined
+                        : Icons.add_circle_outline,
                     onTap: () {
                       if (status == RaceStatus.finished) {
-                        if (isSprint) {
-                          context.push(
-                            '/leagues/$leagueId/race/${race.id}/results$modeQp',
-                          );
-                        } else {
-                          context.push(
-                            '/leagues/$leagueId/race/${race.id}/summary',
-                          );
-                        }
+                        context.push(
+                          '/leagues/$leagueId/race/${race.id}/summary$modeQp',
+                        );
                       } else if (status == RaceStatus.cancelled) {
                         context.push(
                           '/leagues/$leagueId/race/${race.id}/results$modeQp',

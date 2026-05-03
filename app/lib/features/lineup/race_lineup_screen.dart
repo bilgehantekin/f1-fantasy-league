@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/error_messages.dart';
+import '../../core/navigation.dart';
 import '../../core/theme.dart';
 import '../../shared/country_flags.dart';
 import '../../shared/models.dart';
@@ -30,12 +32,12 @@ class RaceLineupScreen extends ConsumerWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => safeBack(context),
         ),
         title: raceAsync.maybeWhen(
           data: (r) => Text(
             sprintMode
-                ? '${r.name.toUpperCase()} · SPRINT'
+                ? '${r.name.toUpperCase()} · Sprint'
                 : r.name.toUpperCase(),
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
@@ -56,10 +58,10 @@ class RaceLineupScreen extends ConsumerWidget {
       ),
       body: raceAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: $e')),
+        error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
         data: (race) => driversAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Hata: $e')),
+          error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
           data: (drivers) => ListView(
             padding: EdgeInsets.zero,
             children: [
@@ -84,9 +86,7 @@ class _RaceInfoHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
-    final qAt = sprintMode
-        ? race.sprintQualifyingAt
-        : race.qualifyingAt;
+    final qAt = sprintMode ? race.sprintQualifyingAt : race.qualifyingAt;
     final rAt = sprintMode ? race.sprintRaceAt : race.raceAt;
     final qDate = qAt != null
         ? DateFormat('d MMM HH:mm').format(qAt.toLocal())
@@ -137,7 +137,7 @@ class _RaceInfoHeader extends StatelessWidget {
                     border: Border.all(color: AppColors.lockOrange, width: 1),
                   ),
                   child: const Text(
-                    'SPRINT',
+                    'Sprint',
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w900,
@@ -151,7 +151,7 @@ class _RaceInfoHeader extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            sprintMode ? '${race.name} · SPRINT' : race.name,
+            sprintMode ? '${race.name} · Sprint' : race.name,
             style: tt.headlineMedium?.copyWith(
               fontSize: 22,
               fontWeight: FontWeight.w900,

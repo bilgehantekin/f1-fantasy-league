@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/error_messages.dart';
+import '../../core/navigation.dart';
 import '../../core/notifications.dart';
 import '../../core/theme.dart';
 import '../../shared/country_flags.dart';
@@ -91,12 +93,21 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
         await upsertPrediction(_draft!, leagueId: leagueId);
         ref.invalidate(predictionProvider(predictionKey));
         ref.invalidate(leaguePredictionStatusProvider(leagueId));
-        await NotificationService.instance.cancelForRace(widget.raceId);
+        await NotificationService.instance.cancelForPrediction(
+          raceId: widget.raceId,
+          leagueId: leagueId,
+          sprint: false,
+        );
       } else {
         if (_sprintDraft == null) return;
         await upsertSprintPrediction(_sprintDraft!, leagueId: leagueId);
         ref.invalidate(sprintPredictionProvider(predictionKey));
         ref.invalidate(leaguePredictionStatusProvider(leagueId));
+        await NotificationService.instance.cancelForPrediction(
+          raceId: widget.raceId,
+          leagueId: leagueId,
+          sprint: true,
+        );
       }
       if (!mounted) return;
       _showSaveSuccess(
@@ -106,7 +117,7 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      _showSaveError('Hata: $e');
+      _showSaveError('Hata: ${friendlyError(e)}');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -229,7 +240,7 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
       _showSaveSuccess('Tahmin seçtiğin liglere kopyalandı');
     } catch (e) {
       if (!mounted) return;
-      _showSaveError('Kopyalama hatası: $e');
+      _showSaveError('Kopyalama hatası: ${friendlyError(e)}');
     } finally {
       if (mounted) setState(() => _copying = false);
     }
@@ -250,55 +261,63 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
       sprintPredictionProvider(predictionKey),
     );
 
+    final previewMode = widget.leagueId == null;
+
     return Scaffold(
       backgroundColor: AppColors.carbon,
       body: raceAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: $e')),
+        error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
         data: (race) => driversAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Hata: $e')),
-          data: (drivers) => predictionAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Hata: $e')),
-            data: (existing) {
-              final draft = _ensureDraft(race.id, existing);
-              final joker = jokerAsync.asData?.value;
-              final sprintExisting = sprintPredictionAsync.asData?.value;
-              final sprintDraft = race.hasSprint
-                  ? _ensureSprintDraft(race.id, sprintExisting)
-                  : null;
-              final mainLocked = race.isLocked;
-              final sprintLocked = race.isSprintLocked;
-              final activeMode = _mode;
-              final activeLocked = activeMode == _PredictionMode.main
-                  ? mainLocked
-                  : sprintLocked;
-              return _PredictionBody(
-                race: race,
-                drivers: drivers,
-                draft: draft,
-                sprintDraft: sprintDraft,
-                joker: joker,
-                mode: activeMode,
-                showModeToggle: false,
-                onModeChanged: (m) => setState(() => _mode = m),
-                locked: activeLocked,
-                mainLocked: mainLocked,
-                sprintLocked: sprintLocked,
-                saving: _saving,
-                copying: _copying,
-                recentlySaved: _recentlySaved,
-                saveMessage: _saveMessage,
-                onChanged: (p) => setState(() => _draft = p),
-                onSprintChanged: (p) => setState(() => _sprintDraft = p),
-                onSave: _save,
-                onCopyToOtherLeagues: widget.leagueId == null
-                    ? null
-                    : _copyToOtherLeagues,
-              );
-            },
-          ),
+          error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
+          data: (drivers) {
+            if (previewMode) {
+              return _RacePreviewBody(race: race, drivers: drivers);
+            }
+            return predictionAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
+              data: (existing) {
+                final draft = _ensureDraft(race.id, existing);
+                final joker = jokerAsync.asData?.value;
+                final sprintExisting = sprintPredictionAsync.asData?.value;
+                final sprintDraft = race.hasSprint
+                    ? _ensureSprintDraft(race.id, sprintExisting)
+                    : null;
+                final mainLocked = race.isLocked;
+                final sprintLocked = race.isSprintLocked;
+                final activeMode = race.hasSprint
+                    ? _mode
+                    : _PredictionMode.main;
+                final activeLocked = activeMode == _PredictionMode.main
+                    ? mainLocked
+                    : sprintLocked;
+                return _PredictionBody(
+                  race: race,
+                  drivers: drivers,
+                  draft: draft,
+                  sprintDraft: sprintDraft,
+                  joker: joker,
+                  mode: activeMode,
+                  showModeToggle: false,
+                  onModeChanged: (m) => setState(() => _mode = m),
+                  locked: activeLocked,
+                  mainLocked: mainLocked,
+                  sprintLocked: sprintLocked,
+                  saving: _saving,
+                  copying: _copying,
+                  recentlySaved: _recentlySaved,
+                  saveMessage: _saveMessage,
+                  leagueId: widget.leagueId,
+                  onChanged: (p) => setState(() => _draft = p),
+                  onSprintChanged: (p) => setState(() => _sprintDraft = p),
+                  onSave: _save,
+                  onCopyToOtherLeagues: _copyToOtherLeagues,
+                );
+              },
+            );
+          },
         ),
       ),
     );
@@ -321,6 +340,7 @@ class _PredictionBody extends StatelessWidget {
   final bool copying;
   final bool recentlySaved;
   final String? saveMessage;
+  final String? leagueId;
   final void Function(Prediction) onChanged;
   final void Function(SprintPrediction) onSprintChanged;
   final VoidCallback onSave;
@@ -342,6 +362,7 @@ class _PredictionBody extends StatelessWidget {
     required this.copying,
     required this.recentlySaved,
     required this.saveMessage,
+    required this.leagueId,
     required this.onChanged,
     required this.onSprintChanged,
     required this.onSave,
@@ -525,7 +546,12 @@ class _PredictionBody extends StatelessWidget {
         toolbarHeight: 56,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => safeBack(
+            context,
+            fallbackLocation: leagueId == null
+                ? '/calendar'
+                : '/leagues/$leagueId',
+          ),
           padding: const EdgeInsets.all(8),
         ),
         leadingWidth: 56,
@@ -694,7 +720,7 @@ class _Header extends StatelessWidget {
                     border: Border.all(color: AppColors.lockOrange, width: 1),
                   ),
                   child: const Text(
-                    'SPRINT',
+                    'Sprint',
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w900,
@@ -1476,6 +1502,233 @@ class _SprintDnfSlider extends StatelessWidget {
             onChanged: locked
                 ? null
                 : (v) => onChanged(draft.copyWith(dnfCount: v.toInt())),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RacePreviewBody extends StatelessWidget {
+  final Race race;
+  final List<Driver> drivers;
+  const _RacePreviewBody({required this.race, required this.drivers});
+
+  @override
+  Widget build(BuildContext context) {
+    final byTeam = <String, List<Driver>>{};
+    final teamOrder = <String>[];
+    final teamColors = <String, String?>{};
+    final teamNames = <String, String>{};
+    for (final d in drivers) {
+      final key = d.teamCode ?? d.teamId ?? '—';
+      if (!byTeam.containsKey(key)) {
+        byTeam[key] = [];
+        teamOrder.add(key);
+        teamColors[key] = d.teamColor;
+        teamNames[key] = d.teamName ?? d.teamCode ?? '—';
+      }
+      byTeam[key]!.add(d);
+    }
+
+    return Scaffold(
+      backgroundColor: AppColors.carbon,
+      appBar: AppBar(
+        backgroundColor: AppColors.carbon,
+        elevation: 0,
+        toolbarHeight: 56,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, size: 20),
+          onPressed: () => safeBack(context, fallbackLocation: '/calendar'),
+          padding: const EdgeInsets.all(8),
+        ),
+        leadingWidth: 56,
+        title: Text(
+          'R${race.round} · ${race.name}',
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.3,
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: const Color(0xFF1F1F2E)),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.only(bottom: 24),
+        children: [
+          _Header(
+            race: race,
+            locked: race.isLocked,
+            mode: _PredictionMode.main,
+          ),
+          const SizedBox(height: 12),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: _PreviewBanner(),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: AppColors.f1Red,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'TAKIMLAR & SÜRÜCÜLER',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceLow,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                for (var t = 0; t < teamOrder.length; t++)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 4,
+                              height: 18,
+                              decoration: BoxDecoration(
+                                color: _parseTeamColor(
+                                  teamColors[teamOrder[t]],
+                                ),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              teamNames[teamOrder[t]]!.toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        for (final d in byTeam[teamOrder[t]]!)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 12, bottom: 8),
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  width: 28,
+                                  child: Text(
+                                    d.number != null ? '${d.number}' : '—',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w900,
+                                      color: Color(0x99FFFFFF),
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  d.code,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    d.fullName,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xCCFFFFFF),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (t < teamOrder.length - 1)
+                          const Divider(
+                            height: 8,
+                            color: Color(0xFF15151E),
+                            thickness: 1,
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Color _parseTeamColor(String? hex) {
+    if (hex == null || hex.isEmpty) return const Color(0xFF6E6E80);
+    try {
+      return Color(int.parse(hex.replaceAll('#', '0xFF')));
+    } catch (_) {
+      return const Color(0xFF6E6E80);
+    }
+  }
+}
+
+class _PreviewBanner extends StatelessWidget {
+  const _PreviewBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.f1Red.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: AppColors.f1Red.withValues(alpha: 0.45),
+          width: 1,
+        ),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(Icons.info_outline, size: 18, color: AppColors.f1Red),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Tahmin yapmak için bir lige katılmalısın.',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+                height: 1.3,
+              ),
+            ),
           ),
         ],
       ),

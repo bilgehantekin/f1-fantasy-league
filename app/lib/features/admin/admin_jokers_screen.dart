@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/error_messages.dart';
 import '../../shared/models.dart';
 import 'admin_controller.dart';
 
@@ -15,7 +16,7 @@ class AdminJokersScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Admin · Joker Soruları')),
       body: isAdmin.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: $e')),
+        error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
         data: (admin) {
           if (!admin) {
             return const Center(
@@ -122,9 +123,9 @@ class _RaceDataTile extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Ingest hatası: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ingest hatası: ${friendlyError(e)}')),
+        );
       }
     }
   }
@@ -230,7 +231,7 @@ class _RaceJokerTile extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        ).showSnackBar(SnackBar(content: Text('Hata: ${friendlyError(e)}')));
       }
     }
   }

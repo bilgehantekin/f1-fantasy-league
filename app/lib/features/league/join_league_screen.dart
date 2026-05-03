@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/error_messages.dart';
 import '../../core/theme.dart';
 import 'league_controller.dart';
 
@@ -29,7 +30,7 @@ class _JoinLeagueScreenState extends ConsumerState<JoinLeagueScreen> {
       if (mounted) context.go('/leagues/$leagueId');
     } catch (e) {
       if (mounted) {
-        setState(() => _error = e.toString());
+        setState(() => _error = friendlyError(e));
       }
     } finally {
       if (mounted) setState(() => _joining = false);

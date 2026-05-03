@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/error_messages.dart';
 import '../../core/notifications.dart';
 import '../../core/theme.dart';
 import '../calendar/calendar_controller.dart';
-import '../league/league_controller.dart';
 import '../profile/profile_controller.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -17,20 +17,15 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _username = TextEditingController();
-  final _leagueName = TextEditingController();
-  final _inviteCode = TextEditingController();
   bool _remindersEnabled = true;
   bool _onlyMissing = true;
   int _hoursBeforeLock = 1;
   bool _busy = false;
   String? _error;
-  String _leagueMode = 'none';
 
   @override
   void dispose() {
     _username.dispose();
-    _leagueName.dispose();
-    _inviteCode.dispose();
     super.dispose();
   }
 
@@ -49,6 +44,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         final granted = await NotificationService.instance.requestPermissions();
         if (!granted) {
           await reminderPrefs.copyWith(enabled: false).save();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Bildirim izni verilmedi. Hatırlatmaları daha sonra ayarlardan açabilirsin.',
+                ),
+              ),
+            );
+          }
         } else {
           await reminderPrefs.save();
         }
@@ -60,26 +64,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         username: _username.text.trim().isEmpty ? null : _username.text.trim(),
       );
 
-      String? targetLeagueId;
-      if (_leagueMode == 'create' && _leagueName.text.trim().isNotEmpty) {
-        targetLeagueId = await createLeague(_leagueName.text.trim());
-      } else if (_leagueMode == 'join' && _inviteCode.text.trim().length >= 6) {
-        targetLeagueId = await joinLeagueByCode(_inviteCode.text.trim());
-      }
-
       ref.invalidate(profileProvider);
-      ref.invalidate(myLeaguesProvider);
       final races = await ref.read(racesProvider.future);
       await NotificationService.instance.scheduleForRaces(races);
 
       if (!mounted) return;
-      if (targetLeagueId == null) {
-        context.go('/calendar');
-      } else {
-        context.go('/leagues/$targetLeagueId');
-      }
+      context.go('/calendar');
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -162,42 +154,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       controlAffinity: ListTileControlAffinity.leading,
                     ),
                   ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            _Panel(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const _StepTitle(number: '03', label: 'LİG'),
-                  const SizedBox(height: 12),
-                  SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(value: 'none', label: Text('Sonra')),
-                      ButtonSegment(value: 'create', label: Text('Oluştur')),
-                      ButtonSegment(value: 'join', label: Text('Katıl')),
-                    ],
-                    selected: {_leagueMode},
-                    onSelectionChanged: (v) =>
-                        setState(() => _leagueMode = v.first),
-                  ),
-                  const SizedBox(height: 12),
-                  if (_leagueMode == 'create')
-                    TextField(
-                      controller: _leagueName,
-                      decoration: const InputDecoration(labelText: 'Lig adı'),
-                      maxLength: 60,
-                    )
-                  else if (_leagueMode == 'join')
-                    TextField(
-                      controller: _inviteCode,
-                      decoration: const InputDecoration(
-                        labelText: 'Davet kodu',
-                      ),
-                      textCapitalization: TextCapitalization.characters,
-                      maxLength: 8,
-                    ),
                 ],
               ),
             ),

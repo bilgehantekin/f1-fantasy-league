@@ -32,8 +32,11 @@ jobs:
           deno-version: v2.x
       - name: Type-check edge functions
         run: |
-          deno check supabase/functions/score-race/index.ts
-          deno check supabase/functions/lock-predictions/index.ts
+          set -euo pipefail
+          find supabase/functions -mindepth 2 -maxdepth 2 -name index.ts -print | sort | while read -r fn; do
+            echo "deno check $fn"
+            deno check "$fn"
+          done
       - name: Start Supabase + run pgTAP tests
         run: |
           supabase start
