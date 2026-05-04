@@ -48,7 +48,7 @@ Please read this Privacy Policy carefully. If you do not agree with our policies
 - Device type and operating system version
 - App version and build number
 - Screen resolution and display settings
-- IP address and geolocation (approximate, from IP)
+- IP address may be processed by our infrastructure and security logs
 - Device identifiers (but NOT unique identifiers like IDFA/GAID)
 
 **Diagnostics & Crash Data (Sentry only)**:
