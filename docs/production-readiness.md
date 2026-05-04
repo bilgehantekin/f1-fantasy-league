@@ -37,7 +37,7 @@ Production builds should keep this false. Mock live timing, fake live events, an
 - Account deletion: in-app via Profile → "Hesabı silme talebi oluştur". Backend wipe is wired through `process_account_deletion()` + `delete-accounts` edge function on a daily cron (see Account Deletion Pipeline below).
 - Demo reviewer account: create one before submission and put credentials in App Store Connect review notes.
 - Notification purpose: app uses **local** notifications only (flutter_local_notifications). No remote push tokens are collected. The iOS purpose string lives in `Info.plist` (`NSUserNotificationsUsageDescription`).
-- **Premium / IAP**: not in this release. The `/premium` route, paywall screen, and the upsell card have been removed from the build. The `dev_toggle_premium` RPC is revoked and dropped by the latest migrations. Re-add real StoreKit / RevenueCat plus restore-purchases flow before reintroducing.
+- **Premium / IAP**: not in this release. The `/premium` route, paywall screen, and the upsell card have been removed from the build. The `dev_toggle_premium` RPC is revoked and dropped by the latest migrations, and any old `manual/dev_toggle` subscription rows are removed. Re-add real StoreKit / RevenueCat plus restore-purchases flow before reintroducing.
 - **F1 brand & data**: the app must ship with a clear "Unofficial — not affiliated with Formula 1, FIA, teams or drivers" disclaimer in onboarding, in the in-app About dialog, and in both legal docs. Avoid F1 logos, team logos, official driver portraits, pist/circuit logos and any wording that mimics official broadcast lines in icons, screenshots, and store metadata.
 - **App Store Connect privacy answers**: declare only what we actually collect — Email, Name (optional), User Content (predictions), Identifiers (auth user id), Diagnostics (Sentry). Do **not** declare push tokens, ad data, location, contacts, or behavioral analytics.
 
@@ -59,6 +59,10 @@ Production wiring (run once per environment):
 5. Smoke test: insert a deletion request with `scheduled_for = now() - interval '1 minute'`, invoke the edge function manually, confirm the user's predictions, league memberships, profile and `auth.users` row are gone and the request status is `completed`.
 
 The 30-day grace period is enforced in SQL (`scheduled_for = now() + interval '30 days'`), matches the privacy policy retention text, and gives users time to reach out and cancel by emailing support.
+
+Suggested App Review note:
+
+> Users can start account deletion in Profile by tapping "Hesabı silme talebi oluştur". The app creates a pending deletion request, signs the user out, and hides the profile. A Supabase scheduled job invokes the `delete-accounts` edge function daily; that service-role function wipes user-owned rows with `process_account_deletion()`, deletes the Supabase Auth user through `auth.admin.deleteUser`, then marks the request completed. The policy states a 30-day cancellation window.
 
 ## Release Smoke Test
 
