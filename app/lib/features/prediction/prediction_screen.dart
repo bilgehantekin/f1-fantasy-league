@@ -10,6 +10,7 @@ import '../../core/notifications.dart';
 import '../../core/theme.dart';
 import '../../shared/country_flags.dart';
 import '../../shared/models.dart';
+import '../../shared/widgets/app_state.dart';
 import '../../shared/widgets/countdown_tiles.dart';
 import '../../shared/widgets/driver_chip.dart';
 import '../../shared/widgets/driver_picker.dart';
@@ -148,6 +149,24 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
     });
   }
 
+  void _showInfo(String message) {
+    HapticFeedback.lightImpact();
+    _saveFeedbackTimer?.cancel();
+    setState(() {
+      _saveMessage = message;
+      _recentlySaved = false;
+    });
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+  }
+
   void _showSaveError(String message) {
     HapticFeedback.heavyImpact();
     setState(() {
@@ -163,6 +182,78 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
           backgroundColor: AppColors.liveRed,
         ),
       );
+  }
+
+  Future<void> _clearCurrentMode() async {
+    final leagueId = widget.leagueId;
+    if (leagueId == null) return;
+    final isSprint = _mode == _PredictionMode.sprint;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          isSprint ? 'Sprint tahminini temizle?' : 'Tahminini temizle?',
+        ),
+        content: Text(
+          isSprint
+              ? 'Bu sprint için yaptığın tüm tahminler silinecek. Bu işlem geri alınamaz.'
+              : 'Bu yarış için yaptığın tüm tahminler silinecek. Bu işlem geri alınamaz.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.liveRed),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Temizle'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() => _saving = true);
+    try {
+      final predictionKey = PredictionKey(
+        raceId: widget.raceId,
+        leagueId: leagueId,
+      );
+      if (isSprint) {
+        await deleteSprintPrediction(raceId: widget.raceId, leagueId: leagueId);
+        ref.invalidate(sprintPredictionProvider(predictionKey));
+        await NotificationService.instance.cancelForPrediction(
+          raceId: widget.raceId,
+          leagueId: leagueId,
+          sprint: true,
+        );
+        if (!mounted) return;
+        setState(() => _sprintDraft = SprintPrediction(raceId: widget.raceId));
+      } else {
+        await deletePrediction(raceId: widget.raceId, leagueId: leagueId);
+        ref.invalidate(predictionProvider(predictionKey));
+        await NotificationService.instance.cancelForPrediction(
+          raceId: widget.raceId,
+          leagueId: leagueId,
+          sprint: false,
+        );
+        if (!mounted) return;
+        setState(() => _draft = Prediction(raceId: widget.raceId));
+      }
+      ref.invalidate(leaguePredictionStatusProvider(leagueId));
+      if (!mounted) return;
+      _showInfo(
+        isSprint
+            ? 'Sprint tahminin temizlendi'
+            : 'Yarış tahminin temizlendi',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      _showSaveError('Hata: ${friendlyError(e)}');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   Future<void> _copyToOtherLeagues() async {
@@ -269,18 +360,29 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
     return Scaffold(
       backgroundColor: AppColors.carbon,
       body: raceAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
+        loading: () => const AppLoadingState(label: 'Yarış yükleniyor'),
+        error: (e, _) => AppErrorState(
+          message: friendlyError(e),
+          onRetry: () => ref.invalidate(raceProvider(widget.raceId)),
+        ),
         data: (race) => driversAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
+          loading: () => const AppLoadingState(label: 'Sürücüler yükleniyor'),
+          error: (e, _) => AppErrorState(
+            message: friendlyError(e),
+            onRetry: () => ref.invalidate(driversProvider),
+          ),
           data: (drivers) {
             if (previewMode) {
               return _RacePreviewBody(race: race, drivers: drivers);
             }
             return predictionAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
+              loading: () =>
+                  const AppLoadingState(label: 'Tahminin yükleniyor'),
+              error: (e, _) => AppErrorState(
+                message: friendlyError(e),
+                onRetry: () =>
+                    ref.invalidate(predictionProvider(predictionKey)),
+              ),
               data: (existing) {
                 final draft = _ensureDraft(race.id, existing);
                 final joker = jokerAsync.asData?.value;
@@ -317,6 +419,7 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
                   onSprintChanged: (p) => setState(() => _sprintDraft = p),
                   onSave: _save,
                   onCopyToOtherLeagues: _copyToOtherLeagues,
+                  onClear: _clearCurrentMode,
                 );
               },
             );
@@ -348,6 +451,7 @@ class _PredictionBody extends StatelessWidget {
   final void Function(SprintPrediction) onSprintChanged;
   final VoidCallback onSave;
   final VoidCallback? onCopyToOtherLeagues;
+  final VoidCallback? onClear;
 
   const _PredictionBody({
     required this.race,
@@ -370,6 +474,7 @@ class _PredictionBody extends StatelessWidget {
     required this.onSprintChanged,
     required this.onSave,
     required this.onCopyToOtherLeagues,
+    required this.onClear,
   });
 
   Driver? _byId(String? id) {
@@ -378,6 +483,38 @@ class _PredictionBody extends StatelessWidget {
       if (d.id == id) return d;
     }
     return null;
+  }
+
+  List<_TeamChoice> get _teams {
+    final byId = <String, _TeamChoice>{};
+    for (final d in drivers) {
+      final id = d.teamId;
+      if (id == null || byId.containsKey(id)) continue;
+      byId[id] = _TeamChoice(
+        id: id,
+        code: d.teamCode ?? d.teamName ?? 'TEAM',
+        name: d.teamName ?? d.teamCode ?? 'Takım',
+        color: d.teamColor,
+      );
+    }
+    final list = byId.values.toList()..sort((a, b) => a.name.compareTo(b.name));
+    return list;
+  }
+
+  _TeamChoice? _teamById(String? id) {
+    if (id == null) return null;
+    for (final team in _teams) {
+      if (team.id == id) return team;
+    }
+    return null;
+  }
+
+  Future<_TeamChoice?> _pickTeam(BuildContext context) {
+    return _showTeamPicker(
+      context,
+      teams: _teams,
+      selected: _teamById(draft.topTeamId),
+    );
   }
 
   Future<Driver?> _pick(
@@ -417,7 +554,7 @@ class _PredictionBody extends StatelessWidget {
     _Section(
       badge: '02',
       label: 'PODYUM (SIRALI)',
-      points: '+15 + her isim için +5',
+      points: 'isim +5 / sıra +2 / tam +3',
       child: _PodiumPicker(
         drivers: drivers,
         draft: draft,
@@ -427,6 +564,20 @@ class _PredictionBody extends StatelessWidget {
     ),
     _Section(
       badge: '03',
+      label: 'EN ÇOK PUAN ALAN TAKIM',
+      points: '+10',
+      child: _TeamChipSlot(
+        team: _teamById(draft.topTeamId),
+        hint: 'En çok puanı hangi takım toplar?',
+        enabled: !locked,
+        onTap: () async {
+          final team = await _pickTeam(context);
+          if (team != null) onChanged(draft.copyWith(topTeamId: team.id));
+        },
+      ),
+    ),
+    _Section(
+      badge: '04',
       label: 'POLE POZİSYONU',
       points: '+8',
       child: DriverChipSlot(
@@ -444,35 +595,32 @@ class _PredictionBody extends StatelessWidget {
       ),
     ),
     _Section(
-      badge: '04',
-      label: 'EN HIZLI TUR',
-      points: '+6',
-      child: DriverChipSlot(
-        driver: _byId(draft.fastestLapDriverId),
-        hint: 'En hızlı turu kim atar?',
-        enabled: !locked,
-        onTap: () async {
-          final d = await _pick(
-            context,
-            'En hızlı tur',
-            _byId(draft.fastestLapDriverId),
-          );
-          if (d != null) onChanged(draft.copyWith(fastestLapDriverId: d.id));
-        },
-      ),
-    ),
-    _Section(
       badge: '05',
       label: 'DNF SAYISI',
       points: 'tam +6 / ±1 +3',
       child: _DnfSlider(draft: draft, locked: locked, onChanged: onChanged),
     ),
-    if (joker != null)
+    _Section(
+      badge: '06',
+      label: 'GÜVENLİK ARACI ÇIKAR MI?',
+      points: '+3',
+      child: _SafetyCarPicker(
+        value: draft.safetyCar,
+        locked: locked,
+        onChanged: (value) => onChanged(draft.copyWith(safetyCar: value)),
+      ),
+    ),
+    if (joker != null && race.isJokerWindowOpen)
       _JokerCard(
         joker: joker!,
         draft: draft,
         locked: locked,
         onChanged: onChanged,
+      )
+    else
+      _JokerInfoBanner(
+        opensIn: race.timeUntilJokerOpens,
+        hasQuestion: joker != null,
       ),
   ];
 
@@ -500,7 +648,7 @@ class _PredictionBody extends StatelessWidget {
       _Section(
         badge: '02',
         label: 'SPRINT PODYUM (SIRALI)',
-        points: '+12 + her isim için +4',
+        points: 'isim +4 / sıra +1 / tam +2',
         child: _SprintPodiumPicker(
           drivers: drivers,
           draft: s,
@@ -510,6 +658,20 @@ class _PredictionBody extends StatelessWidget {
       ),
       _Section(
         badge: '03',
+        label: 'EN ÇOK PUAN ALAN TAKIM',
+        points: '+8',
+        child: _TeamChipSlot(
+          team: _teamById(s.topTeamId),
+          hint: 'Sprintte en çok puanı hangi takım toplar?',
+          enabled: !locked,
+          onTap: () async {
+            final team = await _pickTeam(context);
+            if (team != null) onSprintChanged(s.copyWith(topTeamId: team.id));
+          },
+        ),
+      ),
+      _Section(
+        badge: '04',
         label: 'SPRINT POLE',
         points: '+6',
         child: DriverChipSlot(
@@ -527,13 +689,23 @@ class _PredictionBody extends StatelessWidget {
         ),
       ),
       _Section(
-        badge: '04',
+        badge: '05',
         label: 'SPRINT DNF SAYISI',
         points: 'tam +4 / ±1 +2',
         child: _SprintDnfSlider(
           draft: s,
           locked: locked,
           onChanged: onSprintChanged,
+        ),
+      ),
+      _Section(
+        badge: '06',
+        label: 'GÜVENLİK ARACI ÇIKAR MI?',
+        points: '+2',
+        child: _SafetyCarPicker(
+          value: s.safetyCar,
+          locked: locked,
+          onChanged: (value) => onSprintChanged(s.copyWith(safetyCar: value)),
         ),
       ),
     ];
@@ -614,6 +786,23 @@ class _PredictionBody extends StatelessWidget {
               ),
               child: Row(
                 children: [
+                  if (onClear != null) ...[
+                    IconButton(
+                      tooltip: 'Tahmini temizle',
+                      onPressed: locked || saving ? null : onClear,
+                      style: IconButton.styleFrom(
+                        backgroundColor: const Color(0xFF1F1F2E),
+                        foregroundColor: Colors.white,
+                        disabledForegroundColor: const Color(0x80FFFFFF),
+                        padding: const EdgeInsets.all(14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      icon: const Icon(Icons.delete_outline, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
                   if (onCopyToOtherLeagues != null) ...[
                     IconButton(
                       tooltip: 'Diğer liglere kopyala',
@@ -710,34 +899,11 @@ class _Header extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(flagFor(race.name), style: const TextStyle(fontSize: 16)),
-              if (isSprintMode) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.lockOrange.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: AppColors.lockOrange, width: 1),
-                  ),
-                  child: const Text(
-                    'Sprint',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.lockOrange,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
           const SizedBox(height: 4),
           Text(
-            race.name,
+            isSprintMode ? '${race.name} · Sprint' : race.name,
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w900,
@@ -1185,8 +1351,8 @@ class _DnfSlider extends StatelessWidget {
             child: Slider(
               value: value,
               min: 0,
-              max: 20,
-              divisions: 20,
+              max: 22,
+              divisions: 22,
               onChanged: locked
                   ? null
                   : (v) => onChanged(draft.copyWith(dnfCount: v.toInt())),
@@ -1203,7 +1369,7 @@ class _DnfSlider extends StatelessWidget {
                 ),
               ),
               Text(
-                '20',
+                '22',
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.white.withValues(alpha: 0.4),
@@ -1212,6 +1378,288 @@ class _DnfSlider extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TeamChoice {
+  final String id;
+  final String code;
+  final String name;
+  final String? color;
+
+  const _TeamChoice({
+    required this.id,
+    required this.code,
+    required this.name,
+    this.color,
+  });
+}
+
+Color _teamColor(String? hex) {
+  if (hex == null || hex.isEmpty) return const Color(0xFF6E6E80);
+  final clean = hex.replaceAll('#', '');
+  final value = int.tryParse(clean, radix: 16);
+  if (value == null) return const Color(0xFF6E6E80);
+  return clean.length == 6 ? Color(0xFFFF000000 | value) : Color(value);
+}
+
+class _TeamChipSlot extends StatelessWidget {
+  final _TeamChoice? team;
+  final String hint;
+  final bool enabled;
+  final VoidCallback? onTap;
+
+  const _TeamChipSlot({
+    required this.team,
+    required this.hint,
+    this.enabled = true,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = team;
+    if (selected != null) {
+      final color = _teamColor(selected.color);
+      return InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1F1F2E),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color.withValues(alpha: 0.7), width: 1),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 6,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      selected.code.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    Text(
+                      selected.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white60,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: Colors.white.withValues(alpha: 0.45),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1F1F2E),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.white24),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.add, color: Colors.white54, size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                hint,
+                style: const TextStyle(
+                  color: Colors.white60,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              size: 18,
+              color: Colors.white.withValues(alpha: 0.35),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Future<_TeamChoice?> _showTeamPicker(
+  BuildContext context, {
+  required List<_TeamChoice> teams,
+  _TeamChoice? selected,
+}) {
+  return showModalBottomSheet<_TeamChoice>(
+    context: context,
+    backgroundColor: const Color(0xFF15151E),
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      return DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.45,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) {
+          return Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Takım seç',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  itemCount: teams.length,
+                  itemBuilder: (context, index) {
+                    final team = teams[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _TeamChipSlot(
+                        team: team,
+                        hint: team.name,
+                        onTap: () => Navigator.pop(context, team),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
+class _SafetyCarPicker extends StatelessWidget {
+  final bool? value;
+  final bool locked;
+  final ValueChanged<bool> onChanged;
+
+  const _SafetyCarPicker({
+    required this.value,
+    required this.locked,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _BooleanOption(
+            label: 'Evet',
+            selected: value == true,
+            enabled: !locked,
+            onTap: () => onChanged(true),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _BooleanOption(
+            label: 'Hayır',
+            selected: value == false,
+            enabled: !locked,
+            onTap: () => onChanged(false),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BooleanOption extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  const _BooleanOption({
+    required this.label,
+    required this.selected,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: enabled ? 1 : 0.55,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.f1Red : const Color(0xFF1F1F2E),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: selected ? AppColors.f1Red : Colors.white24,
+              width: 1.5,
+            ),
+          ),
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+          ),
+        ),
       ),
     );
   }
@@ -1346,6 +1794,104 @@ class _JokerCard extends StatelessWidget {
                     ),
                   ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _JokerInfoBanner extends StatelessWidget {
+  final Duration opensIn;
+  final bool hasQuestion;
+
+  const _JokerInfoBanner({required this.opensIn, required this.hasQuestion});
+
+  String _formatRemaining(Duration d) {
+    if (d.isNegative || d == Duration.zero) return 'çok yakında';
+    if (d.inDays >= 1) {
+      final days = d.inDays;
+      final hours = d.inHours - days * 24;
+      if (hours == 0) return '$days gün';
+      return '$days g $hours s';
+    }
+    if (d.inHours >= 1) {
+      final hours = d.inHours;
+      final minutes = d.inMinutes - hours * 60;
+      if (minutes == 0) return '$hours saat';
+      return '$hours s $minutes dk';
+    }
+    return '${d.inMinutes} dk';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final showCountdown = opensIn > Duration.zero;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A26),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: const Color(0xFFE10600).withValues(alpha: 0.45),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE10600).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.lock_clock,
+                size: 18,
+                color: Color(0xFFE10600),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'JOKER SORUSU',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    hasQuestion
+                        ? 'Joker sorusu, tahmin kilitlenmeden 1 gün önce açılır.'
+                        : 'Bu yarış için joker sorusu, tahmin kilitlenmeden 1 gün önce açılır.',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xCCFFFFFF),
+                      height: 1.35,
+                    ),
+                  ),
+                  if (showCountdown) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      'Açılmasına: ${_formatRemaining(opensIn)}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFE10600),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ],
         ),
@@ -1494,17 +2040,45 @@ class _SprintDnfSlider extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Slider(
-            value: value,
-            min: 0,
-            max: 12,
-            divisions: 12,
-            label: '${value.toInt()}',
-            activeColor: const Color(0xFFE10600),
-            onChanged: locked
-                ? null
-                : (v) => onChanged(draft.copyWith(dnfCount: v.toInt())),
+          const SizedBox(height: 16),
+          SliderTheme(
+            data: SliderThemeData(
+              activeTrackColor: const Color(0xFFE10600),
+              inactiveTrackColor: const Color(0xFF15151E),
+              thumbColor: const Color(0xFFE10600),
+              overlayColor: const Color(0x33E10600),
+              trackHeight: 8,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+            ),
+            child: Slider(
+              value: value,
+              min: 0,
+              max: 22,
+              divisions: 22,
+              label: '${value.toInt()}',
+              onChanged: locked
+                  ? null
+                  : (v) => onChanged(draft.copyWith(dnfCount: v.toInt())),
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '0',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.4),
+                ),
+              ),
+              Text(
+                '22',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.4),
+                ),
+              ),
+            ],
           ),
         ],
       ),

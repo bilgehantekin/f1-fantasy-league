@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/error_messages.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/app_state.dart';
 import 'league_controller.dart';
 
 class LeaguesScreen extends ConsumerStatefulWidget {
@@ -27,6 +28,7 @@ class _LeaguesScreenState extends ConsumerState<LeaguesScreen> {
         toolbarHeight: 56,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 20),
+          tooltip: 'Geri',
           onPressed: () =>
               context.canPop() ? context.pop() : context.go('/calendar'),
         ),
@@ -49,18 +51,18 @@ class _LeaguesScreenState extends ConsumerState<LeaguesScreen> {
           _SectionTitle(label: 'AKTİF LİGLERİM'),
           const SizedBox(height: 12),
           leagues.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
+            loading: () => const AppLoadingState(label: 'Ligler yükleniyor'),
+            error: (e, _) => AppErrorState(
+              message: friendlyError(e),
+              onRetry: () => ref.invalidate(myLeaguesProvider),
+            ),
             data: (list) {
               if (list.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    'Henüz bir ligin yok. Ana ekrandan lig oluşturabilir veya davet koduyla lige katılabilirsin.',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
-                    ),
-                  ),
+                return const AppEmptyState(
+                  icon: Icons.groups_outlined,
+                  title: 'Henüz bir ligin yok',
+                  message:
+                      'Ana ekrandan lig oluşturabilir veya davet koduyla lige katılabilirsin.',
                 );
               }
               return Column(

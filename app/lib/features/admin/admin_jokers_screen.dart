@@ -44,7 +44,8 @@ class AdminJokersScreen extends ConsumerWidget {
                   child: races.when(
                     loading: () =>
                         const Center(child: CircularProgressIndicator()),
-                    error: (e, _) => Center(child: Text('Hata: $e')),
+                    error: (e, _) =>
+                        Center(child: Text('Hata: ${friendlyError(e)}')),
                     data: (list) => TabBarView(
                       children: [
                         ListView.builder(
@@ -84,7 +85,7 @@ class _RaceDataTile extends ConsumerWidget {
         ),
         error: (e, _) => ListTile(
           title: Text('R${race.round} · ${race.name}'),
-          subtitle: Text('Hata: $e'),
+          subtitle: Text('Hata: ${friendlyError(e)}'),
         ),
         data: (a) => ListTile(
           title: Text('R${race.round} · ${race.name}'),

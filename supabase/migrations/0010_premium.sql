@@ -1,4 +1,4 @@
--- PitWall — Premium üyelik
+-- GridCall — Premium üyelik
 
 create type public.user_tier as enum ('free', 'premium');
 

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:app/core/notifications.dart';
+import 'package:gridcall/core/notifications.dart';
 
 void main() {
   group('stableNotificationId', () {

@@ -1,4 +1,4 @@
--- PitWall — bildirim log tablosu (idempotent reminder göndermek için)
+-- GridCall — bildirim log tablosu (idempotent reminder göndermek için)
 
 create table public.notifications_log (
   id uuid primary key default gen_random_uuid(),

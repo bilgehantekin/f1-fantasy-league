@@ -1,8 +1,8 @@
 import 'package:url_launcher/url_launcher.dart';
 
 class LegalLinks {
-  static final privacy = Uri.parse('https://pitwall.app/privacy');
-  static final terms = Uri.parse('https://pitwall.app/terms');
+  static final privacy = Uri.parse('https://gridcall.app/privacy');
+  static final terms = Uri.parse('https://gridcall.app/terms');
 
   const LegalLinks._();
 }

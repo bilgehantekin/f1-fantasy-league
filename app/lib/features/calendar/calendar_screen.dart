@@ -6,6 +6,7 @@ import '../../core/error_messages.dart';
 import '../../core/notifications.dart';
 import '../../core/theme.dart';
 import '../../shared/models.dart';
+import '../../shared/widgets/app_state.dart';
 import '../../shared/widgets/race_card_new.dart';
 import '../admin/admin_controller.dart';
 import '../league/league_action_dialogs.dart';
@@ -62,7 +63,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.carbon,
         title: Text(
-          'PIT WALL',
+          'GRIDCALL',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontSize: 22,
             fontWeight: FontWeight.w900,
@@ -84,11 +85,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               tooltip: 'Admin - Joker',
               onPressed: () => context.push('/admin/jokers'),
             ),
-          IconButton(
-            icon: const Icon(Icons.groups_outlined, size: 20),
-            tooltip: 'Liglerim',
-            onPressed: () => context.push('/leagues'),
-          ),
           IconButton(
             icon: const Icon(Icons.person_outline, size: 20),
             tooltip: 'Profil',
@@ -446,41 +442,162 @@ class _RacesSection extends StatelessWidget {
                 text: 'Bu sezon için yarış bulunamadı.',
               );
             }
-            final cards = buildOrderedRaceCards(list);
+            final visibleRaces = buildPreviousAndNextRaces(list);
             return Column(
               children: [
-                for (final entry in cards)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Builder(
-                      builder: (context) {
-                        final race = entry.race;
-                        final isSprint = entry.kind == RaceCardKind.sprint;
-                        final status = effectiveRaceCardStatus(entry);
-                        final modeQp = isSprint ? '?mode=sprint' : '';
-                        return RaceCardNew(
-                          race: race,
-                          kind: entry.kind,
-                          showLeagueContext: false,
-                          onTap: () {
-                            if (status == RaceStatus.finished ||
-                                status == RaceStatus.cancelled) {
-                              context.push('/race/${race.id}/results$modeQp');
-                            } else if (status == RaceStatus.live) {
-                              context.push('/race/${race.id}/live$modeQp');
-                            } else {
-                              context.push('/race/${race.id}/predict$modeQp');
-                            }
-                          },
-                        );
-                      },
-                    ),
+                for (var i = 0; i < visibleRaces.length; i++) ...[
+                  _RaceScopeLabel(
+                    label:
+                        i == 0 &&
+                            !visibleRaces[i].raceAt.isAfter(DateTime.now())
+                        ? 'Önceki yarış'
+                        : 'Sonraki yarış',
                   ),
+                  const SizedBox(height: 8),
+                  RaceCardNew(
+                    race: visibleRaces[i],
+                    showLeagueContext: false,
+                    onTap: () => _openCalendarRace(context, visibleRaces[i]),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showAllRacesSheet(context, list),
+                    icon: const Icon(Icons.calendar_month_outlined, size: 18),
+                    label: const Text('Tüm yarışlar'),
+                  ),
+                ),
               ],
             );
           },
         ),
       ],
+    );
+  }
+
+  Future<void> _openCalendarRace(
+    BuildContext context,
+    Race race, {
+    BuildContext? pickerContext,
+    bool closePickerContextBeforeNavigate = false,
+  }) async {
+    final sourceContext = pickerContext ?? context;
+    final kind = await showRaceKindPicker(
+      sourceContext,
+      race: race,
+      title: 'Yarış seç',
+    );
+    if (kind == null) return;
+    if (closePickerContextBeforeNavigate && sourceContext.mounted) {
+      Navigator.of(sourceContext).pop();
+    }
+    if (!context.mounted) return;
+    final entry = (race: race, kind: kind);
+    final status = effectiveRaceCardStatus(entry);
+    final modeQp = kind == RaceCardKind.sprint ? '?mode=sprint' : '';
+    if (status == RaceStatus.finished || status == RaceStatus.cancelled) {
+      context.push('/race/${race.id}/results$modeQp');
+    } else if (status == RaceStatus.live) {
+      context.push('/race/${race.id}/live$modeQp');
+    } else {
+      context.push('/race/${race.id}/lineup$modeQp');
+    }
+  }
+
+  void _showAllRacesSheet(BuildContext context, List<Race> races) {
+    final pageContext = context;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.carbon,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) {
+        final sorted = [...races]..sort((a, b) => a.raceAt.compareTo(b.raceAt));
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.88,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          builder: (context, scrollController) {
+            return Column(
+              children: [
+                const SizedBox(height: 10),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 18, 8, 12),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: _SectionHeader(title: 'TÜM YARIŞLAR'),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    controller: scrollController,
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    itemCount: sorted.length,
+                    itemBuilder: (context, index) {
+                      final race = sorted[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: RaceCardNew(
+                          race: race,
+                          showLeagueContext: false,
+                          onTap: () => _openCalendarRace(
+                            pageContext,
+                            race,
+                            pickerContext: sheetContext,
+                            closePickerContextBeforeNavigate: true,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _RaceScopeLabel extends StatelessWidget {
+  final String label;
+
+  const _RaceScopeLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        label.toUpperCase(),
+        style: const TextStyle(
+          color: Color(0x99FFFFFF),
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 1.2,
+        ),
+      ),
     );
   }
 }
@@ -821,10 +938,7 @@ class _SectionLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.all(20),
-      child: Center(child: CircularProgressIndicator()),
-    );
+    return const AppLoadingState(label: 'Veriler yükleniyor');
   }
 }
 
@@ -835,10 +949,7 @@ class _SectionError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Text('Hata: ${friendlyError(error)}'),
-    );
+    return AppErrorState(message: friendlyError(error));
   }
 }
 
@@ -849,12 +960,10 @@ class _EmptySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Text(
-        text,
-        style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
-      ),
+    return AppEmptyState(
+      icon: Icons.sports_score_outlined,
+      title: 'Henüz veri yok',
+      message: text,
     );
   }
 }

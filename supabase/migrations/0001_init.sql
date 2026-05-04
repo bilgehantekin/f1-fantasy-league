@@ -1,4 +1,4 @@
--- PitWall — foundations: profiles, seasons, teams, drivers, races, joker questions
+-- GridCall — foundations: profiles, seasons, teams, drivers, races, joker questions
 
 create extension if not exists "pgcrypto";
 

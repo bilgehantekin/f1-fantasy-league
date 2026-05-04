@@ -41,7 +41,7 @@ class WeeklySummaryShareCard extends StatelessWidget {
                 Container(width: 16, height: 64, color: AppColors.f1Red),
                 const SizedBox(width: 24),
                 const Text(
-                  'PIT WALL',
+                  'GRIDCALL',
                   style: TextStyle(
                     fontSize: 48,
                     fontWeight: FontWeight.w900,
@@ -221,7 +221,7 @@ class WeeklySummaryShareCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'EN ÇOK SEÇİLEN',
+                        'EN ÇOK PUAN KAZANDIRAN',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,

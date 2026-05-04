@@ -6,6 +6,7 @@ import '../../core/error_messages.dart';
 import '../../core/navigation.dart';
 import '../../core/theme.dart';
 import '../../shared/models.dart';
+import '../../shared/widgets/app_state.dart';
 import '../../shared/widgets/live_pulse_dot.dart';
 import '../prediction/prediction_controller.dart';
 import 'live_controller.dart';
@@ -31,6 +32,7 @@ class LiveRaceScreen extends ConsumerWidget {
         toolbarHeight: 56,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 20),
+          tooltip: 'Geri',
           onPressed: () => safeBack(context),
         ),
         title: Row(
@@ -60,14 +62,24 @@ class LiveRaceScreen extends ConsumerWidget {
         ),
       ),
       body: raceAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
+        loading: () => const AppLoadingState(label: 'Canlı ekran yükleniyor'),
+        error: (e, _) => AppErrorState(
+          message: friendlyError(e),
+          onRetry: () => ref.invalidate(raceProvider(raceId)),
+        ),
         data: (race) => driversAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
+          loading: () => const AppLoadingState(label: 'Sürücüler yükleniyor'),
+          error: (e, _) => AppErrorState(
+            message: friendlyError(e),
+            onRetry: () => ref.invalidate(driversProvider),
+          ),
           data: (drivers) => positionsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
+            loading: () =>
+                const AppLoadingState(label: 'Canlı veri yükleniyor'),
+            error: (e, _) => AppErrorState(
+              message: friendlyError(e),
+              onRetry: () => ref.invalidate(livePositionsProvider(raceId)),
+            ),
             data: (positions) {
               final prediction = predictionAsync.asData?.value;
               final comparisons = buildComparisons(

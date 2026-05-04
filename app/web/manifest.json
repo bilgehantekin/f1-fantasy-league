@@ -1,11 +1,11 @@
 {
-    "name": "app",
-    "short_name": "app",
+    "name": "GridCall",
+    "short_name": "GridCall",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "PitWall — F1 tahmin uygulamasi",
+    "description": "GridCall — F1 prediction league",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -1,28 +1,28 @@
-# Terms of Service for PitWall
+# Terms of Service for GridCall
 
 **Last Updated**: May 2, 2026  
 **Effective Date**: June 1, 2026
 
 ## 1. Agreement to Terms
 
-By downloading, installing, or using PitWall ("**Service**," "**App**," or "**Application**"), you agree to be bound by these Terms of Service ("**Terms**"). If you do not agree to these Terms, do not use the Service.
+By downloading, installing, or using GridCall ("**Service**," "**App**," or "**Application**"), you agree to be bound by these Terms of Service ("**Terms**"). If you do not agree to these Terms, do not use the Service.
 
-**PitWall** ("**Company**," "**we**," "**us**," "**our**") reserves the right to modify these Terms at any time. Changes become effective when posted. Your continued use of the Service constitutes acceptance.
+**GridCall** ("**Company**," "**we**," "**us**," "**our**") reserves the right to modify these Terms at any time. Changes become effective when posted. Your continued use of the Service constitutes acceptance.
 
 ---
 
 ## 2. Description of Service
 
-### 2.1 What is PitWall?
+### 2.1 What is GridCall?
 
-PitWall is a mobile application that enables users to:
+GridCall is a mobile application that enables users to:
 - Make predictions about Formula 1 race outcomes (driver grid positions, finishes)
 - Create private leagues with friends
 - Track and compare prediction scores with other users
 - View official F1 race schedules and results
 - Participate in seasonal competitions
 
-**PitWall is for entertainment purposes only.** Predictions do not constitute gambling, betting, or financial transactions.
+**GridCall is for entertainment purposes only.** Predictions do not constitute gambling, betting, or financial transactions.
 
 ### 2.2 Service Availability
 
@@ -39,7 +39,7 @@ We may modify, suspend, or terminate the Service with reasonable notice.
 
 ### 3.1 Account Creation
 
-To use PitWall, you must create an account by:
+To use GridCall, you must create an account by:
 - Email signup (email + password), OR
 - Sign in with Google, OR
 - Sign in with Apple
@@ -182,7 +182,7 @@ In leagues, you must:
 
 ### 6.1 Company IP
 
-All content in PitWall is owned by us or our licensors:
+All content in GridCall is owned by us or our licensors:
 - App design, code, and functionality
 - Graphics, logos, and branding
 - Documentation and help content
@@ -240,7 +240,7 @@ Some jurisdictions do not allow exclusion of implied warranties. In those cases,
 
 ### 8.1 Integration with Third Parties
 
-PitWall uses:
+GridCall uses:
 - **Google & Apple**: Sign-in services
 - **OpenF1 API**: F1 race data and results
 - **Supabase**: Database and authentication infrastructure
@@ -254,7 +254,7 @@ We are not responsible for:
 
 ### 8.2 Links to Third-Party Sites
 
-PitWall may contain links to third-party websites. We are not responsible for:
+GridCall may contain links to third-party websites. We are not responsible for:
 - Content or accuracy of third-party sites
 - Availability of third-party sites
 - Third-party terms and policies
@@ -298,7 +298,7 @@ We retain:
 
 ### 10.2 Subscription Terms (If Applicable)
 
-If PitWall offers premium features:
+If GridCall offers premium features:
 - Subscription renews automatically unless cancelled
 - Cancellation available anytime in app settings
 - Refunds issued per App Store policy (Apple/Google)
@@ -333,7 +333,7 @@ These Terms are governed by the laws of United States, without regard to conflic
 ### 12.2 Dispute Resolution
 
 **Before Litigation**:
-- Contact us first: privacy@pitwall.app
+- Contact us first: privacy@gridcall.app
 - Allow 30 days for resolution attempts
 - Both parties agree to negotiate in good faith
 
@@ -372,13 +372,13 @@ If there's any conflict between these Terms and other documents, these Terms con
 ### 15.1 Customer Support
 
 For questions or support:
-- **Email**: privacy@pitwall.app
+- **Email**: privacy@gridcall.app
 - **Response Time**: 5-7 business days
 
 ### 15.2 Legal Notices
 
 Formal legal notices can be sent to:
-- **Email**: privacy@pitwall.app
+- **Email**: privacy@gridcall.app
 
 Notice is effective when email is sent.
 
@@ -388,7 +388,7 @@ Notice is effective when email is sent.
 
 ### 16.1 Related Agreements
 
-By using PitWall, you also agree to:
+By using GridCall, you also agree to:
 - **Privacy Policy**: [Link to privacy policy]
 - **App Store Terms**: Apple App Store or Google Play Store terms
 
@@ -411,7 +411,7 @@ We reserve the right to amend these Terms. Changes take effect when posted. Cont
 ### 17.3 Interpretation
 
 - "You" / "Your" = you and any authorized representative
-- "We" / "Us" = PitWall and its affiliates/partners
+- "We" / "Us" = GridCall and its affiliates/partners
 - Section headings are for convenience only
 
 ---
@@ -426,14 +426,14 @@ We reserve the right to amend these Terms. Changes take effect when posted. Cont
 
 ### 18.2 EULA Compliance
 
-PitWall complies with:
+GridCall complies with:
 - Apple App Store End-User License Agreement
 - Google Play Terms of Service
 - Industry best practices
 
 ---
 
-**PitWall Terms of Service**  
+**GridCall Terms of Service**  
 Last Updated: May 2, 2026  
 Effective: June 1, 2026  
 Status: ✅ App Store Ready | ✅ Legally Compliant
@@ -442,10 +442,10 @@ Status: ✅ App Store Ready | ✅ Legally Compliant
 
 ## Acknowledgment
 
-**By downloading and using PitWall, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.**
+**By downloading and using GridCall, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.**
 
-If you have questions, please contact: privacy@pitwall.app
+If you have questions, please contact: privacy@gridcall.app
 
 ---
 
-*This Terms of Service was created to comply with app store requirements and provide a fair agreement between PitWall and its users.*
+*This Terms of Service was created to comply with app store requirements and provide a fair agreement between GridCall and its users.*

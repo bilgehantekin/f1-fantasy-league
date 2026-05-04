@@ -2,7 +2,7 @@ class Env {
   static const appEnv = String.fromEnvironment('APP_ENV', defaultValue: 'dev');
   static const appBaseUrl = String.fromEnvironment(
     'APP_BASE_URL',
-    defaultValue: 'https://pitwall.app',
+    defaultValue: 'https://gridcall.app',
   );
   static const supabaseUrl = String.fromEnvironment(
     'SUPABASE_URL',
@@ -19,7 +19,7 @@ class Env {
   );
   static const oauthRedirectUrl = String.fromEnvironment(
     'OAUTH_REDIRECT_URL',
-    defaultValue: 'io.supabase.pitwall://auth-callback',
+    defaultValue: 'io.supabase.gridcall://auth-callback',
   );
   static const enableDemoContent = bool.fromEnvironment(
     'ENABLE_DEMO_CONTENT',

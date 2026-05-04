@@ -1,4 +1,4 @@
--- PitWall — yarış sonrası rozet değerlendirme
+-- GridCall — yarış sonrası rozet değerlendirme
 
 create or replace function public.evaluate_race_badges(p_race_id uuid)
 returns int language plpgsql security definer set search_path = public as $$

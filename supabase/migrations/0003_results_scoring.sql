@@ -1,4 +1,4 @@
--- PitWall — predictions, race_results, lock invariant, scoring, standings
+-- GridCall — predictions, race_results, lock invariant, scoring, standings
 
 create table public.predictions (
   id uuid primary key default gen_random_uuid(),

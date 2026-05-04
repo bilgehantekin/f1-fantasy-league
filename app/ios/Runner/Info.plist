@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>App</string>
+	<string>GridCall</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,18 +15,18 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>app</string>
+	<string>GridCall</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.pitwall.app</string>
+			<string>com.bilgehan.gridcall</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>pitwall</string>
-				<string>io.supabase.pitwall</string>
+				<string>gridcall</string>
+				<string>io.supabase.gridcall</string>
 			</array>
 		</dict>
 	</array>

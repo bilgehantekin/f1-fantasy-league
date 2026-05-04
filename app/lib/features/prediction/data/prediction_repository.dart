@@ -90,6 +90,32 @@ class PredictionRepository {
         );
   }
 
+  Future<void> deletePrediction({
+    required String userId,
+    required String raceId,
+    required String leagueId,
+  }) async {
+    await _client
+        .from('predictions')
+        .delete()
+        .eq('user_id', userId)
+        .eq('race_id', raceId)
+        .eq('league_id', leagueId);
+  }
+
+  Future<void> deleteSprintPrediction({
+    required String userId,
+    required String raceId,
+    required String leagueId,
+  }) async {
+    await _client
+        .from('sprint_predictions')
+        .delete()
+        .eq('user_id', userId)
+        .eq('race_id', raceId)
+        .eq('league_id', leagueId);
+  }
+
   Future<void> copyPredictionToLeagues({
     required String userId,
     Prediction? main,

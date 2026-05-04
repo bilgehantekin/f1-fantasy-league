@@ -35,8 +35,8 @@ on conflict (id) do nothing;
 
 insert into public.leagues (id, name, owner_id, invite_code, season_id)
 values
-  ('10000000-0000-0000-0000-000000000301', 'RLS League', '10000000-0000-0000-0000-000000000201', 'RLS001', 9998),
-  ('10000000-0000-0000-0000-000000000302', 'Other RLS League', '30000000-0000-0000-0000-000000000203', 'RLS002', 9998);
+  ('10000000-0000-0000-0000-000000000301', 'RLS League', '10000000-0000-0000-0000-000000000201', 'RLS001AA', 9998),
+  ('10000000-0000-0000-0000-000000000302', 'Other RLS League', '30000000-0000-0000-0000-000000000203', 'RLS002AA', 9998);
 
 insert into public.league_memberships (league_id, user_id, role)
 values
@@ -181,7 +181,7 @@ select is(
 select set_config('request.jwt.claim.sub', '30000000-0000-0000-0000-000000000203', true);
 set local role authenticated;
 prepare invalid_join_code as
-  select public.join_league_by_code('NOPE00');
+  select public.join_league_by_code('NOPE00AA');
 select throws_ok('invalid_join_code', 'P0002', null, 'invalid private league invite code is rejected server-side');
 
 select set_config('request.jwt.claims', '{"role":"authenticated","sub":"20000000-0000-0000-0000-000000000202"}', true);

@@ -230,7 +230,7 @@ class NotificationService {
     await init();
     await _plugin.show(
       999999,
-      'PitWall test',
+      'GridCall test',
       'Bildirimler çalışıyor 🏎️',
       const NotificationDetails(
         iOS: DarwinNotificationDetails(
@@ -241,7 +241,7 @@ class NotificationService {
           presentList: true,
         ),
         android: AndroidNotificationDetails(
-          'pitwall_general',
+          'gridcall_general',
           'Genel',
           importance: Importance.high,
           priority: Priority.high,
@@ -270,7 +270,7 @@ class NotificationService {
             presentBanner: true,
           ),
           android: AndroidNotificationDetails(
-            'pitwall_reminders',
+            'gridcall_reminders',
             'Hatırlatmalar',
             channelDescription: 'Yarış öncesi tahmin hatırlatmaları',
             importance: Importance.high,

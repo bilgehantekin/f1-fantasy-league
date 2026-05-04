@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/error_messages.dart';
 import '../../core/supabase.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/app_state.dart';
 import 'league_controller.dart';
 
 class LeagueSettingsScreen extends ConsumerWidget {
@@ -21,8 +22,11 @@ class LeagueSettingsScreen extends ConsumerWidget {
       backgroundColor: AppColors.carbon,
       appBar: AppBar(title: const Text('LİG AYARLARI')),
       body: leagueAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
+        loading: () => const AppLoadingState(label: 'Lig ayarları yükleniyor'),
+        error: (e, _) => AppErrorState(
+          message: friendlyError(e),
+          onRetry: () => ref.invalidate(leagueProvider(leagueId)),
+        ),
         data: (league) {
           final currentUserId = supabase.auth.currentUser?.id;
           final isOwner = league.ownerId == currentUserId;
@@ -76,8 +80,13 @@ class LeagueSettingsScreen extends ConsumerWidget {
               const _SectionTitle(label: 'ÜYELER'),
               const SizedBox(height: 12),
               membersAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Text('Hata: ${friendlyError(e)}'),
+                loading: () =>
+                    const AppLoadingState(label: 'Üyeler yükleniyor'),
+                error: (e, _) => AppErrorState(
+                  message: friendlyError(e),
+                  onRetry: () =>
+                      ref.invalidate(leagueMembersProvider(leagueId)),
+                ),
                 data: (members) => Column(
                   children: [
                     for (final member in members)

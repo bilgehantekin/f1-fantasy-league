@@ -136,7 +136,7 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
       }
 
       final fileName =
-          'pitwall_${league.inviteCode.toLowerCase()}_'
+          'gridcall_${league.inviteCode.toLowerCase()}_'
           'r${race.round}'
           '${widget.sprintMode ? '_sprint' : ''}.png';
       final file = File('${Directory.systemTemp.path}/$fileName');
@@ -154,9 +154,9 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Paylaşım hatası: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Paylaşım hatası: ${friendlyError(e)}')),
+      );
     } finally {
       if (mounted) setState(() => _sharing = false);
     }
@@ -170,7 +170,7 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
     final winner = summary.bestPrediction == null
         ? 'Henüz skor yok'
         : '${summary.bestPrediction!.username} (${summary.bestPrediction!.score} puan)';
-    return '$leagueName · $raceName\nKazanan: $winner\nPitWall';
+    return '$leagueName · $raceName\nKazanan: $winner\nGridCall';
   }
 }
 
@@ -239,11 +239,11 @@ class _Body extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         _MetricCard(
-          label: 'EN ÇOK SEÇİLEN SÜRÜCÜ',
+          label: 'EN ÇOK PUAN KAZANDIRAN SÜRÜCÜ',
           value: summary.mostPickedDriver?.code ?? '-',
           subvalue: summary.mostPickedDriver == null
               ? 'Tahmin yok'
-              : '${summary.mostPickedDriver!.fullName} · ${summary.mostPickedDriver!.pickCount} seçim',
+              : '${summary.mostPickedDriver!.fullName} · ${summary.mostPickedDriver!.points} puan',
           accentColor: summary.mostPickedDriver?.color,
         ),
         const SizedBox(height: 24),

@@ -11,6 +11,206 @@ enum RaceCardKind { main, sprint }
 
 typedef RaceCardEntry = ({Race race, RaceCardKind kind});
 
+List<Race> buildPreviousAndNextRaces(List<Race> races, {DateTime? now}) {
+  if (races.isEmpty) return const [];
+  final t = now ?? DateTime.now();
+  final sorted = [...races]..sort((a, b) => a.raceAt.compareTo(b.raceAt));
+  Race? previous;
+  Race? next;
+  for (final race in sorted) {
+    if (!race.raceAt.isAfter(t)) {
+      previous = race;
+    } else {
+      next ??= race;
+    }
+  }
+  final selected = <Race>[];
+  if (previous != null) selected.add(previous);
+  if (next != null && next.id != previous?.id) selected.add(next);
+  return selected;
+}
+
+Future<RaceCardKind?> showRaceKindPicker(
+  BuildContext context, {
+  required Race race,
+  required String title,
+  bool mainSaved = false,
+  bool sprintSaved = false,
+}) {
+  if (!race.hasSprint) {
+    return Future.value(RaceCardKind.main);
+  }
+
+  return showModalBottomSheet<RaceCardKind>(
+    context: context,
+    backgroundColor: AppColors.carbon,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (context) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                race.name,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: const Color(0x99FFFFFF),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _RaceKindOption(
+                label: 'Sprint yarışı',
+                subtitle: _eventSubtitle(
+                  race.sprintRaceAt,
+                  effectiveRaceCardStatus((
+                    race: race,
+                    kind: RaceCardKind.sprint,
+                  )),
+                ),
+                icon: Icons.bolt_outlined,
+                saved: sprintSaved,
+                onTap: () => Navigator.of(context).pop(RaceCardKind.sprint),
+              ),
+              const SizedBox(height: 10),
+              _RaceKindOption(
+                label: 'Ana yarış',
+                subtitle: _eventSubtitle(
+                  race.raceAt,
+                  effectiveRaceCardStatus((
+                    race: race,
+                    kind: RaceCardKind.main,
+                  )),
+                ),
+                icon: Icons.flag_outlined,
+                saved: mainSaved,
+                onTap: () => Navigator.of(context).pop(RaceCardKind.main),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+String _eventSubtitle(DateTime? at, RaceStatus status) {
+  final statusLabel = switch (status) {
+    RaceStatus.upcoming => 'Tahmine açık',
+    RaceStatus.locked => 'Kilitli',
+    RaceStatus.live => 'Canlı',
+    RaceStatus.finished => 'Tamamlandı',
+    RaceStatus.cancelled => 'İptal',
+  };
+  if (at == null) return statusLabel;
+  final date = DateFormat('d MMM HH:mm', 'tr_TR').format(at.toLocal());
+  return '$date · $statusLabel';
+}
+
+class _RaceKindOption extends StatelessWidget {
+  final String label;
+  final String subtitle;
+  final IconData icon;
+  final bool saved;
+  final VoidCallback onTap;
+
+  const _RaceKindOption({
+    required this.label,
+    required this.subtitle,
+    required this.icon,
+    required this.saved,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFF1A1A26),
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF15151E),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: AppColors.f1Red, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        if (saved) ...[
+                          const SizedBox(width: 8),
+                          const _PredictionBadge(),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0x99FFFFFF),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: Color(0x66FFFFFF)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Bir Race listesini sprint kartlarını da üreterek sıralar.
 ///
 /// `pinFeaturedRace = false` (ana ekran): tüm kartlar kronolojik (eski → yeni).
@@ -112,8 +312,6 @@ class RaceCardNew extends StatelessWidget {
       _isSprint ? race.sprintQualifyingAt : race.qualifyingAt;
 
   DateTime? get _raceAt => _isSprint ? race.sprintRaceAt : race.raceAt;
-
-  DateTime? get _lockAt => _isSprint ? race.sprintLockAt : race.lockAt;
 
   @override
   Widget build(BuildContext context) {
@@ -225,13 +423,21 @@ class RaceCardNew extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  _isSprint ? '${race.name} · Sprint' : race.name,
-                  style: tt.headlineMedium?.copyWith(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.3,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _isSprint ? '${race.name} · Sprint' : race.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: tt.headlineMedium?.copyWith(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -262,25 +468,9 @@ class RaceCardNew extends StatelessWidget {
   }
 
   Widget _buildUpcomingContent(BuildContext context) {
-    final lockAt = _lockAt;
-    final now = DateTime.now();
-    final diff = lockAt != null
-        ? lockAt.difference(now)
-        : const Duration(seconds: -1);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (!diff.isNegative && _status != RaceStatus.locked)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _CountdownTimer(
-              days: diff.inDays,
-              hours: diff.inHours % 24,
-              minutes: diff.inMinutes % 60,
-              seconds: diff.inSeconds % 60,
-            ),
-          ),
         _buildScheduleRow(context),
         if (actionLabel != null) ...[
           const SizedBox(height: 12),
@@ -530,16 +720,16 @@ class _PredictionBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const color = AppColors.lockGreen;
+    const color = AppColors.lockOrange;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: color.withValues(alpha: 0.7), width: 1),
       ),
       child: const Text(
-        'KAYITLI',
+        'TAHMİN YAPILDI',
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w900,
@@ -547,91 +737,6 @@ class _PredictionBadge extends StatelessWidget {
           letterSpacing: 0.8,
         ),
       ),
-    );
-  }
-}
-
-class _CountdownTimer extends StatelessWidget {
-  final int days;
-  final int hours;
-  final int minutes;
-  final int seconds;
-
-  const _CountdownTimer({
-    required this.days,
-    required this.hours,
-    required this.minutes,
-    required this.seconds,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final tt = Theme.of(context).textTheme;
-
-    return Row(
-      children: [
-        _TimeUnit(value: days, label: 'G'),
-        const SizedBox(width: 4),
-        _TimeUnit(value: hours, label: 'S'),
-        const SizedBox(width: 4),
-        _TimeUnit(value: minutes, label: 'D'),
-        const SizedBox(width: 4),
-        _TimeUnit(value: seconds, label: 'S'),
-        const SizedBox(width: 16),
-        Text(
-          'KAPANMAYA',
-          style: tt.labelSmall?.copyWith(
-            color: AppColors.lockGreen,
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TimeUnit extends StatelessWidget {
-  final int value;
-  final String label;
-
-  const _TimeUnit({required this.value, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final tt = Theme.of(context).textTheme;
-
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.lockGreen,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          constraints: const BoxConstraints(minWidth: 36),
-          child: Center(
-            child: Text(
-              value.toString().padLeft(2, '0'),
-              style: tt.titleLarge?.copyWith(
-                color: Colors.black,
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                height: 1.0,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: tt.labelSmall?.copyWith(
-            color: const Color(0x66FFFFFF),
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
     );
   }
 }

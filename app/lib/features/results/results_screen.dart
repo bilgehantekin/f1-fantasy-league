@@ -5,6 +5,7 @@ import '../../core/navigation.dart';
 import '../../core/supabase.dart';
 import '../../core/theme.dart';
 import '../../shared/models.dart';
+import '../../shared/widgets/app_state.dart';
 import '../prediction/prediction_controller.dart';
 
 final raceResultProvider = FutureProvider.autoDispose
@@ -87,6 +88,7 @@ class ResultsScreen extends ConsumerWidget {
         leadingWidth: 56,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 20),
+          tooltip: 'Geri',
           onPressed: () => safeBack(
             context,
             fallbackLocation: leagueId == null
@@ -118,11 +120,17 @@ class ResultsScreen extends ConsumerWidget {
         ),
       ),
       body: raceAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
+        loading: () => const AppLoadingState(label: 'Sonuçlar yükleniyor'),
+        error: (e, _) => AppErrorState(
+          message: friendlyError(e),
+          onRetry: () => ref.invalidate(raceProvider(raceId)),
+        ),
         data: (race) => driversAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
+          loading: () => const AppLoadingState(label: 'Sürücüler yükleniyor'),
+          error: (e, _) => AppErrorState(
+            message: friendlyError(e),
+            onRetry: () => ref.invalidate(driversProvider),
+          ),
           data: (drivers) {
             Driver? byId(String? id) {
               if (id == null) return null;
@@ -184,7 +192,7 @@ class ResultsScreen extends ConsumerWidget {
                     ),
                   const SizedBox(height: 24),
                 ],
-                _SectionTitle(label: 'GERÇEK SONUÇLAR'),
+                _SectionTitle(label: 'SONUÇLAR'),
                 if (result != null)
                   _ActualResults(
                     result: result,
@@ -372,16 +380,34 @@ class _SprintScoreBreakdown extends StatelessWidget {
       return '-';
     }
 
-    final podiumExact =
-        p.p1Id == r['p1'] && p.p2Id == r['p2'] && p.p3Id == r['p3'];
+    String teamName(String? id) {
+      if (id == null) return '-';
+      for (final d in drivers) {
+        if (d.teamId == id) return d.teamName ?? d.teamCode ?? '-';
+      }
+      return '-';
+    }
+
+    final actualPodiumOrdered = [r['p1'], r['p2'], r['p3']];
     final actualPodium = {r['p1'], r['p2'], r['p3']};
     final predictedPodium = [p.p1Id, p.p2Id, p.p3Id];
     final podiumNames = predictedPodium.whereType<String>().toList();
     final podiumHits = podiumNames.where(actualPodium.contains).length;
+    var exactPodiumHits = 0;
+    for (var i = 0; i < 3; i++) {
+      if (predictedPodium[i] != null &&
+          predictedPodium[i] == actualPodiumOrdered[i]) {
+        exactPodiumHits++;
+      }
+    }
+    final podiumExact = exactPodiumHits == 3;
+    final sprintPodiumPoints =
+        podiumHits * 4 + exactPodiumHits * 1 + (podiumExact ? 2 : 0);
     final actualDnf = (r['dnf_count'] as num?)?.toInt();
     final dnfDiff = p.dnfCount == null || actualDnf == null
         ? null
         : (p.dnfCount! - actualDnf).abs();
+    final actualSafetyCar = r['safety_car'] as bool?;
 
     return [
       _BreakdownData(
@@ -394,12 +420,20 @@ class _SprintScoreBreakdown extends StatelessWidget {
       ),
       _BreakdownData(
         label: 'Sprint podyum: ${podiumNames.map(code).join(' ')}',
-        points: (podiumExact ? 12 : 0) + podiumHits * 4,
+        points: sprintPodiumPoints,
         status: podiumExact
             ? 'correct'
             : (podiumHits > 0 ? 'partial' : 'wrong'),
         note:
-            '$podiumHits/3 sürücü podyumda${podiumExact ? ' · sıra tam' : ''}',
+            '$podiumHits/3 isim · $exactPodiumHits/3 sıra${podiumExact ? ' · tam bonus' : ''}',
+      ),
+      _BreakdownData(
+        label: 'Takım: ${teamName(p.topTeamId)}',
+        points: p.topTeamId == r['top_team_id'] ? 8 : 0,
+        status: p.topTeamId == r['top_team_id'] ? 'correct' : 'wrong',
+        note: p.topTeamId == r['top_team_id']
+            ? null
+            : '(Doğru: ${teamName(r['top_team_id'] as String?)})',
       ),
       _BreakdownData(
         label: 'Sprint pole: ${code(p.poleDriverId)}',
@@ -414,6 +448,22 @@ class _SprintScoreBreakdown extends StatelessWidget {
         points: dnfDiff == 0 ? 4 : (dnfDiff == 1 ? 2 : 0),
         status: dnfDiff == 0 ? 'correct' : (dnfDiff == 1 ? 'partial' : 'wrong'),
         note: actualDnf == null ? null : '(Gerçek: $actualDnf)',
+      ),
+      _BreakdownData(
+        label:
+            'Güvenlik aracı: ${p.safetyCar == null ? '-' : (p.safetyCar! ? 'Evet' : 'Hayır')}',
+        points:
+            p.safetyCar != null &&
+                actualSafetyCar != null &&
+                p.safetyCar == actualSafetyCar
+            ? 2
+            : 0,
+        status: actualSafetyCar == null
+            ? 'pending'
+            : (p.safetyCar == actualSafetyCar ? 'correct' : 'wrong'),
+        note: actualSafetyCar == null
+            ? null
+            : '(Gerçek: ${actualSafetyCar ? 'Evet' : 'Hayır'})',
       ),
     ];
   }
@@ -536,20 +586,34 @@ class _ScoreBreakdown extends StatelessWidget {
       return '-';
     }
 
-    bool podiumExact =
-        prediction.p1Id == result['p1'] &&
-        prediction.p2Id == result['p2'] &&
-        prediction.p3Id == result['p3'];
-    final actualPodium = {result['p1'], result['p2'], result['p3']};
+    String teamName(String? id) {
+      if (id == null) return '-';
+      for (final d in drivers) {
+        if (d.teamId == id) return d.teamName ?? d.teamCode ?? '-';
+      }
+      return '-';
+    }
+
+    final actualPodium = [result['p1'], result['p2'], result['p3']];
     final predictedPodium = [prediction.p1Id, prediction.p2Id, prediction.p3Id];
     final podiumNames = predictedPodium.whereType<String>().toList();
     final podiumHits = podiumNames
         .where((id) => actualPodium.contains(id))
         .length;
+    var exactPodiumHits = 0;
+    for (var i = 0; i < 3; i++) {
+      if (predictedPodium[i] != null && predictedPodium[i] == actualPodium[i]) {
+        exactPodiumHits++;
+      }
+    }
+    final podiumExact = exactPodiumHits == 3;
+    final podiumPoints =
+        podiumHits * 5 + exactPodiumHits * 2 + (podiumExact ? 3 : 0);
     final actualDnf = (result['dnf_count'] as num?)?.toInt();
     final dnfDiff = prediction.dnfCount == null || actualDnf == null
         ? null
         : (prediction.dnfCount! - actualDnf).abs();
+    final actualSafetyCar = result['safety_car'] as bool?;
 
     return [
       _BreakdownData(
@@ -562,12 +626,22 @@ class _ScoreBreakdown extends StatelessWidget {
       ),
       _BreakdownData(
         label: 'Podyum: ${podiumNames.map(code).join(' ')}',
-        points: (podiumExact ? 15 : 0) + podiumHits * 5,
+        points: podiumPoints,
         status: podiumExact
             ? 'correct'
             : (podiumHits > 0 ? 'partial' : 'wrong'),
         note:
-            '$podiumHits/3 sürücü podyumda${podiumExact ? ' · sıra tam' : ''}',
+            '$podiumHits/3 isim · $exactPodiumHits/3 sıra${podiumExact ? ' · tam bonus' : ''}',
+      ),
+      _BreakdownData(
+        label: 'Takım: ${teamName(prediction.topTeamId)}',
+        points: prediction.topTeamId == result['top_team_id'] ? 10 : 0,
+        status: prediction.topTeamId == result['top_team_id']
+            ? 'correct'
+            : 'wrong',
+        note: prediction.topTeamId == result['top_team_id']
+            ? null
+            : '(Doğru: ${teamName(result['top_team_id'] as String?)})',
       ),
       _BreakdownData(
         label: 'Pole: ${code(prediction.poleDriverId)}',
@@ -578,20 +652,26 @@ class _ScoreBreakdown extends StatelessWidget {
             : '(Doğru: ${code(result['pole'] as String?)})',
       ),
       _BreakdownData(
-        label: 'En hızlı tur: ${code(prediction.fastestLapDriverId)}',
-        points: prediction.fastestLapDriverId == result['fastest_lap'] ? 6 : 0,
-        status: prediction.fastestLapDriverId == result['fastest_lap']
-            ? 'correct'
-            : 'wrong',
-        note: prediction.fastestLapDriverId == result['fastest_lap']
-            ? null
-            : '(Doğru: ${code(result['fastest_lap'] as String?)})',
-      ),
-      _BreakdownData(
         label: 'DNF: ${prediction.dnfCount ?? '-'}',
         points: dnfDiff == 0 ? 6 : (dnfDiff == 1 ? 3 : 0),
         status: dnfDiff == 0 ? 'correct' : (dnfDiff == 1 ? 'partial' : 'wrong'),
         note: actualDnf == null ? null : '(Gerçek: $actualDnf)',
+      ),
+      _BreakdownData(
+        label:
+            'Güvenlik aracı: ${prediction.safetyCar == null ? '-' : (prediction.safetyCar! ? 'Evet' : 'Hayır')}',
+        points:
+            prediction.safetyCar != null &&
+                actualSafetyCar != null &&
+                prediction.safetyCar == actualSafetyCar
+            ? 3
+            : 0,
+        status: actualSafetyCar == null
+            ? 'pending'
+            : (prediction.safetyCar == actualSafetyCar ? 'correct' : 'wrong'),
+        note: actualSafetyCar == null
+            ? null
+            : '(Gerçek: ${actualSafetyCar ? 'Evet' : 'Hayır'})',
       ),
       _BreakdownData(
         label: 'Joker: ${prediction.jokerOption ?? '-'}',
@@ -726,6 +806,8 @@ class _ActualResults extends StatelessWidget {
     final p1 = byId(result['p1'] as String?);
     final p2 = byId(result['p2'] as String?);
     final p3 = byId(result['p3'] as String?);
+    final topTeamName = _teamName(result['top_team_id'] as String?);
+    final safetyCar = result['safety_car'] as bool?;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -735,35 +817,70 @@ class _ActualResults extends StatelessWidget {
       ),
       child: Column(
         children: [
-          if (p1 != null) _PodiumPosition(position: 1, driver: p1),
-          if (p2 != null) ...[
-            const SizedBox(height: 12),
-            _PodiumPosition(position: 2, driver: p2),
-          ],
-          if (p3 != null) ...[
-            const SizedBox(height: 12),
-            _PodiumPosition(position: 3, driver: p3),
-          ],
+          _ResultRow(
+            label: sprintMode ? 'Sprint kazanan:' : 'Kazanan:',
+            value: p1?.code ?? '—',
+          ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Divider(color: Color(0xFF15151E), height: 1),
           ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              sprintMode ? 'Sprint podyum:' : 'Podyum:',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withValues(alpha: 0.6),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          if (p1 != null) _PodiumPosition(position: 1, driver: p1),
+          if (p2 != null) ...[
+            const SizedBox(height: 10),
+            _PodiumPosition(position: 2, driver: p2),
+          ],
+          if (p3 != null) ...[
+            const SizedBox(height: 10),
+            _PodiumPosition(position: 3, driver: p3),
+          ],
+          if (p1 == null && p2 == null && p3 == null)
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text('—', style: TextStyle(fontWeight: FontWeight.w800)),
+            ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(color: Color(0xFF15151E), height: 1),
+          ),
+          _ResultRow(label: 'En çok puan alan takım:', value: topTeamName),
+          const SizedBox(height: 6),
           _ResultRow(
             label: sprintMode ? 'Sprint pole:' : 'Pole:',
             value: byId(result['pole'] as String?)?.code ?? '—',
           ),
-          if (!sprintMode) ...[
-            const SizedBox(height: 6),
-            _ResultRow(
-              label: 'En hızlı tur:',
-              value: byId(result['fastest_lap'] as String?)?.code ?? '—',
-            ),
-          ],
           const SizedBox(height: 6),
-          _ResultRow(label: 'DNF:', value: '${result['dnf_count']}'),
+          _ResultRow(
+            label: 'DNF sayısı:',
+            value: '${result['dnf_count'] ?? '—'}',
+          ),
+          const SizedBox(height: 6),
+          _ResultRow(
+            label: 'Güvenlik aracı:',
+            value: safetyCar == null ? '—' : (safetyCar ? 'Evet' : 'Hayır'),
+          ),
         ],
       ),
     );
+  }
+
+  String _teamName(String? id) {
+    if (id == null) return '—';
+    for (final d in drivers) {
+      if (d.teamId == id) return d.teamName ?? d.teamCode ?? '—';
+    }
+    return '—';
   }
 }
 

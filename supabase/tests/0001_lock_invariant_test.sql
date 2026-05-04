@@ -29,7 +29,7 @@ values (
   '00000000-0000-0000-0000-000000009999',
   'Test League',
   '00000000-0000-0000-0000-000000000001',
-  'TST001',
+  'TST001AA',
   9999
 )
 on conflict (id) do nothing;
@@ -38,7 +38,7 @@ values (
   '00000000-0000-0000-0000-000000009998',
   'Second Test League',
   '00000000-0000-0000-0000-000000000001',
-  'TST002',
+  'TST002AA',
   9999
 )
 on conflict (id) do nothing;
@@ -98,28 +98,31 @@ prepare same_p1p2 as
 select throws_like('same_p1p2', '%P1 and P2 must be different%', 'p1==p2 yasak');
 
 -- 6) Skor formülü (immutable, rule-by-rule)
--- Tam podium + winner + pole + fastest_lap + dnf doğru + joker doğru = 10+15+3*5+8+6+6+12 = 72
+-- Tam podium + winner + top team + pole + dnf doğru + safety car + joker doğru
+-- = 10 + (3*5 + 3*2 + 3) + 10 + 8 + 6 + 3 + 12 = 73
 do $$
 declare
   v_pred public.predictions;
   v_res  public.race_results;
   v_d1 uuid; v_d2 uuid;
+  v_team uuid;
   v_league uuid := '00000000-0000-0000-0000-000000009999';
 begin
   select id into v_d1 from public.drivers where code='TD1' and season_id=9999;
   select id into v_d2 from public.drivers where code='TD2' and season_id=9999;
+  select id into v_team from public.teams where code='TST' and season_id=9999;
   v_pred := row(
     gen_random_uuid(), '00000000-0000-0000-0000-000000000001', gen_random_uuid(),
     v_d1, v_d1, v_d2, v_d1, v_d1, v_d1, 3, 'Yes',
-    null, null, now(), now(), v_league
+    null, null, now(), now(), v_league, v_team, true
   )::public.predictions;
   v_res := row(
-    gen_random_uuid(), v_d1, v_d2, v_d1, v_d1, v_d1, 3, 'Yes', now()
+    gen_random_uuid(), v_d1, v_d2, v_d1, v_d1, v_d1, 3, 'Yes', now(), v_team, true
   )::public.race_results;
   perform set_config('test.score_perfect',
     public.compute_prediction_score(v_pred, v_res, 12)::text, true);
 end$$;
-select is(current_setting('test.score_perfect')::int, 72, 'Perfect prediction = 72 (10+15+15+8+6+6+12)');
+select is(current_setting('test.score_perfect')::int, 73, 'Perfect prediction = 73');
 
 -- 7) Hiç doğru yoksa 0
 -- Pred her şeyi v_d2 tahmin ediyor, sonuçlar tamamı v_d1.
@@ -129,17 +132,19 @@ declare
   v_pred public.predictions;
   v_res  public.race_results;
   v_d1 uuid; v_d2 uuid;
+  v_team uuid;
   v_league uuid := '00000000-0000-0000-0000-000000009999';
 begin
   select id into v_d1 from public.drivers where code='TD1' and season_id=9999;
   select id into v_d2 from public.drivers where code='TD2' and season_id=9999;
+  select id into v_team from public.teams where code='TST' and season_id=9999;
   v_pred := row(
     gen_random_uuid(), '00000000-0000-0000-0000-000000000001', gen_random_uuid(),
     v_d2, v_d2, v_d2, v_d2, v_d2, v_d2, 0, 'No',
-    null, null, now(), now(), v_league
+    null, null, now(), now(), v_league, null, false
   )::public.predictions;
   v_res := row(
-    gen_random_uuid(), v_d1, v_d1, v_d1, v_d1, v_d1, 5, 'Yes', now()
+    gen_random_uuid(), v_d1, v_d1, v_d1, v_d1, v_d1, 5, 'Yes', now(), v_team, true
   )::public.race_results;
   perform set_config('test.score_zero',
     public.compute_prediction_score(v_pred, v_res, 12)::text, true);

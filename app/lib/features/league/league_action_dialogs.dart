@@ -232,7 +232,7 @@ class _JoinLeagueDialogState extends State<_JoinLeagueDialog> {
 
   Future<void> _submit() async {
     final code = _ctrl.text.trim();
-    if (code.length < 6 || _busy) return;
+    if (code.length != 8 || _busy) return;
     setState(() {
       _busy = true;
       _error = null;
@@ -343,7 +343,7 @@ class _JoinLeagueDialogState extends State<_JoinLeagueDialog> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _busy || _ctrl.text.trim().length < 6
+                    onPressed: _busy || _ctrl.text.trim().length != 8
                         ? null
                         : _submit,
                     style: ElevatedButton.styleFrom(

@@ -270,6 +270,7 @@ class SummaryDriver {
   final String fullName;
   final String? color;
   final int pickCount;
+  final int points;
 
   SummaryDriver({
     required this.id,
@@ -277,6 +278,7 @@ class SummaryDriver {
     required this.fullName,
     required this.color,
     required this.pickCount,
+    required this.points,
   });
 
   factory SummaryDriver.fromJson(Map<String, dynamic> j) => SummaryDriver(
@@ -285,5 +287,6 @@ class SummaryDriver {
     fullName: j['full_name'] as String,
     color: j['color'] as String?,
     pickCount: ((j['pick_count'] ?? 0) as num).toInt(),
+    points: ((j['points'] ?? j['pick_count'] ?? 0) as num).toInt(),
   );
 }

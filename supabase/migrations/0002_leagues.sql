@@ -1,4 +1,4 @@
--- PitWall — leagues + memberships + invite_code RPC'leri
+-- GridCall — leagues + memberships + invite_code RPC'leri
 
 create type public.league_type as enum ('private','public');
 

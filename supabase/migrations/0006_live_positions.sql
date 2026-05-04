@@ -1,4 +1,4 @@
--- PitWall — canlı yarış pozisyon tablosu (Realtime publication ile)
+-- GridCall — canlı yarış pozisyon tablosu (Realtime publication ile)
 
 create table public.live_positions (
   race_id uuid not null references public.races(id) on delete cascade,

@@ -1,4 +1,4 @@
-// PitWall — domain modelleri (POCO; fromJson Supabase select sonuçlarına eşlenir)
+// GridCall — domain modelleri (POCO; fromJson Supabase select sonuçlarına eşlenir)
 
 class Profile {
   final String id;
@@ -138,6 +138,11 @@ class Race {
       sprintLockAt == null ? true : DateTime.now().isAfter(sprintLockAt!);
   Duration get timeUntilLock => lockAt.difference(DateTime.now());
   Duration? get timeUntilSprintLock => sprintLockAt?.difference(DateTime.now());
+
+  static const Duration jokerLeadTime = Duration(hours: 24);
+  DateTime get jokerOpensAt => lockAt.subtract(jokerLeadTime);
+  bool get isJokerWindowOpen => !DateTime.now().isBefore(jokerOpensAt);
+  Duration get timeUntilJokerOpens => jokerOpensAt.difference(DateTime.now());
 }
 
 class RaceClassificationRow {
@@ -187,9 +192,11 @@ class Prediction {
   final String? p1Id;
   final String? p2Id;
   final String? p3Id;
+  final String? topTeamId;
   final String? poleDriverId;
   final String? fastestLapDriverId;
   final int? dnfCount;
+  final bool? safetyCar;
   final String? jokerOption;
   final int? score;
   Prediction({
@@ -200,9 +207,11 @@ class Prediction {
     this.p1Id,
     this.p2Id,
     this.p3Id,
+    this.topTeamId,
     this.poleDriverId,
     this.fastestLapDriverId,
     this.dnfCount,
+    this.safetyCar,
     this.jokerOption,
     this.score,
   });
@@ -214,9 +223,11 @@ class Prediction {
     p1Id: j['p1_id'] as String?,
     p2Id: j['p2_id'] as String?,
     p3Id: j['p3_id'] as String?,
+    topTeamId: j['top_team_id'] as String?,
     poleDriverId: j['pole_driver_id'] as String?,
     fastestLapDriverId: j['fastest_lap_driver_id'] as String?,
     dnfCount: j['dnf_count'] as int?,
+    safetyCar: j['safety_car'] as bool?,
     jokerOption: j['joker_option'] as String?,
     score: j['score'] as int?,
   );
@@ -232,9 +243,11 @@ class Prediction {
     'p1_id': p1Id,
     'p2_id': p2Id,
     'p3_id': p3Id,
+    'top_team_id': topTeamId,
     'pole_driver_id': poleDriverId,
     'fastest_lap_driver_id': fastestLapDriverId,
     'dnf_count': dnfCount,
+    'safety_car': safetyCar,
     'joker_option': jokerOption,
   };
 
@@ -243,9 +256,11 @@ class Prediction {
     String? p1Id,
     String? p2Id,
     String? p3Id,
+    String? topTeamId,
     String? poleDriverId,
     String? fastestLapDriverId,
     int? dnfCount,
+    bool? safetyCar,
     String? jokerOption,
   }) => Prediction(
     id: id,
@@ -255,9 +270,11 @@ class Prediction {
     p1Id: p1Id ?? this.p1Id,
     p2Id: p2Id ?? this.p2Id,
     p3Id: p3Id ?? this.p3Id,
+    topTeamId: topTeamId ?? this.topTeamId,
     poleDriverId: poleDriverId ?? this.poleDriverId,
     fastestLapDriverId: fastestLapDriverId ?? this.fastestLapDriverId,
     dnfCount: dnfCount ?? this.dnfCount,
+    safetyCar: safetyCar ?? this.safetyCar,
     jokerOption: jokerOption ?? this.jokerOption,
     score: score,
   );
@@ -271,8 +288,10 @@ class SprintPrediction {
   final String? p1Id;
   final String? p2Id;
   final String? p3Id;
+  final String? topTeamId;
   final String? poleDriverId;
   final int? dnfCount;
+  final bool? safetyCar;
   final int? score;
   SprintPrediction({
     this.id,
@@ -282,8 +301,10 @@ class SprintPrediction {
     this.p1Id,
     this.p2Id,
     this.p3Id,
+    this.topTeamId,
     this.poleDriverId,
     this.dnfCount,
+    this.safetyCar,
     this.score,
   });
   factory SprintPrediction.fromJson(Map<String, dynamic> j) => SprintPrediction(
@@ -294,8 +315,10 @@ class SprintPrediction {
     p1Id: j['p1_id'] as String?,
     p2Id: j['p2_id'] as String?,
     p3Id: j['p3_id'] as String?,
+    topTeamId: j['top_team_id'] as String?,
     poleDriverId: j['pole_driver_id'] as String?,
     dnfCount: j['dnf_count'] as int?,
+    safetyCar: j['safety_car'] as bool?,
     score: j['score'] as int?,
   );
 
@@ -310,8 +333,10 @@ class SprintPrediction {
     'p1_id': p1Id,
     'p2_id': p2Id,
     'p3_id': p3Id,
+    'top_team_id': topTeamId,
     'pole_driver_id': poleDriverId,
     'dnf_count': dnfCount,
+    'safety_car': safetyCar,
   };
 
   SprintPrediction copyWith({
@@ -319,8 +344,10 @@ class SprintPrediction {
     String? p1Id,
     String? p2Id,
     String? p3Id,
+    String? topTeamId,
     String? poleDriverId,
     int? dnfCount,
+    bool? safetyCar,
   }) => SprintPrediction(
     id: id,
     raceId: raceId,
@@ -329,8 +356,10 @@ class SprintPrediction {
     p1Id: p1Id ?? this.p1Id,
     p2Id: p2Id ?? this.p2Id,
     p3Id: p3Id ?? this.p3Id,
+    topTeamId: topTeamId ?? this.topTeamId,
     poleDriverId: poleDriverId ?? this.poleDriverId,
     dnfCount: dnfCount ?? this.dnfCount,
+    safetyCar: safetyCar ?? this.safetyCar,
     score: score,
   );
 }

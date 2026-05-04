@@ -1,5 +1,5 @@
-name: app
-description: "PitWall — F1 tahmin uygulaması"
+name: gridcall
+description: "GridCall — F1 prediction league"
 publish_to: 'none'
 version: 0.1.0+1
 
@@ -8,6 +8,8 @@ environment:
 
 dependencies:
   flutter:
+    sdk: flutter
+  flutter_localizations:
     sdk: flutter
   cupertino_icons: ^1.0.8
   supabase_flutter: ^2.10.4

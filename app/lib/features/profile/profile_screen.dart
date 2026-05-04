@@ -8,6 +8,7 @@ import '../../core/navigation.dart';
 import '../../core/supabase.dart';
 import '../../core/theme.dart';
 import '../../shared/models.dart';
+import '../../shared/widgets/app_state.dart';
 import '../league/league_controller.dart';
 import 'profile_controller.dart';
 
@@ -28,6 +29,7 @@ class ProfileScreen extends ConsumerWidget {
         toolbarHeight: 56,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 20),
+          tooltip: 'Geri',
           onPressed: () => safeBack(context),
         ),
         title: const Text(
@@ -41,6 +43,7 @@ class ProfileScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.settings, size: 20),
+            tooltip: 'Bildirim ayarları',
             onPressed: () => context.push('/settings/notifications'),
           ),
         ],
@@ -50,10 +53,23 @@ class ProfileScreen extends ConsumerWidget {
         ),
       ),
       body: profileAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
+        loading: () => const AppLoadingState(label: 'Profil yükleniyor'),
+        error: (e, _) => AppErrorState(
+          message: friendlyError(e),
+          onRetry: () {
+            ref.invalidate(profileProvider);
+            ref.invalidate(profileStatsProvider);
+            ref.invalidate(myBadgesProvider);
+          },
+        ),
         data: (p) {
-          if (p == null) return const Center(child: Text('Giriş gerekli'));
+          if (p == null) {
+            return const AppEmptyState(
+              icon: Icons.login_outlined,
+              title: 'Giriş gerekli',
+              message: 'Profilini görmek için hesabına giriş yapmalısın.',
+            );
+          }
           return ListView(
             padding: EdgeInsets.zero,
             children: [
@@ -92,12 +108,11 @@ class ProfileScreen extends ConsumerWidget {
                       .where((userBadge) => userBadge.badge != null)
                       .toList();
                   if (earnedBadges.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'Henüz kazanılmış rozet yok.',
-                        style: TextStyle(color: Color(0x99FFFFFF)),
-                      ),
+                    return const AppEmptyState(
+                      icon: Icons.workspace_premium_outlined,
+                      title: 'Henüz rozet yok',
+                      message:
+                          'Yarış sonuçları geldikçe başarılarına göre rozet kazanacaksın.',
                     );
                   }
                   return Padding(
@@ -831,18 +846,14 @@ class _UpsellItem extends StatelessWidget {
 class _Loading extends StatelessWidget {
   const _Loading();
   @override
-  Widget build(BuildContext context) => const Padding(
-    padding: EdgeInsets.all(20),
-    child: Center(child: CircularProgressIndicator()),
-  );
+  Widget build(BuildContext context) =>
+      const AppLoadingState(label: 'Bölüm yükleniyor');
 }
 
 class _Error extends StatelessWidget {
   final Object error;
   const _Error(this.error);
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 20),
-    child: Text('Hata: ${friendlyError(error)}'),
-  );
+  Widget build(BuildContext context) =>
+      AppErrorState(message: friendlyError(error));
 }

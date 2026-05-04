@@ -1,12 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:app/shared/models.dart';
-import 'package:app/shared/widgets/race_card_new.dart';
+import 'package:gridcall/shared/models.dart';
+import 'package:gridcall/shared/widgets/race_card_new.dart';
 
 void main() {
   Race race({
     required String id,
     required DateTime lockAt,
+    DateTime? raceAt,
     RaceStatus status = RaceStatus.upcoming,
     bool hasSprint = false,
     DateTime? sprintLockAt,
@@ -18,7 +19,7 @@ void main() {
       name: 'Test Grand Prix',
       circuit: 'Test Circuit',
       qualifyingAt: lockAt.add(const Duration(hours: 1)),
-      raceAt: lockAt.add(const Duration(days: 1)),
+      raceAt: raceAt ?? lockAt.add(const Duration(days: 1)),
       lockAt: lockAt,
       status: status,
       hasSprint: hasSprint,
@@ -74,6 +75,39 @@ void main() {
         effectiveRaceCardStatus((race: r, kind: RaceCardKind.main), now: now),
         RaceStatus.finished,
       );
+    });
+  });
+
+  group('previous and next race selection', () {
+    test('returns only the nearest previous and next race', () {
+      final now = DateTime.utc(2026, 5, 10, 12);
+      final races = [
+        race(
+          id: 'future-2',
+          lockAt: now,
+          raceAt: now.add(const Duration(days: 14)),
+        ),
+        race(
+          id: 'past-1',
+          lockAt: now,
+          raceAt: now.subtract(const Duration(days: 7)),
+        ),
+        race(
+          id: 'future-1',
+          lockAt: now,
+          raceAt: now.add(const Duration(days: 7)),
+        ),
+        race(
+          id: 'past-2',
+          lockAt: now,
+          raceAt: now.subtract(const Duration(days: 21)),
+        ),
+      ];
+
+      expect(buildPreviousAndNextRaces(races, now: now).map((r) => r.id), [
+        'past-1',
+        'future-1',
+      ]);
     });
   });
 }

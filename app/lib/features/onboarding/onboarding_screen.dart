@@ -92,7 +92,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           children: [
             const SizedBox(height: 16),
             const Text(
-              'PIT WALL',
+              'GRIDCALL',
               style: TextStyle(
                 fontSize: 42,
                 fontWeight: FontWeight.w900,

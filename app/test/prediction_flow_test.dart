@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:app/features/prediction/prediction_controller.dart';
-import 'package:app/features/prediction/domain/prediction_rules.dart';
-import 'package:app/features/prediction/domain/prediction_validator.dart';
-import 'package:app/shared/models.dart';
+import 'package:gridcall/features/prediction/prediction_controller.dart';
+import 'package:gridcall/features/prediction/domain/prediction_rules.dart';
+import 'package:gridcall/features/prediction/domain/prediction_validator.dart';
+import 'package:gridcall/shared/models.dart';
 
 void main() {
   group('prediction flow payloads', () {
@@ -14,9 +14,10 @@ void main() {
         p1Id: 'nor',
         p2Id: 'pia',
         p3Id: 'lec',
+        topTeamId: 'mclaren',
         poleDriverId: 'nor',
-        fastestLapDriverId: 'ver',
         dnfCount: 2,
+        safetyCar: true,
         jokerOption: 'yes',
       );
 
@@ -26,7 +27,8 @@ void main() {
       expect(json['race_id'], 'race-1');
       expect(json['league_id'], 'league-a');
       expect(json['winner_driver_id'], 'nor');
-      expect(json['fastest_lap_driver_id'], 'ver');
+      expect(json['top_team_id'], 'mclaren');
+      expect(json['safety_car'], true);
       expect(json['joker_option'], 'yes');
     });
 
@@ -43,6 +45,8 @@ void main() {
       final updated = original.copyWith(
         winnerDriverId: 'pia',
         p2Id: 'lec',
+        topTeamId: 'ferrari',
+        safetyCar: false,
         jokerOption: 'yes',
       );
 
@@ -53,6 +57,8 @@ void main() {
       expect(updated.winnerDriverId, 'pia');
       expect(updated.p1Id, 'nor');
       expect(updated.p2Id, 'lec');
+      expect(updated.topTeamId, 'ferrari');
+      expect(updated.safetyCar, false);
       expect(updated.jokerOption, 'yes');
     });
 
@@ -63,8 +69,10 @@ void main() {
         p1Id: 'nor',
         p2Id: 'pia',
         p3Id: 'lec',
+        topTeamId: 'mclaren',
         poleDriverId: 'nor',
         dnfCount: 2,
+        safetyCar: true,
       );
 
       final json = prediction.toUpsertJson('user-1', leagueId: 'league-a');
@@ -73,7 +81,9 @@ void main() {
       expect(json['race_id'], 'race-1');
       expect(json['league_id'], 'league-a');
       expect(json['winner_driver_id'], 'nor');
+      expect(json['top_team_id'], 'mclaren');
       expect(json['pole_driver_id'], 'nor');
+      expect(json['safety_car'], true);
       expect(json.containsKey('fastest_lap_driver_id'), false);
       expect(json.containsKey('joker_option'), false);
     });
@@ -127,8 +137,10 @@ void main() {
 
       final updated = original.copyWith(
         winnerDriverId: 'pia',
+        topTeamId: 'ferrari',
         poleDriverId: 'lec',
         dnfCount: 1,
+        safetyCar: false,
       );
 
       expect(updated.id, 'sprint-1');
@@ -136,8 +148,10 @@ void main() {
       expect(updated.leagueId, 'league-a');
       expect(updated.score, 12);
       expect(updated.winnerDriverId, 'pia');
+      expect(updated.topTeamId, 'ferrari');
       expect(updated.poleDriverId, 'lec');
       expect(updated.dnfCount, 1);
+      expect(updated.safetyCar, false);
     });
 
     test('same race in different leagues has different provider keys', () {

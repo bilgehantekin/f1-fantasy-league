@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/error_messages.dart';
 import '../../core/notifications.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/app_state.dart';
 import '../calendar/calendar_controller.dart';
 
 final reminderPreferencesProvider = FutureProvider<ReminderPreferences>(
@@ -20,8 +21,11 @@ class NotificationSettingsScreen extends ConsumerWidget {
       backgroundColor: AppColors.carbon,
       appBar: AppBar(title: const Text('BİLDİRİMLER')),
       body: prefsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
+        loading: () => const AppLoadingState(label: 'Ayarlar yükleniyor'),
+        error: (e, _) => AppErrorState(
+          message: friendlyError(e),
+          onRetry: () => ref.invalidate(reminderPreferencesProvider),
+        ),
         data: (prefs) => ListView(
           padding: const EdgeInsets.all(16),
           children: [

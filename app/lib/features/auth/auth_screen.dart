@@ -137,16 +137,18 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     if (!_isValidEmail(email)) {
       return 'Geçerli bir e-posta adresi yaz.';
     }
-    if (password.length < 8) {
-      return 'Şifre en az 8 karakter olmalı.';
-    }
     if (_isSignUp) {
+      if (password.length < 8) {
+        return 'Şifre en az 8 karakter olmalı.';
+      }
       if (username.length < 3 || username.length > 24) {
         return 'Kullanıcı adı 3-24 karakter olmalı.';
       }
       if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(username)) {
         return 'Kullanıcı adında sadece harf, rakam ve alt çizgi kullan.';
       }
+    } else if (password.isEmpty) {
+      return 'Şifreni yaz.';
     }
     return null;
   }
@@ -174,7 +176,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       Container(width: 6, height: 48, color: AppColors.f1Red),
                       const SizedBox(width: 12),
                       Text(
-                        'PIT WALL',
+                        'GRIDCALL',
                         style: tt.displayLarge?.copyWith(
                           letterSpacing: 2,
                           fontSize: 44,

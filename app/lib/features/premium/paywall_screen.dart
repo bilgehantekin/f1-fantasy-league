@@ -43,7 +43,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     final tt = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('PITWALL PREMIUM')),
+      appBar: AppBar(title: const Text('GRIDCALL PREMIUM')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -64,7 +64,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 const Text('🏆', style: TextStyle(fontSize: 56)),
                 const SizedBox(height: 8),
                 Text(
-                  'PitWall Premium',
+                  'GridCall Premium',
                   style: tt.displayMedium?.copyWith(fontSize: 32),
                 ),
                 const SizedBox(height: 4),

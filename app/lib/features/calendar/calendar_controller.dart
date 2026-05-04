@@ -9,6 +9,7 @@ final racesProvider = FutureProvider<List<Race>>((ref) async {
       .from('races')
       .select()
       .eq('season_id', Env.seasonId)
+      .neq('status', 'cancelled')
       .order('round');
   return rows.map((e) => Race.fromJson(e)).toList();
 });

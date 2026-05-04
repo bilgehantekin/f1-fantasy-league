@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:app/core/router.dart';
-import 'package:app/shared/models.dart';
+import 'package:gridcall/core/router.dart';
+import 'package:gridcall/shared/models.dart';
 
 void main() {
   Profile profile({required bool onboardingCompleted}) => Profile(

@@ -1,6 +1,6 @@
-# PitWall
+# GridCall
 
-PitWall is a Flutter mobile app for F1 race predictions, private leagues,
+GridCall is a Flutter mobile app for F1 race predictions, private leagues,
 sprint weekends, joker questions, reminders, live pages, race results, and
 season standings.
 

@@ -175,6 +175,14 @@ ThemeData buildTheme() {
         borderSide: const BorderSide(color: AppColors.f1Red, width: 1.5),
       ),
       labelStyle: const TextStyle(color: Colors.white60),
+      helperStyle: const TextStyle(color: Color(0x99FFFFFF)),
+      errorStyle: const TextStyle(color: AppColors.liveRed),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: AppColors.surfaceHi,
+      contentTextStyle: const TextStyle(color: Colors.white),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     ),
     chipTheme: ChipThemeData(
       backgroundColor: AppColors.surfaceHi,

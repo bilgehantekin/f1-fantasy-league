@@ -6,7 +6,7 @@
 //
 // Env vars:
 //   RESEND_API_KEY  → set ise Resend ile gerçek email gönderir
-//   REMINDER_FROM   → 'PitWall <noreply@example.com>' (Resend doğrulanmış domain)
+//   REMINDER_FROM   → 'GridCall <noreply@example.com>' (Resend doğrulanmış domain)
 //   yoksa: dry-run modu (yalnızca log yazar, mail gitmez — yerel dev için)
 
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
 
   const resendKey = Deno.env.get("RESEND_API_KEY");
   const fromAddr = Deno.env.get("REMINDER_FROM") ??
-    "PitWall <noreply@pitwall.local>";
+    "GridCall <noreply@gridcall.local>";
   const dryRun = !resendKey;
 
   // Pencerelere giren yarışlar
@@ -239,7 +239,7 @@ async function sendEmail(
     <p>Merhaba ${user.username},</p>
     <p><b>${user.league_name}</b> liginde <b>${race.name}</b> için tahminlerin kilide kadar yaklaşık ${minsLeft} kaldı.</p>
     <p>Uygulamayı aç ve seçimlerini yap — kilit zamanı: ${race.lock_at}.</p>
-    <p>— PitWall</p>
+    <p>— GridCall</p>
   `.trim();
 
   const res = await fetch("https://api.resend.com/emails", {

@@ -7,6 +7,7 @@ import '../../core/navigation.dart';
 import '../../core/theme.dart';
 import '../../shared/country_flags.dart';
 import '../../shared/models.dart';
+import '../../shared/widgets/app_state.dart';
 import '../prediction/prediction_controller.dart';
 
 /// Yaklaşan yarışlarda calendar'dan tıklayınca açılan ekran.
@@ -32,6 +33,7 @@ class RaceLineupScreen extends ConsumerWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 20),
+          tooltip: 'Geri',
           onPressed: () => safeBack(context),
         ),
         title: raceAsync.maybeWhen(
@@ -57,15 +59,25 @@ class RaceLineupScreen extends ConsumerWidget {
         ),
       ),
       body: raceAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
+        loading: () => const AppLoadingState(label: 'Kadro yükleniyor'),
+        error: (e, _) => AppErrorState(
+          message: friendlyError(e),
+          onRetry: () => ref.invalidate(raceProvider(raceId)),
+        ),
         data: (race) => driversAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
+          loading: () => const AppLoadingState(label: 'Sürücüler yükleniyor'),
+          error: (e, _) => AppErrorState(
+            message: friendlyError(e),
+            onRetry: () => ref.invalidate(driversProvider),
+          ),
           data: (drivers) => ListView(
             padding: EdgeInsets.zero,
             children: [
               _RaceInfoHeader(race: race, sprintMode: sprintMode),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: _LeagueRequiredBanner(),
+              ),
               const SizedBox(height: 16),
               const _SectionTitle(label: 'PİSTE ÇIKACAK SÜRÜCÜLER'),
               _DriversByTeam(drivers: drivers),
@@ -124,29 +136,6 @@ class _RaceInfoHeader extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(flagFor(race.name), style: const TextStyle(fontSize: 16)),
-              if (sprintMode) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.lockOrange.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: AppColors.lockOrange, width: 1),
-                  ),
-                  child: const Text(
-                    'Sprint',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.lockOrange,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
           const SizedBox(height: 4),
@@ -176,6 +165,42 @@ class _RaceInfoHeader extends StatelessWidget {
                 value: rDate,
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LeagueRequiredBanner extends StatelessWidget {
+  const _LeagueRequiredBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.f1Red.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: AppColors.f1Red.withValues(alpha: 0.45),
+          width: 1,
+        ),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.info_outline, size: 18, color: AppColors.f1Red),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Tahmin yapmak için bir lige katılmalısın.',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                height: 1.3,
+              ),
+            ),
           ),
         ],
       ),

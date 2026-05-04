@@ -1,4 +1,4 @@
--- PitWall — admin yetkisi + joker_questions yazma RLS'i
+-- GridCall — admin yetkisi + joker_questions yazma RLS'i
 
 alter table public.profiles add column is_admin boolean not null default false;
 

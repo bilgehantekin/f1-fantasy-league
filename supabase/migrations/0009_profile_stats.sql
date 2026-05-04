@@ -1,4 +1,4 @@
--- PitWall — detaylı profil istatistik RPC'leri
+-- GridCall — detaylı profil istatistik RPC'leri
 
 -- Kategori bazlı doğruluk (winner / podium_exact / pole / fastest_lap / dnf_exact / joker)
 create or replace function public.user_category_accuracy(p_user_id uuid, p_season_id smallint)

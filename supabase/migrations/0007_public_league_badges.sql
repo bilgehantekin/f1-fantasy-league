@@ -1,4 +1,4 @@
--- PitWall — public lig (otomatik üyelik) + rozet sistemi
+-- GridCall — public lig (otomatik üyelik) + rozet sistemi
 
 -- Public ligler sahipsiz olabilsin: owner_id nullable + delete'te SET NULL
 alter table public.leagues alter column owner_id drop not null;

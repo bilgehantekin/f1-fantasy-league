@@ -2,19 +2,19 @@
 // Trigger zinciri (handle_race_result -> score_race) tüm tahminleri otomatik puanlar.
 //
 // Çağırma şekilleri:
-//   POST /ingest-openf1                      → son 24 saat içinde biten ve sonucu olmayan yarışlar
+//   POST /ingest-openf1                      → son 72 saatte biten yarışları yeniden/idempotent çeker
 //   POST /ingest-openf1 {"race_id":"<uuid>"} → tek yarış
 //   POST /ingest-openf1 {"race_id":"...","dry_run":true} → DB'ye yazmaz, payload döner
+//   POST /ingest-openf1 {"race_id":"...","force_sprint":true} → sprint sonucunu da yeniden yazar
 //
-// Cron örneği (pg_cron): yarış günü saatte bir
-//   select cron.schedule('ingest-openf1','*/30 * * * *',
-//     $$select net.http_post(url:='<edge-fn-url>', headers:='{"Authorization":"Bearer <key>"}', body:='{}')$$);
+// Cron: 0021_schedule_openf1_ingest.sql migration'ı pg_cron + pg_net ile bağlar.
 
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 
 const OPENF1 = "https://api.openf1.org/v1";
 const TWO_WEEKS_MS = 14 * 24 * 3600 * 1000;
+const AUTO_REINGEST_WINDOW_MS = 72 * 3600 * 1000;
 
 interface OpenF1Meeting {
   meeting_key: number;
@@ -39,10 +39,16 @@ interface OpenF1Lap {
   lap_duration: number | null;
   is_pit_out_lap: boolean;
 }
+interface OpenF1RaceControl {
+  category: string | null;
+  flag: string | null;
+  message: string | null;
+}
 
 interface IngestBody {
   race_id?: string;
   dry_run?: boolean;
+  force_sprint?: boolean;
   mode?: "results" | "season-bootstrap";
   year?: number;
 }
@@ -83,7 +89,14 @@ Deno.serve(async (req) => {
   const results: unknown[] = [];
   for (const id of raceIds) {
     try {
-      results.push(await ingestRace(c, id, body.dry_run ?? false));
+      results.push(
+        await ingestRace(
+          c,
+          id,
+          body.dry_run ?? false,
+          body.force_sprint ?? false,
+        ),
+      );
     } catch (e) {
       results.push({ race_id: id, error: String(e) });
     }
@@ -98,22 +111,22 @@ async function resolveRaceIds(
 ): Promise<string[]> {
   if (explicitId) return [explicitId];
 
-  const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+  const since = new Date(Date.now() - AUTO_REINGEST_WINDOW_MS).toISOString();
   const now = new Date().toISOString();
   const { data: races } = await c
     .from("races")
     .select("id")
     .lte("race_at", now)
-    .gte("race_at", since);
-  const { data: existing } = await c.from("race_results").select("race_id");
-  const have = new Set((existing ?? []).map((r) => r.race_id as string));
-  return (races ?? []).map((r) => r.id as string).filter((id) => !have.has(id));
+    .gte("race_at", since)
+    .order("race_at", { ascending: true });
+  return (races ?? []).map((r) => r.id as string);
 }
 
 async function ingestRace(
   c: SupabaseClient,
   raceId: string,
   dryRun: boolean,
+  forceSprint: boolean,
 ) {
   const { data: race, error } = await c
     .from("races")
@@ -150,12 +163,18 @@ async function ingestRace(
     )
     : [];
   const fastestLap = await findFastestLap(raceSession.session_key);
+  const raceControl = await fetchJson<OpenF1RaceControl[]>(
+    `${OPENF1}/race_control?session_key=${raceSession.session_key}`,
+  );
 
   const { data: drivers } = await c
     .from("drivers")
-    .select("id, number, code")
+    .select("id, number, code, team_id")
     .eq("season_id", race.season_id);
-  const byNumber = new Map<number, { id: string; code: string }>();
+  const byNumber = new Map<
+    number,
+    { id: string; code: string; team_id: string | null }
+  >();
   for (const d of drivers ?? []) {
     if (d.number != null) byNumber.set(d.number as number, d);
   }
@@ -173,6 +192,8 @@ async function ingestRace(
   const pole = byNumber.get(sortedQual[0]?.driver_number);
   const fl = fastestLap ? byNumber.get(fastestLap.driver_number) : undefined;
   const dnfCount = countDnfResults(raceResults);
+  const topTeamId = topScoringTeamId(sortedRace, byNumber, mainPoints());
+  const safetyCar = hasSafetyCar(raceControl);
 
   // Tam klasman: her sürücü için satır (DNF/DSQ/DNS dahil).
   const classification = raceResults
@@ -204,6 +225,8 @@ async function ingestRace(
     pole: pole?.id,
     fastest_lap: fl?.id,
     dnf_count: dnfCount,
+    top_team_id: topTeamId,
+    safety_car: safetyCar,
   };
 
   if (missing.length > 0) {
@@ -223,6 +246,8 @@ async function ingestRace(
     p3: string;
     pole: string;
     dnf_count: number;
+    top_team_id: string | null;
+    safety_car: boolean;
   } | null = null;
   let sprintClassification: Array<{
     race_id: string;
@@ -239,6 +264,9 @@ async function ingestRace(
     const sprintQualResults = await fetchJson<OpenF1Result[]>(
       `${OPENF1}/session_result?session_key=${sprintQuali.session_key}`,
     );
+    const sprintRaceControl = await fetchJson<OpenF1RaceControl[]>(
+      `${OPENF1}/race_control?session_key=${sprintRace.session_key}`,
+    );
     const sprintRaceSorted = sprintResults
       .filter((r) => r.position != null)
       .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
@@ -251,6 +279,12 @@ async function ingestRace(
     const sp3 = byNumber.get(sprintRaceSorted[2]?.driver_number);
     const sPole = byNumber.get(sprintQualSorted[0]?.driver_number);
     const sDnfCount = countDnfResults(sprintResults);
+    const sTopTeamId = topScoringTeamId(
+      sprintRaceSorted,
+      byNumber,
+      sprintPoints(),
+    );
+    const sSafetyCar = hasSafetyCar(sprintRaceControl);
 
     if (!sp1) sprintMissing.push(`sp1#${sprintRaceSorted[0]?.driver_number}`);
     if (!sp2) sprintMissing.push(`sp2#${sprintRaceSorted[1]?.driver_number}`);
@@ -267,6 +301,8 @@ async function ingestRace(
         p3: sp3.id,
         pole: sPole.id,
         dnf_count: sDnfCount,
+        top_team_id: sTopTeamId,
+        safety_car: sSafetyCar,
       };
     }
 
@@ -321,14 +357,23 @@ async function ingestRace(
     if (clsErr) throw clsErr;
   }
 
-  // Sprint sonuçları
-  if (sprintPayload) {
+  const { data: existingSprint } = await c
+    .from("sprint_results")
+    .select("race_id")
+    .eq("race_id", raceId)
+    .maybeSingle();
+  const sprintToWrite = sprintPayload;
+  const shouldWriteSprint = !!sprintToWrite && (!existingSprint || forceSprint);
+
+  // Sprint sonuçları dünkü ayrı oturumdan gelebilir; ana yarış ingest'i varsayılan
+  // olarak finalize edilmiş sprint skorlarını yeniden hesaplatmasın.
+  if (shouldWriteSprint && sprintToWrite) {
     const { error: spErr } = await c.from("sprint_results").upsert(
-      sprintPayload,
+      sprintToWrite,
     );
     if (spErr) throw spErr;
   }
-  if (hasSprint) {
+  if (hasSprint && (!existingSprint || forceSprint)) {
     await c.from("sprint_classifications").delete().eq("race_id", raceId);
     if (sprintClassification.length > 0) {
       const { error: scErr } = await c
@@ -344,8 +389,12 @@ async function ingestRace(
     meeting: meeting.meeting_name,
     dnf_count: dnfCount,
     classification_rows: classification.length,
-    sprint_ingested: !!sprintPayload,
-    sprint_classification_rows: sprintClassification.length,
+    sprint_ingested: shouldWriteSprint,
+    sprint_skipped_existing: !!sprintPayload && !!existingSprint &&
+      !forceSprint,
+    sprint_classification_rows: shouldWriteSprint
+      ? sprintClassification.length
+      : 0,
     sprint_missing: sprintMissing,
   };
 }
@@ -440,7 +489,70 @@ async function findFastestLap(sessionKey: number): Promise<OpenF1Lap | null> {
 }
 
 function countDnfResults(results: OpenF1Result[]): number {
-  return results.filter((r) => r.dnf || r.dns || r.dsq).length;
+  return results.filter((r) => r.dnf).length;
+}
+
+function topScoringTeamId(
+  sortedRace: OpenF1Result[],
+  byNumber: Map<number, { id: string; code: string; team_id: string | null }>,
+  pointsByPosition: Map<number, number>,
+): string | null {
+  const teamPoints = new Map<string, number>();
+  for (const result of sortedRace) {
+    if (result.position == null) continue;
+    const points = pointsByPosition.get(result.position) ?? 0;
+    if (points === 0) continue;
+    const teamId = byNumber.get(result.driver_number)?.team_id;
+    if (!teamId) continue;
+    teamPoints.set(teamId, (teamPoints.get(teamId) ?? 0) + points);
+  }
+  let bestTeamId: string | null = null;
+  let bestPoints = -1;
+  for (const [teamId, points] of teamPoints.entries()) {
+    if (points > bestPoints) {
+      bestTeamId = teamId;
+      bestPoints = points;
+    }
+  }
+  return bestTeamId;
+}
+
+function mainPoints(): Map<number, number> {
+  return new Map<number, number>([
+    [1, 25],
+    [2, 18],
+    [3, 15],
+    [4, 12],
+    [5, 10],
+    [6, 8],
+    [7, 6],
+    [8, 4],
+    [9, 2],
+    [10, 1],
+  ]);
+}
+
+function sprintPoints(): Map<number, number> {
+  return new Map<number, number>([
+    [1, 8],
+    [2, 7],
+    [3, 6],
+    [4, 5],
+    [5, 4],
+    [6, 3],
+    [7, 2],
+    [8, 1],
+  ]);
+}
+
+function hasSafetyCar(events: OpenF1RaceControl[]): boolean {
+  return events.some((event) => {
+    const category = (event.category ?? "").toUpperCase();
+    const message = (event.message ?? "").toUpperCase();
+    return category.includes("SAFETY") ||
+      message.includes("SAFETY CAR") ||
+      message.includes("VIRTUAL SAFETY CAR");
+  });
 }
 
 async function fetchJson<T>(url: string): Promise<T> {

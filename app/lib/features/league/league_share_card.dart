@@ -34,7 +34,7 @@ class LeagueShareCard extends StatelessWidget {
                 Container(width: 18, height: 72, color: AppColors.f1Red),
                 const SizedBox(width: 28),
                 const Text(
-                  'PIT WALL',
+                  'GRIDCALL',
                   style: TextStyle(
                     fontSize: 54,
                     fontWeight: FontWeight.w900,

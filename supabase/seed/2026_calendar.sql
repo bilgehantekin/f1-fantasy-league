@@ -1,4 +1,4 @@
--- PitWall — sezon başlatma (boş)
+-- GridCall — sezon başlatma (boş)
 -- Gerçek takımlar, sürücüler ve takvim için ingest-openf1 fonksiyonunu
 -- season-bootstrap modunda çağırın:
 --   curl -s -X POST $URL/functions/v1/ingest-openf1 \

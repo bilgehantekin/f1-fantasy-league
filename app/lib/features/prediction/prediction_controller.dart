@@ -70,6 +70,32 @@ Future<void> upsertSprintPrediction(
   ).upsertSprintPrediction(userId: user.id, prediction: p, leagueId: leagueId);
 }
 
+Future<void> deletePrediction({
+  required String raceId,
+  required String leagueId,
+}) async {
+  final user = supabase.auth.currentUser;
+  if (user == null) throw 'Auth required';
+  await PredictionRepository(supabase).deletePrediction(
+    userId: user.id,
+    raceId: raceId,
+    leagueId: leagueId,
+  );
+}
+
+Future<void> deleteSprintPrediction({
+  required String raceId,
+  required String leagueId,
+}) async {
+  final user = supabase.auth.currentUser;
+  if (user == null) throw 'Auth required';
+  await PredictionRepository(supabase).deleteSprintPrediction(
+    userId: user.id,
+    raceId: raceId,
+    leagueId: leagueId,
+  );
+}
+
 Future<void> copyPredictionToLeagues({
   Prediction? main,
   SprintPrediction? sprint,

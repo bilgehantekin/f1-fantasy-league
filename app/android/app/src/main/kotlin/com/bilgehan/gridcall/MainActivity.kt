@@ -1,4 +1,4 @@
-package com.pitwall.app
+package com.bilgehan.gridcall
 
 import io.flutter.embedding.android.FlutterActivity
 

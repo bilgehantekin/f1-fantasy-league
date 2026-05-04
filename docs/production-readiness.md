@@ -1,4 +1,4 @@
-# PitWall Production Readiness
+# GridCall Production Readiness
 
 This checklist keeps app code, Supabase schema, and store setup moving together.
 
@@ -13,7 +13,7 @@ This checklist keeps app code, Supabase schema, and store setup moving together.
 
 ## Supabase Auth
 
-- Add `io.supabase.pitwall://auth-callback` to Supabase Auth additional redirect URLs.
+- Add `io.supabase.gridcall://auth-callback` to Supabase Auth additional redirect URLs.
 - Configure Google provider in Supabase and Google Cloud.
 - Configure Apple provider in Supabase and Apple Developer.
 - Keep Apple login visible whenever Google login is visible on iOS.

@@ -1,16 +1,16 @@
-# Privacy Policy for PitWall
+# Privacy Policy for GridCall
 
 **Last Updated**: May 2, 2026  
 **Effective Date**: June 1, 2026
 
 ## 1. Introduction
 
-PitWall ("**we**," "**us**," "**our**," or "**Company**") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application and related services (the "**Service**").
+GridCall ("**we**," "**us**," "**our**," or "**Company**") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application and related services (the "**Service**").
 
 Please read this Privacy Policy carefully. If you do not agree with our policies and practices, please do not use our Service.
 
 **Contact Information**:
-- Email: privacy@pitwall.app
+- Email: privacy@gridcall.app
 - Address: Contact via email (preferred)
 
 ---
@@ -195,7 +195,7 @@ We comply with privacy laws in your jurisdiction. Please contact us for jurisdic
 
 ### 6.4 How to Submit Rights Requests
 
-To exercise any of these rights, email us at: **privacy@pitwall.app**
+To exercise any of these rights, email us at: **privacy@gridcall.app**
 
 Please include:
 - "Privacy Request" in the subject line
@@ -320,7 +320,7 @@ We may update this Privacy Policy from time to time. When we do:
 
 For privacy-related questions, please contact:
 
-**Email**: privacy@pitwall.app  
+**Email**: privacy@gridcall.app  
 **Response Time**: 5-7 business days  
 
 ### 13.2 GDPR Data Protection Authority
@@ -332,7 +332,7 @@ EU residents can lodge complaints with their national data protection authority:
 ### 13.3 California Privacy Rights
 
 California residents can submit requests via:
-- Email: privacy@pitwall.app
+- Email: privacy@gridcall.app
 
 ---
 
@@ -366,7 +366,7 @@ We do NOT engage in direct marketing. Notifications are only for:
 
 ### 15.1 Data Controller & Processor
 
-- **Data Controller**: PitWall (the company/developer)
+- **Data Controller**: GridCall (the company/developer)
 - **Data Processor**: Supabase (database infrastructure)
 
 ### 15.2 Legitimate Interests Assessment
@@ -392,7 +392,7 @@ This Privacy Policy is compliant with:
 
 ---
 
-**PitWall Privacy Policy**  
+**GridCall Privacy Policy**  
 Last Updated: May 2, 2026  
 Effective: June 1, 2026  
 Status: ✅ GDPR Compliant | ✅ App Store Ready
