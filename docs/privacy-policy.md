@@ -40,7 +40,7 @@ Please read this Privacy Policy carefully. If you do not agree with our policies
 
 **Communication**:
 - Messages you send us (support inquiries, feedback)
-- Push notification opt-in/preferences
+- Local reminder opt-in/preferences
 
 ### 2.2 Information Collected Automatically
 
@@ -54,11 +54,12 @@ Please read this Privacy Policy carefully. If you do not agree with our policies
 **Diagnostics & Crash Data (Sentry only)**:
 - Error logs and crash reports
 - Stack traces, app version, OS version, and device model attached to a crash event
-- We do **not** run a behavioral analytics SDK (no Firebase Analytics, Google Analytics, Mixpanel, Amplitude, or similar). We do not track screen views, taps, dwell time, or marketing attribution.
+- We do **not** run a behavioral analytics SDK. We do not track screen views, taps, dwell time, or marketing attribution.
 
 **Notifications**:
 - All race reminders are scheduled and delivered locally on your device by the app itself; we do not send remote push notifications and do not collect any push notification tokens.
 - Your notification preferences (enabled, hours before lock, missing-only filter) are stored on your device and in your account.
+- Email reminders, if enabled for your account, are sent through Resend using your account email address.
 
 ### 2.3 Information from Third-Party Services
 
@@ -67,6 +68,7 @@ Please read this Privacy Policy carefully. If you do not agree with our policies
 - **Google**: OAuth provider (only when you choose Sign in with Google)
 - **Apple**: Sign In with Apple provider (only when you choose Apple sign-in)
 - **OpenF1 API**: Public, unofficial Formula 1 race timing/results feed (no user data is sent to OpenF1; we only consume publicly available data)
+- **Resend**: Transactional email delivery for account and reminder emails
 - **Sentry**: Error and crash reporting
 
 ---
@@ -81,16 +83,16 @@ We use the information we collect for the following purposes:
 |---------|-----------|------------|
 | Provide the Service | Account, predictions, gameplay data | Contract fulfillment |
 | User authentication | Email, OAuth tokens | Necessary for security |
-| Send race reminders | Notification tokens, preferences | Legitimate interest |
-| Calculate scores | Predictions, official race results | Contract fulfillment |
-| Improve the app | Usage analytics, error logs (Sentry) | Legitimate interest |
+| Send race reminders | Local notification preferences and, if enabled, email address | Legitimate interest |
+| Calculate scores | Predictions, race results | Contract fulfillment |
+| Improve the app | Error logs (Sentry) | Legitimate interest |
 | Customer support | Email, account info | Legitimate interest |
 | Comply with law | Any data, as legally required | Legal obligation |
 | Prevent fraud/abuse | Account info, usage patterns | Legitimate interest |
 
 ### 3.2 Specific Uses
 
-**Race Reminders**: We send push notifications approximately 1 hour before each race, reminding users to submit predictions. You can disable notifications in app settings or device settings.
+**Race Reminders**: The app can schedule local reminders on your device before prediction lock. If you opt into email reminders, we may send transactional reminder emails through Resend. You can disable reminders in app settings or device settings.
 
 **Error Tracking**: Sentry receives error logs and crash reports to help us fix bugs. Sentry will NOT receive personal data like email or usernames.
 
@@ -113,6 +115,7 @@ We share your data with the following third parties to operate the Service:
 | **OpenF1 API** | F1 race data | No user data sent — read-only public feed | https://openf1.org/ |
 | **Google** | Authentication | Email + profile (only if you choose Google login) | https://policies.google.com/privacy |
 | **Apple** | Authentication | Email (only if you choose Apple login) | https://www.apple.com/privacy/ |
+| **Resend** | Transactional email | Email address and email delivery metadata | https://resend.com/legal/privacy-policy |
 
 > **Note on F1 data**: OpenF1 is an independent, unofficial API. It is not affiliated with Formula 1, the FIA, or any team. We do not redistribute proprietary timing feeds and we do not use OpenF1 data to gate paid features.
 
@@ -336,7 +339,7 @@ California residents can submit requests via:
 We do NOT collect:
 - Biometric data
 - Health information
-- Payment information (we use third-party payment processors)
+- Payment information
 - Racial or ethnic origin
 - Political opinions
 - Sexual orientation

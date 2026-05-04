@@ -18,10 +18,10 @@ By downloading, installing, or using GridCall ("**Service**," "**App**," or "**A
 ### 2.1 What is GridCall?
 
 GridCall is an unofficial mobile application that enables users to:
-- Make predictions about Formula 1 race outcomes (winner, podium, pole, DNF count, etc.)
+- Make predictions about Grand Prix race outcomes (winner, podium, pole, DNF count, etc.)
 - Create and join private leagues with friends
 - Track and compare prediction scores with other users
-- View Formula 1 race schedules and post-race results from publicly available sources
+- View race schedules and post-race results from publicly available, unofficial third-party sources
 - Participate in seasonal competitions
 
 **GridCall is for entertainment purposes only.** Predictions do not constitute gambling, betting, or financial transactions and there are no real-money winnings.
@@ -147,7 +147,7 @@ If you violate these Terms, we may:
 - Your predictions must be original (no cheating/collusion)
 
 **Scoring System**:
-- Scores calculated using official Formula 1 race results (OpenF1 API)
+- Scores are calculated using race results sourced from OpenF1 and other publicly available, unofficial third-party feeds
 - Points awarded based on accuracy of predictions
 - Joker cards (if available) double points for that prediction
 - Final standings determined automatically
@@ -243,9 +243,9 @@ Some jurisdictions do not allow exclusion of implied warranties. In those cases,
 
 GridCall uses:
 - **Google & Apple**: Sign-in services
-- **OpenF1 API**: F1 race data and results
+- **OpenF1 API**: Race data and results from an unofficial public source
 - **Supabase**: Database and authentication infrastructure
-- **Firebase**: Push notifications
+- **Resend**: Transactional email delivery
 - **Sentry**: Error reporting
 
 We are not responsible for:
@@ -269,7 +269,7 @@ You access third-party sites at your own risk.
 ### 9.1 Deleting Your Account
 
 You can request account deletion anytime in the app:
-Profile → Settings → Delete Account
+Profile -> Hesabı silme talebi oluştur
 
 ### 9.2 What Happens When You Delete
 

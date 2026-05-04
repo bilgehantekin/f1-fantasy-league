@@ -109,7 +109,7 @@ class ProfileScreen extends ConsumerWidget {
                       .toList();
                   if (earnedBadges.isEmpty) {
                     return const AppEmptyState(
-                      icon: Icons.workspace_premium_outlined,
+                      icon: Icons.emoji_events_outlined,
                       title: 'Henüz rozet yok',
                       message:
                           'Yarış sonuçları geldikçe başarılarına göre rozet kazanacaksın.',
