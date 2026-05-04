@@ -101,7 +101,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
             const SizedBox(height: 6),
             const Text(
-              'Sezona başlamadan önce birkaç şeyi ayarlayalım.',
+              'Arkadaşlarınla lig kur, yarıştan önce tahmin yap, sonuçlar gelince puanları karşılaştır.',
               style: TextStyle(fontSize: 15, color: Color(0xB3FFFFFF)),
             ),
             const SizedBox(height: 28),
@@ -109,7 +109,37 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _StepTitle(number: '01', label: 'PROFİL'),
+                  const _StepTitle(number: '01', label: 'NASIL OYNANIR?'),
+                  const SizedBox(height: 14),
+                  const _HowItWorksItem(
+                    icon: Icons.groups_outlined,
+                    title: 'Ligini kur veya davet koduyla katıl',
+                    text:
+                        'Özel ligde arkadaşlarınla aynı yarış haftasında kapışırsın.',
+                  ),
+                  const SizedBox(height: 12),
+                  const _HowItWorksItem(
+                    icon: Icons.sports_score_outlined,
+                    title: 'Kilitlenmeden önce tahminini yap',
+                    text:
+                        'Ana yarış ve sprint için seçimlerini kaydet; kilit saatinden sonra değişmez.',
+                  ),
+                  const SizedBox(height: 12),
+                  const _HowItWorksItem(
+                    icon: Icons.ios_share_outlined,
+                    title: 'Puanları ve haftalık özeti paylaş',
+                    text:
+                        'Sonuçlar işlenince lig sıralaması, rozetler ve paylaşım kartları hazır olur.',
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            _Panel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _StepTitle(number: '02', label: 'PROFİL'),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _username,
@@ -126,7 +156,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _StepTitle(number: '02', label: 'BİLDİRİMLER'),
+                  const _StepTitle(number: '03', label: 'BİLDİRİMLER'),
                   const SizedBox(height: 8),
                   SwitchListTile(
                     value: _remindersEnabled,
@@ -201,6 +231,59 @@ class _Panel extends StatelessWidget {
       border: Border.all(color: AppColors.surfaceHi),
     ),
     child: child,
+  );
+}
+
+class _HowItWorksItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String text;
+
+  const _HowItWorksItem({
+    required this.icon,
+    required this.title,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: AppColors.f1Red.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, size: 19, color: AppColors.f1Red),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                height: 1.2,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              text,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.white.withValues(alpha: 0.64),
+                height: 1.35,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
   );
 }
 

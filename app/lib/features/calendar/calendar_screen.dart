@@ -128,20 +128,22 @@ class _LeagueActionsPanel extends ConsumerWidget {
           children: [
             Expanded(
               child: _PrimaryLeagueActionCard(
-                icon: Icons.emoji_events,
-                title: 'LİG OLUŞTUR',
-                subtitle: 'Yeni bir lig başlat',
-                colors: const [Color(0xFFE10600), Color(0xFFA00500)],
+                title: 'YENİ LİG',
+                subtitle: 'Kendi ligini oluştur',
+                buttonLabel: 'OLUŞTUR',
+                accentColor: const Color(0xFF00D26A),
+                colors: const [Color(0xFF00D26A), Color(0xFF00A855)],
                 onTap: () => showCreateLeagueDialog(context, ref),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _PrimaryLeagueActionCard(
-                icon: Icons.groups,
-                title: 'LİGE KATIL',
+                title: 'KATIL',
                 subtitle: 'Davet koduyla katıl',
-                colors: const [Color(0xFF00D26A), Color(0xFF00A855)],
+                buttonLabel: 'KOD GİR',
+                accentColor: const Color(0xFFE10600),
+                colors: const [Color(0xFFE10600), Color(0xFFA00500)],
                 onTap: () => showJoinLeagueDialog(context, ref),
               ),
             ),
@@ -210,70 +212,87 @@ class _LeagueActionsPanel extends ConsumerWidget {
 }
 
 class _PrimaryLeagueActionCard extends StatelessWidget {
-  final IconData icon;
   final String title;
   final String subtitle;
+  final String buttonLabel;
+  final Color accentColor;
   final List<Color> colors;
   final VoidCallback onTap;
 
   const _PrimaryLeagueActionCard({
-    required this.icon,
     required this.title,
     required this.subtitle,
+    required this.buttonLabel,
+    required this.accentColor,
     required this.colors,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: colors,
+    final tt = Theme.of(context).textTheme;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: colors,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.add, size: 20),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: tt.titleMedium?.copyWith(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
           ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, size: 20, color: Colors.white),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: tt.bodySmall?.copyWith(
+              fontSize: 11,
+              color: Colors.white.withValues(alpha: 0.9),
+              height: 1.2,
             ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.3,
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onTap,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: accentColor,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                textStyle: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
+              child: Text(buttonLabel),
             ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.8),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
