@@ -23,24 +23,35 @@ Future<void> completeOnboarding({String? username}) async {
 class AccountDeletionResult {
   final String requestId;
   final DateTime? scheduledFor;
-  AccountDeletionResult({required this.requestId, this.scheduledFor});
+  const AccountDeletionResult({required this.requestId, this.scheduledFor});
 }
 
 Future<AccountDeletionResult> requestAccountDeletion({String? reason}) async {
-  final result = await supabase.rpc(
+  final response = await supabase.rpc(
     'request_account_deletion',
     params: {'p_reason': reason},
   );
-  if (result is List && result.isNotEmpty) {
-    final row = result.first as Map<String, dynamic>;
-    return AccountDeletionResult(
-      requestId: row['request_id'] as String,
-      scheduledFor: row['scheduled_for'] == null
-          ? null
-          : DateTime.parse(row['scheduled_for'] as String),
-    );
+
+  final row = _firstRpcRow(response);
+
+  if (row == null) {
+    return const AccountDeletionResult(requestId: '');
   }
-  return AccountDeletionResult(requestId: result?.toString() ?? '');
+
+  return AccountDeletionResult(
+    requestId: row['request_id'] as String? ?? '',
+    scheduledFor: DateTime.tryParse(row['scheduled_for'] as String? ?? ''),
+  );
+}
+
+Map<String, dynamic>? _firstRpcRow(Object? response) {
+  final Object? rawRow = switch (response) {
+    final List<dynamic> rows when rows.isNotEmpty => rows.first,
+    final Map<dynamic, dynamic> map => map,
+    _ => null,
+  };
+  if (rawRow is! Map<dynamic, dynamic>) return null;
+  return rawRow.map((key, value) => MapEntry(key.toString(), value));
 }
 
 final allBadgesProvider = FutureProvider<List<AppBadge>>((ref) async {

@@ -56,13 +56,13 @@ Production wiring (run once per environment):
 2. Ensure Vault secrets `gridcall_project_url` and `gridcall_service_role_key` already exist (same secrets used by the OpenF1 ingest cron).
 3. Deploy the edge function: `supabase functions deploy delete-accounts`.
 4. Verify the `gridcall-delete-accounts` cron job in `cron.job` runs daily at 03:00 UTC.
-5. Smoke test: insert a deletion request with `scheduled_for = now() - interval '1 minute'`, invoke the edge function manually, confirm the user's predictions, league memberships, profile and `auth.users` row are gone and the request status is `completed`.
+5. Smoke test: insert a deletion request with `scheduled_for = now() - interval '1 minute'`, invoke the edge function manually, and confirm the user's predictions, league memberships, profile and `auth.users` row are gone. The request row may also be removed by the `auth.users` delete cascade; if it remains, its status should be `completed`.
 
 The 30-day grace period is enforced in SQL (`scheduled_for = now() + interval '30 days'`), matches the privacy policy retention text, and gives users time to reach out and cancel by emailing support.
 
 Suggested App Review note:
 
-> Users can start account deletion in Profile by tapping "Hesabı silme talebi oluştur". The app creates a pending deletion request, signs the user out, and hides the profile. A Supabase scheduled job invokes the `delete-accounts` edge function daily; that service-role function wipes user-owned rows with `process_account_deletion()`, deletes the Supabase Auth user through `auth.admin.deleteUser`, then marks the request completed. The policy states a 30-day cancellation window.
+> Users can start account deletion in Profile by tapping "Hesabı silme talebi oluştur". The app creates a pending deletion request, signs the user out, and hides the profile. A Supabase scheduled job invokes the `delete-accounts` edge function daily; that service-role function wipes user-owned rows with `process_account_deletion()`, deletes the Supabase Auth user through `auth.admin.deleteUser`, then marks the request completed if the request row still exists. The policy states a 30-day cancellation window.
 
 ## Release Smoke Test
 
