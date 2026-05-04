@@ -148,9 +148,6 @@ class ProfileScreen extends ConsumerWidget {
               _SectionTitle(label: 'HESAP VE YASAL'),
               const _AccountLifecyclePanel(),
               const SizedBox(height: 24),
-              // Premium upsell şimdilik gizli — ileride tekrar açılacak.
-              // if (!isPremium) _PremiumUpsell(),
-              // const SizedBox(height: 24),
               Center(
                 child: TextButton(
                   onPressed: () => supabase.auth.signOut(),
@@ -186,6 +183,12 @@ class _AccountLifecyclePanel extends StatelessWidget {
       ),
       child: Column(
         children: [
+          _AccountRow(
+            icon: Icons.info_outline,
+            title: 'Hakkında',
+            onTap: () => _showAboutDialog(context),
+          ),
+          const Divider(height: 1, color: Color(0xFF1F1F2E)),
           _AccountRow(
             icon: Icons.privacy_tip_outlined,
             title: 'Gizlilik Politikası',
@@ -245,6 +248,36 @@ class _AccountRow extends StatelessWidget {
   }
 }
 
+Future<void> _showAboutDialog(BuildContext context) async {
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      backgroundColor: const Color(0xFF1A1A26),
+      title: const Text('GridCall hakkında'),
+      content: const SingleChildScrollView(
+        child: Text(
+          'GridCall, Formula 1\'i takip eden hayranlar için bağımsız bir tahmin '
+          'uygulamasıdır.\n\n'
+          'GridCall; Formula 1, FIA, Formula One Management, takımlar, sürücüler '
+          'veya sponsorlarla bağlantılı, onlar tarafından desteklenen ya da onaylanan '
+          'bir uygulama değildir. F1 ile ilgili tüm marka, logo ve isimler ilgili '
+          'sahiplerinin tescilli markalarıdır ve burada yalnızca bilgilendirme '
+          'amacıyla kullanılır.\n\n'
+          'Yarış zamanlama ve sonuç verileri, kamuya açık üçüncü taraf bir kaynak '
+          'olan OpenF1 üzerinden alınır. OpenF1 da resmi bir kaynak değildir.',
+          style: TextStyle(fontSize: 13, height: 1.45),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text('Tamam'),
+        ),
+      ],
+    ),
+  );
+}
+
 Future<void> _openLegal(BuildContext context, Uri uri) async {
   try {
     await openExternalLink(uri);
@@ -261,13 +294,19 @@ Future<void> _confirmDeletionRequest(BuildContext context) async {
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: const Text('Hesap silme talebi'),
+      title: const Text('Hesabını sil'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Talep oluşturduğunda hesabın ve verilerin silinmesi için işlem başlatılır. Bu işlem geri alınamayabilir.',
+            'Talep oluşturduğun andan itibaren 30 gün içinde hesabın ve sana ait '
+            'tüm tahminler, lig üyelikleri, rozetler ve profil bilgileri kalıcı '
+            'olarak silinecek. Bu süre içinde fikrini değiştirirsen '
+            'bilgehan.2002@gmail.com adresine yazarak iptal talep edebilirsin.\n\n'
+            'Talep oluşturulduktan sonra oturumun kapatılır ve hesabın diğer '
+            'kullanıcılara görünmez olur.',
+            style: TextStyle(height: 1.4),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -303,14 +342,17 @@ Future<void> _confirmDeletionRequest(BuildContext context) async {
   }
 
   try {
-    await requestAccountDeletion(reason: reasonCtrl.text.trim());
+    final result = await requestAccountDeletion(reason: reasonCtrl.text.trim());
     reasonCtrl.dispose();
     if (!context.mounted) return;
+    final scheduledMessage = result.scheduledFor != null
+        ? 'Hesabın ${_formatDate(result.scheduledFor!)} tarihinde silinecek.'
+        : 'Hesap silme talebin alındı.';
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Hesap silme talebin alındı. Çıkış yapılıyor…'),
+      SnackBar(
+        content: Text('$scheduledMessage Çıkış yapılıyor…'),
         backgroundColor: AppColors.lockGreen,
-        duration: Duration(seconds: 2),
+        duration: const Duration(seconds: 3),
       ),
     );
     // Kullanıcı silinmiş hesapla devam etmesin diye oturumu kapat;
@@ -326,6 +368,13 @@ Future<void> _confirmDeletionRequest(BuildContext context) async {
       ),
     );
   }
+}
+
+String _formatDate(DateTime date) {
+  final local = date.toLocal();
+  final dd = local.day.toString().padLeft(2, '0');
+  final mm = local.month.toString().padLeft(2, '0');
+  return '$dd.$mm.${local.year}';
 }
 
 class _HeroProfile extends StatelessWidget {
@@ -359,14 +408,6 @@ class _HeroProfile extends StatelessWidget {
           Text(
             profile.username,
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            profile.isPremium ? 'Premium üye' : 'Free üye',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white.withValues(alpha: 0.6),
-            ),
           ),
           const SizedBox(height: 16),
           // Stats grid would go here but we'll use _StatsCards separately
@@ -757,88 +798,6 @@ class _LeaguesList extends StatelessWidget {
           },
         );
       },
-    );
-  }
-}
-
-// ignore: unused_element
-class _PremiumUpsell extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFE10600), Color(0xFFA00500)],
-        ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.workspace_premium, size: 24),
-              SizedBox(width: 8),
-              Text(
-                'PREMİUM\'A GEÇ',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _UpsellItem(text: 'Gelişmiş istatistikler'),
-          const SizedBox(height: 8),
-          _UpsellItem(text: 'Sınırsız lig katılımı'),
-          const SizedBox(height: 8),
-          _UpsellItem(text: 'Özel rozetler'),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => context.push('/premium'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFFE10600),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 0,
-              ),
-              child: const Text(
-                'HEMEN BAŞLA',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _UpsellItem extends StatelessWidget {
-  final String text;
-  const _UpsellItem({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(
-          '•',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.white.withValues(alpha: 0.8),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(text, style: const TextStyle(fontSize: 14)),
-      ],
     );
   }
 }

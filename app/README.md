@@ -1,8 +1,12 @@
 # GridCall
 
-GridCall is a Flutter mobile app for F1 race predictions, private leagues,
-sprint weekends, joker questions, reminders, live pages, race results, and
-season standings.
+GridCall is an unofficial, fan-made Flutter mobile app for Formula 1 race
+predictions, private leagues, sprint weekends, joker questions, reminders, live
+pages, race results, and season standings.
+
+> **Disclaimer**: GridCall is not affiliated with, endorsed by, or sponsored by
+> Formula 1, the FIA, Formula One Management, any team, driver, or sponsor. All
+> trademarks are the property of their respective owners.
 
 ## Features
 

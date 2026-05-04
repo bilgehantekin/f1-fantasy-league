@@ -1,7 +1,9 @@
 # Privacy Policy for GridCall
 
-**Last Updated**: May 2, 2026  
+**Last Updated**: May 4, 2026  
 **Effective Date**: June 1, 2026
+
+> **Disclaimer**: GridCall is an independent, fan-made application. It is **not affiliated with, endorsed, sponsored, or associated with Formula 1, the FIA, Formula One Management, any team, driver, or sponsor**. All trademarks are the property of their respective owners. Race timing, results, and statistics are sourced from publicly available third-party feeds.
 
 ## 1. Introduction
 
@@ -10,7 +12,7 @@ GridCall ("**we**," "**us**," "**our**," or "**Company**") is committed to prote
 Please read this Privacy Policy carefully. If you do not agree with our policies and practices, please do not use our Service.
 
 **Contact Information**:
-- Email: privacy@gridcall.app
+- Email: bilgehan.2002@gmail.com
 - Address: Contact via email (preferred)
 
 ---
@@ -49,27 +51,23 @@ Please read this Privacy Policy carefully. If you do not agree with our policies
 - IP address and geolocation (approximate, from IP)
 - Device identifiers (but NOT unique identifiers like IDFA/GAID)
 
-**Usage Analytics**:
-- Pages/screens visited
-- Features used (predictions submitted, leagues created, etc.)
-- Time spent in app
-- Error logs and crash reports (via Sentry)
-- Clicks and interactions
+**Diagnostics & Crash Data (Sentry only)**:
+- Error logs and crash reports
+- Stack traces, app version, OS version, and device model attached to a crash event
+- We do **not** run a behavioral analytics SDK (no Firebase Analytics, Google Analytics, Mixpanel, Amplitude, or similar). We do not track screen views, taps, dwell time, or marketing attribution.
 
-**Push Notification Tokens**:
-- Firebase Cloud Messaging (FCM) token for Android notifications
-- Apple Push Notification (APNs) token for iOS notifications
-- Your notification preferences and settings
+**Notifications**:
+- All race reminders are scheduled and delivered locally on your device by the app itself; we do not send remote push notifications and do not collect any push notification tokens.
+- Your notification preferences (enabled, hours before lock, missing-only filter) are stored on your device and in your account.
 
 ### 2.3 Information from Third-Party Services
 
 **Third Parties We Use**:
 - **Supabase**: PostgreSQL database, authentication provider
-- **Google Cloud**: OAuth provider, some infrastructure
-- **Apple**: Sign In with Apple provider
-- **OpenF1 API**: Public Formula 1 race data and results
+- **Google**: OAuth provider (only when you choose Sign in with Google)
+- **Apple**: Sign In with Apple provider (only when you choose Apple sign-in)
+- **OpenF1 API**: Public, unofficial Formula 1 race timing/results feed (no user data is sent to OpenF1; we only consume publicly available data)
 - **Sentry**: Error and crash reporting
-- **Firebase** (Android): Push notification delivery
 
 ---
 
@@ -111,15 +109,16 @@ We share your data with the following third parties to operate the Service:
 | Service | Purpose | Data Shared | Privacy Link |
 |---------|---------|------------|-------------|
 | **Supabase** | Database, Auth | All account & prediction data | https://supabase.com/privacy |
-| **Firebase** (Android) | Push notifications | Notification tokens only | https://firebase.google.com/support/privacy |
-| **Sentry** | Error tracking | Error logs (no PII) | https://sentry.io/privacy/ |
-| **OpenF1 API** | F1 data | No user data sent | https://openf1.org/ |
-| **Google** | Authentication | Email + profile (if Google login) | https://policies.google.com/privacy |
-| **Apple** | Authentication | Email (if Apple login) | https://www.apple.com/privacy/ |
+| **Sentry** | Error tracking | Crash reports & stack traces (no PII) | https://sentry.io/privacy/ |
+| **OpenF1 API** | F1 race data | No user data sent — read-only public feed | https://openf1.org/ |
+| **Google** | Authentication | Email + profile (only if you choose Google login) | https://policies.google.com/privacy |
+| **Apple** | Authentication | Email (only if you choose Apple login) | https://www.apple.com/privacy/ |
+
+> **Note on F1 data**: OpenF1 is an independent, unofficial API. It is not affiliated with Formula 1, the FIA, or any team. We do not redistribute proprietary timing feeds and we do not use OpenF1 data to gate paid features.
 
 ### 4.2 No Sale of Data
 
-**We do NOT sell your personal data to third parties.** We may share aggregated, anonymized statistics (e.g., "2,500 users submitted predictions for Monaco GP") for analytics.
+**We do NOT sell your personal data to third parties.** We may share aggregated, anonymized statistics (e.g., "2,500 users submitted predictions for Monaco GP") for product reporting.
 
 ### 4.3 Legal Compliance
 
@@ -143,13 +142,11 @@ As long as your account is active, we retain all your data:
 
 ### 5.2 After Account Deletion
 
-When you delete your account:
-- Personal data (email, username, avatar) is deleted within 7 days
-- Predictions and predictions are deleted within 7 days
-- League memberships are removed
-- Joker card usage is deleted
+When you request account deletion from inside the app, we begin a **30-day deletion window**:
 
-**Retention Exception**: We retain league statistics and anonymous scoring data for historical reference (does not identify you).
+- **Day 0**: Your account is marked for deletion. You are signed out and your profile is no longer visible to other users. You can cancel by contacting support before the window ends.
+- **Within 30 days** (and typically much sooner): personal data (email, username, avatar, OAuth identifiers, push preferences), all of your predictions, joker selections, league memberships, and your auth record are permanently deleted.
+- **Retention exception**: We may retain anonymous, aggregated scoring/league statistics (with no identifier linking back to you) for historical reference. We may also retain a minimal record of the deletion request itself for legal/audit purposes.
 
 ### 5.3 After Inactivity
 
@@ -195,7 +192,7 @@ We comply with privacy laws in your jurisdiction. Please contact us for jurisdic
 
 ### 6.4 How to Submit Rights Requests
 
-To exercise any of these rights, email us at: **privacy@gridcall.app**
+To exercise any of these rights, email us at: **bilgehan.2002@gmail.com**
 
 Please include:
 - "Privacy Request" in the subject line
@@ -261,11 +258,9 @@ These are not traditional cookies and expire when you log out.
 ### 9.2 Tracking Technologies
 
 We use:
-- **Sentry**: Error tracking (anonymized)
-- **Firebase Analytics** (optional): Usage analytics
-- **Device analytics**: App startup time, performance metrics
+- **Sentry**: Error and crash reporting only (anonymized — no email, username, or prediction content is attached to error events).
 
-You can disable analytics in app settings: Profile → Settings → Analytics.
+We do **not** run a behavioral analytics SDK and do **not** track marketing attribution, screen views, or session duration.
 
 ---
 
@@ -274,15 +269,13 @@ You can disable analytics in app settings: Profile → Settings → Analytics.
 ### 10.1 Communication Preferences
 
 You can manage your preferences in the app:
-- **Push Notifications**: Profile → Notification Settings
-  - Race reminders
-  - League updates
-  - Results notifications
-  - Toggle on/off or allow only for specific times
+- **Local Reminders**: Profile → Notification Settings
+  - Race reminders (delivered locally on your device)
+  - Hours-before-lock window (1h or 6h)
+  - "Only when I haven't predicted yet" filter
+  - Disable anytime in app or device settings
 
-- **Email Communications**: 
-  - Unsubscribe links in all emails
-  - Update preferences in settings
+- **Transactional email**: We currently do not send marketing email. Service emails (sign-in verification, security) are sent through your authentication provider (Supabase / Google / Apple).
 
 ### 10.2 Account Settings
 
@@ -320,7 +313,7 @@ We may update this Privacy Policy from time to time. When we do:
 
 For privacy-related questions, please contact:
 
-**Email**: privacy@gridcall.app  
+**Email**: bilgehan.2002@gmail.com  
 **Response Time**: 5-7 business days  
 
 ### 13.2 GDPR Data Protection Authority
@@ -332,7 +325,7 @@ EU residents can lodge complaints with their national data protection authority:
 ### 13.3 California Privacy Rights
 
 California residents can submit requests via:
-- Email: privacy@gridcall.app
+- Email: bilgehan.2002@gmail.com
 
 ---
 
@@ -366,13 +359,14 @@ We do NOT engage in direct marketing. Notifications are only for:
 
 ### 15.1 Data Controller & Processor
 
-- **Data Controller**: GridCall (the company/developer)
-- **Data Processor**: Supabase (database infrastructure)
+- **Data Controller**: GridCall (the developer)
+- **Data Processor**: Supabase (database & auth infrastructure)
+- **Sub-processor**: Sentry (crash reporting)
 
 ### 15.2 Legitimate Interests Assessment
 
 We process data on the basis of "legitimate interests" for:
-- Improving the Service (analytics, error tracking)
+- Improving the Service (crash diagnostics via Sentry)
 - Preventing fraud and abuse
 - Communicating with you about the Service
 - Complying with legal obligations
@@ -381,18 +375,19 @@ We process data on the basis of "legitimate interests" for:
 
 ## 16. Final Notes
 
-This Privacy Policy is compliant with:
-- ✅ GDPR (General Data Protection Regulation)
-- ✅ CCPA (California Consumer Privacy Act)
-- ✅ iOS App Store Guidelines
-- ✅ Android Play Store Guidelines
-- ✅ LGPD (Brazil)
+This Privacy Policy is written to align with:
+- GDPR (General Data Protection Regulation)
+- CCPA (California Consumer Privacy Act)
+- Apple App Store Review Guidelines
+- Google Play developer policies
+- LGPD (Brazil)
 
-**Questions?** Email: [your-email@gmail.com]
+This is a self-assessment by the developer, not a third-party audit.
+
+**Questions?** Email: bilgehan.2002@gmail.com
 
 ---
 
 **GridCall Privacy Policy**  
-Last Updated: May 2, 2026  
-Effective: June 1, 2026  
-Status: ✅ GDPR Compliant | ✅ App Store Ready
+Last Updated: May 4, 2026  
+Effective: June 1, 2026

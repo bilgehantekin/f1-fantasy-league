@@ -31,13 +31,34 @@ Production builds should keep this false. Mock live timing, fake live events, an
 
 ## App Store Basics
 
-- Privacy policy URL
-- Terms of service URL
-- Support email
-- Account deletion flow or support path
-- Demo reviewer account or reviewer notes for auth
-- Push notification purpose text in onboarding/settings
-- In-app purchase notes if Premium is submitted
+- Privacy policy URL hosted at https://gridcall.app/privacy (mirror `docs/privacy-policy.md`).
+- Terms of service URL hosted at https://gridcall.app/terms (mirror `docs/terms-of-service.md`).
+- Support / privacy email: bilgehan.2002@gmail.com (must work — Apple verifies it).
+- Account deletion: in-app via Profile → "Hesabı silme talebi oluştur". Backend wipe is wired through `process_account_deletion()` + `delete-accounts` edge function on a daily cron (see Account Deletion Pipeline below).
+- Demo reviewer account: create one before submission and put credentials in App Store Connect review notes.
+- Notification purpose: app uses **local** notifications only (flutter_local_notifications). No remote push tokens are collected. The iOS purpose string lives in `Info.plist` (`NSUserNotificationsUsageDescription`).
+- **Premium / IAP**: not in this release. The `/premium` route, paywall screen, and the upsell card have been removed from the build. The `dev_toggle_premium` RPC is now revoked from `authenticated`. Re-add real StoreKit / RevenueCat plus restore-purchases flow before reintroducing.
+- **F1 brand & data**: the app must ship with a clear "Unofficial — not affiliated with Formula 1, FIA, teams or drivers" disclaimer in onboarding, in the in-app About dialog, and in both legal docs. Avoid F1 logos, team logos, official driver portraits, pist/circuit logos and any wording that mimics official broadcast lines in icons, screenshots, and store metadata.
+- **App Store Connect privacy answers**: declare only what we actually collect — Email, Name (optional), User Content (predictions), Identifiers (auth user id), Diagnostics (Sentry). Do **not** declare push tokens, ad data, location, contacts, or behavioral analytics.
+
+## Privacy Manifest (iOS)
+
+Apple now requires `PrivacyInfo.xcprivacy` and "required reason API" declarations. Before submission:
+
+- Add `ios/Runner/PrivacyInfo.xcprivacy` listing the SDKs in use (Sentry) and required-reason API categories actually used (e.g., `NSPrivacyAccessedAPICategoryUserDefaults`, `NSPrivacyAccessedAPICategoryFileTimestamp`).
+- Re-check Sentry's published privacy manifest and link it as a sub-package privacy manifest where supported.
+
+## Account Deletion Pipeline
+
+Production wiring (run once per environment):
+
+1. Apply `0028_account_deletion_processing.sql` to the target database.
+2. Ensure Vault secrets `gridcall_project_url` and `gridcall_service_role_key` already exist (same secrets used by the OpenF1 ingest cron).
+3. Deploy the edge function: `supabase functions deploy delete-accounts`.
+4. Verify the `gridcall-delete-accounts` cron job in `cron.job` runs daily at 03:00 UTC.
+5. Smoke test: insert a deletion request with `scheduled_for = now() - interval '1 minute'`, invoke the edge function manually, confirm the user's predictions, league memberships, profile and `auth.users` row are gone and the request status is `completed`.
+
+The 30-day grace period is enforced in SQL (`scheduled_for = now() + interval '30 days'`), matches the privacy policy retention text, and gives users time to reach out and cancel by emailing support.
 
 ## Release Smoke Test
 
@@ -50,3 +71,5 @@ Production builds should keep this false. Mock live timing, fake live events, an
 - Open weekly summary after results exist
 - Change notification settings
 - Rename league, regenerate invite code, remove member, transfer ownership
+- Open Profile → "Hakkında" and confirm the unofficial-app disclaimer renders
+- Open Profile → "Hesabı silme talebi oluştur" with a throwaway account, confirm the dialog shows the 30-day window and that the user is signed out

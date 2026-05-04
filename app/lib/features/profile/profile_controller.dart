@@ -20,8 +20,27 @@ Future<void> completeOnboarding({String? username}) async {
   await supabase.rpc('complete_onboarding', params: {'p_username': username});
 }
 
-Future<void> requestAccountDeletion({String? reason}) async {
-  await supabase.rpc('request_account_deletion', params: {'p_reason': reason});
+class AccountDeletionResult {
+  final String requestId;
+  final DateTime? scheduledFor;
+  AccountDeletionResult({required this.requestId, this.scheduledFor});
+}
+
+Future<AccountDeletionResult> requestAccountDeletion({String? reason}) async {
+  final result = await supabase.rpc(
+    'request_account_deletion',
+    params: {'p_reason': reason},
+  );
+  if (result is List && result.isNotEmpty) {
+    final row = result.first as Map<String, dynamic>;
+    return AccountDeletionResult(
+      requestId: row['request_id'] as String,
+      scheduledFor: row['scheduled_for'] == null
+          ? null
+          : DateTime.parse(row['scheduled_for'] as String),
+    );
+  }
+  return AccountDeletionResult(requestId: result?.toString() ?? '');
 }
 
 final allBadgesProvider = FutureProvider<List<AppBadge>>((ref) async {

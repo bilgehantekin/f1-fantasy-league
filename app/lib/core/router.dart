@@ -13,7 +13,6 @@ import '../features/league/weekly_summary_screen.dart';
 import '../features/lineup/race_lineup_screen.dart';
 import '../features/live/live_race_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
-import '../features/premium/paywall_screen.dart';
 import '../features/prediction/prediction_screen.dart';
 import '../features/profile/notification_settings_screen.dart';
 import '../features/profile/profile_controller.dart';
@@ -121,7 +120,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings/notifications',
         builder: (_, _) => const NotificationSettingsScreen(),
       ),
-      GoRoute(path: '/premium', builder: (_, _) => const PaywallScreen()),
     ],
   );
 });

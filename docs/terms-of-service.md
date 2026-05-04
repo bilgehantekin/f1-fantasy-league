@@ -1,7 +1,9 @@
 # Terms of Service for GridCall
 
-**Last Updated**: May 2, 2026  
+**Last Updated**: May 4, 2026  
 **Effective Date**: June 1, 2026
+
+> **Disclaimer**: GridCall is an independent, unofficial fan-made application. It is **not affiliated with, endorsed, sponsored, or associated with Formula 1, the FIA, Formula One Management, any team, driver, or sponsor**. All trademarks and logos referenced are the property of their respective owners and are used here, where they appear at all, only in a descriptive/editorial sense.
 
 ## 1. Agreement to Terms
 
@@ -15,14 +17,14 @@ By downloading, installing, or using GridCall ("**Service**," "**App**," or "**A
 
 ### 2.1 What is GridCall?
 
-GridCall is a mobile application that enables users to:
-- Make predictions about Formula 1 race outcomes (driver grid positions, finishes)
-- Create private leagues with friends
+GridCall is an unofficial mobile application that enables users to:
+- Make predictions about Formula 1 race outcomes (winner, podium, pole, DNF count, etc.)
+- Create and join private leagues with friends
 - Track and compare prediction scores with other users
-- View official F1 race schedules and results
+- View Formula 1 race schedules and post-race results from publicly available sources
 - Participate in seasonal competitions
 
-**GridCall is for entertainment purposes only.** Predictions do not constitute gambling, betting, or financial transactions.
+**GridCall is for entertainment purposes only.** Predictions do not constitute gambling, betting, or financial transactions and there are no real-money winnings.
 
 ### 2.2 Service Availability
 
@@ -155,18 +157,17 @@ If you violate these Terms, we may:
 - We do not overturn scores except for technical errors
 - Contact support if you believe there's a technical error
 
-### 5.3 Joker Cards
+### 5.3 Joker Question
 
-**What Are Joker Cards?**
-- Special power-ups that double points for one prediction
-- Available to premium members or as seasonal rewards
-- One joker card per race (if available)
-- Once used, cannot be recovered
+**What Is the Joker?**
+- A bonus question attached to some races (e.g., "Will there be a safety car?") worth extra points if you answer correctly.
+- The joker question only becomes visible inside the prediction screen during the **24 hours before prediction lock** for that race; before that window it is hidden for everyone equally.
+- Joker availability and points value can vary per race and may not exist for every race.
 
 **Usage**:
-- Jokers can only be used before prediction lock
-- Used automatically when prediction is submitted (if selected)
-- Refunds are NOT issued for joker card usage
+- The joker can only be answered before prediction lock.
+- If you do not answer, you simply forgo the bonus points; nothing is consumed.
+- Joker answers, like other predictions, can be cleared from the prediction screen until lock.
 
 ### 5.4 League Conduct
 
@@ -289,27 +290,11 @@ We retain:
 
 ---
 
-## 10. Pricing & Payment (If Applicable)
+## 10. Pricing & Payment
 
-### 10.1 Free vs. Premium
+GridCall is currently **free to download and use**. There are no in-app purchases, subscriptions, or paid tiers in this version of the app. All features described in these Terms are available to every user at no cost.
 
-- **Free Tier**: Basic features available to all users
-- **Premium Tier**: Additional features (if offered)
-
-### 10.2 Subscription Terms (If Applicable)
-
-If GridCall offers premium features:
-- Subscription renews automatically unless cancelled
-- Cancellation available anytime in app settings
-- Refunds issued per App Store policy (Apple/Google)
-- Price may change with 30 days' notice
-
-### 10.3 No Refunds (Unless Required)
-
-Except as required by law or the App Store:
-- Subscription fees are non-refundable
-- No refunds for joker card usage
-- No refunds for league creation fees (if any)
+If we introduce paid features in a future version, we will update these Terms in advance and the App Store / Play Store listing will disclose the price, billing period, and cancellation/refund policy in accordance with platform rules. We will not collect payment information through the app outside of the standard platform billing flow (StoreKit / Google Play Billing).
 
 ---
 
@@ -333,7 +318,7 @@ These Terms are governed by the laws of United States, without regard to conflic
 ### 12.2 Dispute Resolution
 
 **Before Litigation**:
-- Contact us first: privacy@gridcall.app
+- Contact us first: bilgehan.2002@gmail.com
 - Allow 30 days for resolution attempts
 - Both parties agree to negotiate in good faith
 
@@ -372,13 +357,13 @@ If there's any conflict between these Terms and other documents, these Terms con
 ### 15.1 Customer Support
 
 For questions or support:
-- **Email**: privacy@gridcall.app
+- **Email**: bilgehan.2002@gmail.com
 - **Response Time**: 5-7 business days
 
 ### 15.2 Legal Notices
 
 Formal legal notices can be sent to:
-- **Email**: privacy@gridcall.app
+- **Email**: bilgehan.2002@gmail.com
 
 Notice is effective when email is sent.
 
@@ -389,7 +374,7 @@ Notice is effective when email is sent.
 ### 16.1 Related Agreements
 
 By using GridCall, you also agree to:
-- **Privacy Policy**: [Link to privacy policy]
+- **Privacy Policy**: https://gridcall.app/privacy
 - **App Store Terms**: Apple App Store or Google Play Store terms
 
 ### 16.2 Accessibility
@@ -434,9 +419,8 @@ GridCall complies with:
 ---
 
 **GridCall Terms of Service**  
-Last Updated: May 2, 2026  
-Effective: June 1, 2026  
-Status: ✅ App Store Ready | ✅ Legally Compliant
+Last Updated: May 4, 2026  
+Effective: June 1, 2026
 
 ---
 
@@ -444,7 +428,7 @@ Status: ✅ App Store Ready | ✅ Legally Compliant
 
 **By downloading and using GridCall, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.**
 
-If you have questions, please contact: privacy@gridcall.app
+If you have questions, please contact: bilgehan.2002@gmail.com
 
 ---
 

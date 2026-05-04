@@ -170,6 +170,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               onPressed: _busy ? null : _finish,
               child: Text(_busy ? 'HAZIRLANIYOR...' : 'BAŞLA'),
             ),
+            const SizedBox(height: 20),
+            Text(
+              'GridCall, Formula 1, FIA, takım veya sürücülerle bağlantısı olmayan, '
+              'bağımsız bir hayran uygulamasıdır. Tüm marka ve logolar ilgili sahiplerine aittir.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.white.withValues(alpha: 0.5),
+                height: 1.4,
+              ),
+            ),
           ],
         ),
       ),
