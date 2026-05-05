@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
 import '../../shared/models.dart';
+import 'share_card_atoms.dart';
 
 class LeagueShareCard extends StatelessWidget {
   final League league;
@@ -18,200 +19,240 @@ class LeagueShareCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topRows = standings.take(3).toList();
+    final others = standings.skip(3).take(3).toList();
+    final memberText = league.memberCount == null
+        ? '${standings.length} oyuncu'
+        : '${league.memberCount} oyuncu';
 
-    return Material(
-      color: AppColors.carbon,
-      child: Container(
-        width: 1080,
-        height: 1080,
-        padding: const EdgeInsets.all(56),
-        decoration: const BoxDecoration(color: AppColors.carbon),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(width: 18, height: 72, color: AppColors.f1Red),
-                const SizedBox(width: 28),
-                const Text(
-                  'GRIDCALL',
-                  style: TextStyle(
-                    fontSize: 54,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 2,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
+    return ShareStoryFrame(
+      width: 1080,
+      height: 1920,
+      padding: const EdgeInsets.fromLTRB(80, 120, 80, 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const ShareGridCallLogo(fontSize: 40, bulbSize: 14),
+              const Spacer(),
+              ShareSeasonPill(label: 'SEZON ${league.seasonId}'),
+            ],
+          ),
+          const SizedBox(height: 80),
+          Text(
+            'LİGİN ADI',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 3,
+              color: Colors.white.withValues(alpha: 0.55),
             ),
-            const Spacer(),
-            Text(
-              league.name.toUpperCase(),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 78,
-                fontWeight: FontWeight.w900,
-                height: 0.94,
-                color: Colors.white,
-              ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            league.name.toUpperCase(),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 100,
+              fontWeight: FontWeight.w900,
+              height: 0.92,
+              color: Colors.white,
             ),
-            const SizedBox(height: 28),
-            const Text(
-              'F1 tahmin ligime katil',
-              style: TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.w700,
-                color: Color(0xCCFFFFFF),
-              ),
-            ),
-            const SizedBox(height: 42),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceLow,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.surfaceHi, width: 2),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'DAVET KODU',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 2,
-                      color: Color(0x99FFFFFF),
-                    ),
-                  ),
-                  const SizedBox(width: 26),
-                  Text(
-                    league.inviteCode,
-                    style: const TextStyle(
-                      fontSize: 50,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 7,
-                      color: AppColors.f1Red,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 34),
-            if (topRows.isNotEmpty) ...[
-              const Text(
-                'ILK 3',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 2,
-                  color: Color(0x99FFFFFF),
-                ),
-              ),
-              const SizedBox(height: 18),
-              for (final row in topRows)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _StandingShareRow(row: row),
-                ),
-            ] else
-              const Text(
-                'Ilk yaris sonucundan sonra siralama burada gorunecek.',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0x99FFFFFF),
-                ),
-              ),
-            const Spacer(),
+          ),
+          const SizedBox(height: 90),
+          if (topRows.isNotEmpty)
+            _Podium(topRows: topRows)
+          else
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(28),
+              padding: const EdgeInsets.all(36),
               decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(18),
+                color: Colors.white.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
               ),
-              child: Text(
+              child: const Text(
+                'İlk yarış sonucundan sonra sıralama burada görünecek.',
+                style: TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xB3FFFFFF),
+                ),
+              ),
+            ),
+          if (others.isNotEmpty) ...[
+            const SizedBox(height: 56),
+            for (final row in others)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: ShareStandingLine(row: row),
+              ),
+          ],
+          const Spacer(),
+          ShareInviteBox(code: league.inviteCode),
+          const SizedBox(height: 28),
+          Row(
+            children: [
+              Text(
+                '$memberText · ${standings.length} sıralama',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white.withValues(alpha: 0.42),
+                ),
+              ),
+              const Spacer(),
+              Text(
                 inviteLink,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white.withValues(alpha: 0.42),
                 ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
-class _StandingShareRow extends StatelessWidget {
-  final StandingRow row;
+class _Podium extends StatelessWidget {
+  final List<StandingRow> topRows;
 
-  const _StandingShareRow({required this.row});
+  const _Podium({required this.topRows});
 
   @override
   Widget build(BuildContext context) {
-    final rankColor = switch (row.rank) {
-      1 => const Color(0xFFFFD700),
-      2 => const Color(0xFFC0C0C0),
-      3 => const Color(0xFFCD7F32),
-      _ => AppColors.surfaceHi,
-    };
+    final first = topRows[0];
+    final second = topRows.length > 1 ? topRows[1] : null;
+    final third = topRows.length > 2 ? topRows[2] : null;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLow,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: rankColor,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Text(
-              '${row.rank}',
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w900,
-                color: Colors.black,
-              ),
-            ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: second == null
+              ? const SizedBox(height: 300)
+              : _PodiumBar(
+                  row: second,
+                  place: 2,
+                  height: 280,
+                  accent: shareSilver,
+                ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: _PodiumBar(
+            row: first,
+            place: 1,
+            height: 360,
+            accent: shareGold,
+            crown: true,
           ),
-          const SizedBox(width: 24),
-          Expanded(
-            child: Text(
-              row.username,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          Text(
-            '${row.score} PTS',
-            style: const TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.w900,
-              color: AppColors.f1Red,
-            ),
-          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: third == null
+              ? const SizedBox(height: 240)
+              : _PodiumBar(
+                  row: third,
+                  place: 3,
+                  height: 220,
+                  accent: shareBronze,
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PodiumBar extends StatelessWidget {
+  final StandingRow row;
+  final int place;
+  final double height;
+  final Color accent;
+  final bool crown;
+
+  const _PodiumBar({
+    required this.row,
+    required this.place,
+    required this.height,
+    required this.accent,
+    this.crown = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        if (crown) ...[
+          const Icon(Icons.workspace_premium, size: 56, color: shareGold),
+          const SizedBox(height: 8),
         ],
-      ),
+        Text(
+          row.username,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text.rich(
+          TextSpan(
+            text: '${row.score}',
+            children: [
+              TextSpan(
+                text: ' PTS',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white.withValues(alpha: 0.5),
+                ),
+              ),
+            ],
+          ),
+          style: const TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.w800,
+            color: AppColors.f1Red,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Container(
+          height: height,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [accent, accent.withValues(alpha: 0.54)],
+            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+            boxShadow: [
+              BoxShadow(color: accent.withValues(alpha: 0.25), blurRadius: 60),
+            ],
+          ),
+          alignment: Alignment.topCenter,
+          padding: const EdgeInsets.only(top: 24),
+          child: Text(
+            '$place',
+            style: TextStyle(
+              fontSize: 120,
+              fontWeight: FontWeight.w900,
+              color: Colors.black.withValues(alpha: 0.55),
+              height: 1,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

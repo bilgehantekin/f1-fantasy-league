@@ -93,6 +93,7 @@ class Race {
   final DateTime? sprintRaceAt;
   final DateTime? sprintLockAt;
   final RaceStatus sprintStatus;
+  final List<RaceSession> sessions;
   Race({
     required this.id,
     required this.round,
@@ -108,29 +109,42 @@ class Race {
     this.sprintRaceAt,
     this.sprintLockAt,
     this.sprintStatus = RaceStatus.upcoming,
+    this.sessions = const [],
   });
-  factory Race.fromJson(Map<String, dynamic> j) => Race(
-    id: j['id'] as String,
-    round: j['round'] as int,
-    name: j['name'] as String,
-    circuit: j['circuit'] as String,
-    qualifyingAt: DateTime.parse(j['qualifying_at'] as String),
-    raceAt: DateTime.parse(j['race_at'] as String),
-    lockAt: DateTime.parse(j['lock_at'] as String),
-    status: _parseStatus(j['status'] as String),
-    cancellationNote: j['cancellation_note'] as String?,
-    hasSprint: (j['has_sprint'] as bool?) ?? false,
-    sprintQualifyingAt: j['sprint_qualifying_at'] != null
-        ? DateTime.parse(j['sprint_qualifying_at'] as String)
-        : null,
-    sprintRaceAt: j['sprint_race_at'] != null
-        ? DateTime.parse(j['sprint_race_at'] as String)
-        : null,
-    sprintLockAt: j['sprint_lock_at'] != null
-        ? DateTime.parse(j['sprint_lock_at'] as String)
-        : null,
-    sprintStatus: _parseStatus((j['sprint_status'] as String?) ?? 'upcoming'),
-  );
+  factory Race.fromJson(Map<String, dynamic> j) {
+    final rawSessions = j['race_sessions'];
+    final sessions = rawSessions is List
+        ? rawSessions
+              .whereType<Map<String, dynamic>>()
+              .map(RaceSession.fromJson)
+              .toList()
+        : <RaceSession>[];
+    sessions.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+
+    return Race(
+      id: j['id'] as String,
+      round: j['round'] as int,
+      name: j['name'] as String,
+      circuit: j['circuit'] as String,
+      qualifyingAt: DateTime.parse(j['qualifying_at'] as String),
+      raceAt: DateTime.parse(j['race_at'] as String),
+      lockAt: DateTime.parse(j['lock_at'] as String),
+      status: _parseStatus(j['status'] as String),
+      cancellationNote: j['cancellation_note'] as String?,
+      hasSprint: (j['has_sprint'] as bool?) ?? false,
+      sprintQualifyingAt: j['sprint_qualifying_at'] != null
+          ? DateTime.parse(j['sprint_qualifying_at'] as String)
+          : null,
+      sprintRaceAt: j['sprint_race_at'] != null
+          ? DateTime.parse(j['sprint_race_at'] as String)
+          : null,
+      sprintLockAt: j['sprint_lock_at'] != null
+          ? DateTime.parse(j['sprint_lock_at'] as String)
+          : null,
+      sprintStatus: _parseStatus((j['sprint_status'] as String?) ?? 'upcoming'),
+      sessions: sessions,
+    );
+  }
 
   bool get isLocked => DateTime.now().isAfter(lockAt);
   bool get isCancelled => status == RaceStatus.cancelled;
@@ -143,6 +157,41 @@ class Race {
   DateTime get jokerOpensAt => lockAt.subtract(jokerLeadTime);
   bool get isJokerWindowOpen => !DateTime.now().isBefore(jokerOpensAt);
   Duration get timeUntilJokerOpens => jokerOpensAt.difference(DateTime.now());
+}
+
+class RaceSession {
+  final String id;
+  final int? sessionKey;
+  final String sessionName;
+  final String sessionType;
+  final String shortLabel;
+  final int sortOrder;
+  final DateTime startsAt;
+  final DateTime? endsAt;
+
+  const RaceSession({
+    required this.id,
+    required this.sessionKey,
+    required this.sessionName,
+    required this.sessionType,
+    required this.shortLabel,
+    required this.sortOrder,
+    required this.startsAt,
+    this.endsAt,
+  });
+
+  factory RaceSession.fromJson(Map<String, dynamic> j) => RaceSession(
+    id: j['id'] as String,
+    sessionKey: (j['session_key'] as num?)?.toInt(),
+    sessionName: j['session_name'] as String,
+    sessionType: j['session_type'] as String,
+    shortLabel: j['short_label'] as String,
+    sortOrder: (j['sort_order'] as num).toInt(),
+    startsAt: DateTime.parse(j['starts_at'] as String),
+    endsAt: j['ends_at'] == null
+        ? null
+        : DateTime.parse(j['ends_at'] as String),
+  );
 }
 
 class RaceClassificationRow {

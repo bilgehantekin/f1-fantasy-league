@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/error_messages.dart';
+import '../../core/supabase.dart';
 import '../../core/theme.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets/app_state.dart';
@@ -146,7 +147,11 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
                 animation: _tabController,
                 builder: (context, _) {
                   return _tabController.index == 0
-                      ? _StandingsTab(standingsAsync: standingsAsync)
+                      ? _StandingsTab(
+                          leagueId: widget.leagueId,
+                          standingsAsync: standingsAsync,
+                          racesAsync: racesAsync,
+                        )
                       : _RacesTab(
                           racesAsync: racesAsync,
                           predictionStatusAsync: predictionStatusAsync,
@@ -157,7 +162,7 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
               const SizedBox(height: 24),
             ],
           ),
-          if (league != null)
+          if (_sharing && league != null)
             Positioned(
               left: -1400,
               top: 0,
@@ -235,29 +240,242 @@ class _InviteCodeCard extends StatefulWidget {
   State<_InviteCodeCard> createState() => _InviteCodeCardState();
 }
 
-class _StandingsTab extends StatelessWidget {
+class _StandingsTab extends ConsumerStatefulWidget {
+  final String leagueId;
   final AsyncValue<List<StandingRow>> standingsAsync;
+  final AsyncValue<List<Race>> racesAsync;
 
-  const _StandingsTab({required this.standingsAsync});
+  const _StandingsTab({
+    required this.leagueId,
+    required this.standingsAsync,
+    required this.racesAsync,
+  });
+
+  @override
+  ConsumerState<_StandingsTab> createState() => _StandingsTabState();
+}
+
+class _StandingsTabState extends ConsumerState<_StandingsTab> {
+  int _selectedIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final myUserId = ref.watch(currentUserProvider)?.id;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _StandingsSegmentedControl(
+          selectedIndex: _selectedIndex,
+          onChanged: (index) => setState(() => _selectedIndex = index),
+        ),
+        const SizedBox(height: 16),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: _selectedIndex == 0
+              ? _GeneralStandings(
+                  standingsAsync: widget.standingsAsync,
+                  myUserId: myUserId,
+                )
+              : _WeeklyStandings(
+                  leagueId: widget.leagueId,
+                  racesAsync: widget.racesAsync,
+                  myUserId: myUserId,
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StandingsSegmentedControl extends StatelessWidget {
+  final int selectedIndex;
+  final ValueChanged<int> onChanged;
+
+  const _StandingsSegmentedControl({
+    required this.selectedIndex,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const labels = ['Genel', 'Bu Hafta'];
+    return Row(
+      children: [
+        for (var i = 0; i < labels.length; i++) ...[
+          _StandingsSegmentButton(
+            label: labels[i],
+            selected: selectedIndex == i,
+            onTap: () => onChanged(i),
+          ),
+          if (i != labels.length - 1) const SizedBox(width: 10),
+        ],
+      ],
+    );
+  }
+}
+
+class _StandingsSegmentButton extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _StandingsSegmentButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected
+          ? AppColors.f1Red.withValues(alpha: 0.12)
+          : AppColors.surface,
+      borderRadius: BorderRadius.circular(22),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: selected
+                  ? AppColors.f1Red
+                  : Colors.white.withValues(alpha: 0.08),
+              width: selected ? 1.6 : 1,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+              color: selected
+                  ? AppColors.f1Red
+                  : Colors.white.withValues(alpha: 0.62),
+              letterSpacing: 0.1,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GeneralStandings extends StatelessWidget {
+  final AsyncValue<List<StandingRow>> standingsAsync;
+  final String? myUserId;
+
+  const _GeneralStandings({
+    required this.standingsAsync,
+    required this.myUserId,
+  });
 
   @override
   Widget build(BuildContext context) {
     return standingsAsync.when(
       loading: () => const AppLoadingState(label: 'Sıralama yükleniyor'),
       error: (e, _) => AppErrorState(message: friendlyError(e)),
-      data: (rows) {
-        if (rows.isEmpty) {
+      data: (rows) => _StandingsList(
+        rows: rows,
+        myUserId: myUserId,
+        emptyTitle: 'Henüz puan yok',
+        emptyMessage:
+            'İlk yarış sonucundan sonra lig sıralaması burada dolacak.',
+      ),
+    );
+  }
+}
+
+class _WeeklyStandings extends ConsumerWidget {
+  final String leagueId;
+  final AsyncValue<List<Race>> racesAsync;
+  final String? myUserId;
+
+  const _WeeklyStandings({
+    required this.leagueId,
+    required this.racesAsync,
+    required this.myUserId,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return racesAsync.when(
+      loading: () =>
+          const AppLoadingState(label: 'Haftalık sıralama yükleniyor'),
+      error: (e, _) => AppErrorState(message: friendlyError(e)),
+      data: (races) {
+        final race = _weeklyRaceFor(races);
+        if (race == null) {
           return const AppEmptyState(
-            icon: Icons.leaderboard_outlined,
-            title: 'Henüz puan yok',
-            message:
-                'İlk yarış sonucundan sonra lig sıralaması burada dolacak.',
+            icon: Icons.event_busy_outlined,
+            title: 'Yarış bulunamadı',
+            message: 'Bu hafta için gösterilecek yarış bulunamadı.',
           );
         }
-        return Column(
-          children: [for (final row in rows) _StandingRow(row: row)],
+        final summaryAsync = ref.watch(
+          weeklySummaryProvider(
+            WeeklySummaryKey(leagueId: leagueId, raceId: race.id),
+          ),
+        );
+        return summaryAsync.when(
+          loading: () =>
+              const AppLoadingState(label: 'Haftalık sıralama yükleniyor'),
+          error: (e, _) => AppErrorState(message: friendlyError(e)),
+          data: (summary) => _StandingsList(
+            rows: summary.topStandings,
+            myUserId: myUserId,
+            emptyTitle: 'Bu hafta puan yok',
+            emptyMessage:
+                '${race.name} skorları hesaplanınca burada görünecek.',
+          ),
         );
       },
+    );
+  }
+
+  Race? _weeklyRaceFor(List<Race> races) {
+    if (races.isEmpty) return null;
+    final now = DateTime.now();
+    final sorted = [...races]..sort((a, b) => a.raceAt.compareTo(b.raceAt));
+    Race? latestStarted;
+    for (final race in sorted) {
+      if (!race.raceAt.isAfter(now)) latestStarted = race;
+    }
+    if (latestStarted != null) return latestStarted;
+    return sorted.first;
+  }
+}
+
+class _StandingsList extends StatelessWidget {
+  final List<StandingRow> rows;
+  final String? myUserId;
+  final String emptyTitle;
+  final String emptyMessage;
+
+  const _StandingsList({
+    required this.rows,
+    required this.myUserId,
+    required this.emptyTitle,
+    required this.emptyMessage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (rows.isEmpty) {
+      return AppEmptyState(
+        icon: Icons.leaderboard_outlined,
+        title: emptyTitle,
+        message: emptyMessage,
+      );
+    }
+    return Column(
+      children: [
+        for (final row in rows)
+          _StandingRow(row: row, isMe: row.userId == myUserId),
+      ],
     );
   }
 }
@@ -315,9 +533,14 @@ class _RacesTab extends StatelessWidget {
                     sprint: true,
                   );
                   final predictionSaved = mainSaved || sprintSaved;
+                  final savedPredictionCount =
+                      (mainSaved ? 1 : 0) + (sprintSaved ? 1 : 0);
+                  final totalPredictionCount = race.hasSprint ? 2 : 1;
                   return RaceCardNew(
                     race: race,
                     predictionSaved: predictionSaved,
+                    savedPredictionCount: savedPredictionCount,
+                    totalPredictionCount: totalPredictionCount,
                     actionLabel:
                         mainStatus == RaceStatus.upcoming ||
                             mainStatus == RaceStatus.locked
@@ -446,11 +669,16 @@ class _RacesTab extends StatelessWidget {
                         race.id,
                         sprint: true,
                       );
+                      final savedPredictionCount =
+                          (mainSaved ? 1 : 0) + (sprintSaved ? 1 : 0);
+                      final totalPredictionCount = race.hasSprint ? 2 : 1;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: RaceCardNew(
                           race: race,
                           predictionSaved: mainSaved || sprintSaved,
+                          savedPredictionCount: savedPredictionCount,
+                          totalPredictionCount: totalPredictionCount,
                           actionLabel: 'Tahmin Yap',
                           actionIcon: Icons.add_circle_outline,
                           onTap: () => _openLeagueRace(
@@ -629,86 +857,127 @@ class _InviteCodeCardState extends State<_InviteCodeCard> {
 }
 
 class _StandingRow extends StatelessWidget {
-  final dynamic row;
-  const _StandingRow({required this.row});
+  final StandingRow row;
+  final bool isMe;
+
+  const _StandingRow({required this.row, required this.isMe});
 
   @override
   Widget build(BuildContext context) {
-    final rank = row.rank as int;
-    final username = row.username as String;
-    final score = row.score as int;
-
-    final (rankBg, rankText) = switch (rank) {
-      1 => (const Color(0xFFFFD700), Colors.black),
-      2 => (const Color(0xFFC0C0C0), Colors.black),
-      3 => (const Color(0xFFCD7F32), Colors.black),
-      _ => (const Color(0xFF1F1F2E), Colors.white),
+    final rankColor = switch (row.rank) {
+      1 => const Color(0xFFFFD700),
+      2 => const Color(0xFFC8CDD3),
+      3 => const Color(0xFFD08B5B),
+      _ => Colors.white.withValues(alpha: 0.72),
     };
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A26),
-        borderRadius: BorderRadius.circular(8),
+        color: isMe
+            ? AppColors.f1Red.withValues(alpha: 0.16)
+            : AppColors.surface.withValues(alpha: 0.78),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isMe ? AppColors.f1Red : Colors.white.withValues(alpha: 0.07),
+          width: isMe ? 1.8 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 14,
+            offset: const Offset(0, 7),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: rankBg,
-              borderRadius: BorderRadius.circular(8),
-            ),
+          SizedBox(
+            width: 42,
             child: Text(
-              '$rank',
+              '${row.rank}',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 24,
                 fontWeight: FontWeight.w900,
-                color: rankText,
+                color: isMe ? AppColors.f1Red : rankColor,
+                height: 1,
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 18),
           Expanded(
             child: Row(
               children: [
-                Text(
-                  username,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                Flexible(
+                  child: Text(
+                    row.username,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
+                if (isMe) ...[
+                  const SizedBox(width: 8),
+                  const Text(
+                    'SEN',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.9,
+                      color: AppColors.f1Red,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '$score',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFFE10600),
-                ),
+          const SizedBox(width: 14),
+          const _RankChangeChip(),
+          const SizedBox(width: 18),
+          SizedBox(
+            width: 56,
+            child: Text(
+              '${row.score}',
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                height: 1,
               ),
-              Text(
-                'PTS',
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                  color: Colors.white.withValues(alpha: 0.5),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _RankChangeChip extends StatelessWidget {
+  const _RankChangeChip();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 54,
+      height: 36,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Text(
+        '—',
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w900,
+          color: Colors.white.withValues(alpha: 0.42),
+        ),
       ),
     );
   }

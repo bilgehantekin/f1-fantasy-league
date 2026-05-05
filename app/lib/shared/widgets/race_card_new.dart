@@ -185,7 +185,11 @@ class _RaceKindOption extends StatelessWidget {
                         ),
                         if (saved) ...[
                           const SizedBox(width: 8),
-                          const _PredictionBadge(),
+                          const Icon(
+                            Icons.check_circle_outline,
+                            size: 18,
+                            color: Color(0xB3FFFFFF),
+                          ),
                         ],
                       ],
                     ),
@@ -285,6 +289,8 @@ class RaceCardNew extends StatelessWidget {
   final VoidCallback onTap;
   final RaceCardKind kind;
   final bool? predictionSaved;
+  final int? savedPredictionCount;
+  final int? totalPredictionCount;
   final String? actionLabel;
   final IconData? actionIcon;
 
@@ -298,6 +304,8 @@ class RaceCardNew extends StatelessWidget {
     required this.race,
     required this.onTap,
     this.predictionSaved,
+    this.savedPredictionCount,
+    this.totalPredictionCount,
     this.actionLabel,
     this.actionIcon,
     this.showLeagueContext = true,
@@ -312,6 +320,14 @@ class RaceCardNew extends StatelessWidget {
       _isSprint ? race.sprintQualifyingAt : race.qualifyingAt;
 
   DateTime? get _raceAt => _isSprint ? race.sprintRaceAt : race.raceAt;
+
+  int get _predictionTotal => totalPredictionCount ?? (race.hasSprint ? 2 : 1);
+
+  int get _predictionSavedCount {
+    final explicit = savedPredictionCount;
+    if (explicit != null) return explicit.clamp(0, _predictionTotal);
+    return predictionSaved == true ? _predictionTotal : 0;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -395,9 +411,12 @@ class RaceCardNew extends StatelessWidget {
                         letterSpacing: 1.5,
                       ),
                     ),
-                    if (showLeagueContext && predictionSaved == true) ...[
+                    if (showLeagueContext && _predictionSavedCount > 0) ...[
                       const Spacer(),
-                      const _PredictionBadge(),
+                      _PredictionBadge(
+                        saved: _predictionSavedCount,
+                        total: _predictionTotal,
+                      ),
                     ],
                   ],
                 ),
@@ -448,6 +467,10 @@ class RaceCardNew extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
+                _StartLightsPanel(
+                  sessions: _buildStartLightSessions(DateTime.now()),
+                ),
+                const SizedBox(height: 12),
 
                 // Status-specific content
                 if (status == RaceStatus.upcoming ||
@@ -465,6 +488,115 @@ class RaceCardNew extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  List<_StartLightSession> _buildStartLightSessions(DateTime now) {
+    if (race.sessions.isNotEmpty) {
+      final isRaceWeek =
+          now.isAfter(
+            race.sessions.first.startsAt.subtract(const Duration(days: 1)),
+          ) &&
+          now.isBefore(
+            (race.sessions.last.endsAt ?? race.sessions.last.startsAt).add(
+              const Duration(hours: 4),
+            ),
+          );
+      final forceInactive = !isRaceWeek || _status == RaceStatus.cancelled;
+      return race.sessions
+          .take(5)
+          .map(
+            (session) => _StartLightSession(
+              label: session.shortLabel,
+              state: _lightStateFor(
+                session.startsAt,
+                now,
+                forceInactive: forceInactive,
+                endsAt: session.endsAt,
+              ),
+            ),
+          )
+          .toList();
+    }
+
+    final qAt = _qualifyingAt;
+    final rAt = _raceAt;
+    final useSprintWeekendLayout = race.hasSprint;
+    final firstKnownSession = useSprintWeekendLayout
+        ? (race.sprintQualifyingAt ?? race.sprintRaceAt ?? qAt ?? rAt)
+        : (qAt ?? rAt);
+    final isRaceWeek =
+        firstKnownSession != null &&
+        now.isAfter(firstKnownSession.subtract(const Duration(days: 3))) &&
+        rAt != null &&
+        now.isBefore(rAt.add(const Duration(hours: 4)));
+    final forceInactive = !isRaceWeek || _status == RaceStatus.cancelled;
+
+    if (useSprintWeekendLayout) {
+      final sqAt = race.sprintQualifyingAt ?? qAt;
+      final srAt = race.sprintRaceAt;
+      final p1At = sqAt?.subtract(const Duration(hours: 4));
+      return [
+        _StartLightSession(
+          label: 'P1',
+          state: _lightStateFor(p1At, now, forceInactive: forceInactive),
+        ),
+        _StartLightSession(
+          label: 'SQ',
+          state: _lightStateFor(sqAt, now, forceInactive: forceInactive),
+        ),
+        _StartLightSession(
+          label: 'SR',
+          state: _lightStateFor(srAt, now, forceInactive: forceInactive),
+        ),
+        _StartLightSession(
+          label: 'Q',
+          state: _lightStateFor(qAt, now, forceInactive: forceInactive),
+        ),
+        _StartLightSession(
+          label: 'R',
+          state: _lightStateFor(rAt, now, forceInactive: forceInactive),
+        ),
+      ];
+    }
+
+    final p1At = qAt?.subtract(const Duration(days: 2));
+    final p2At = qAt?.subtract(const Duration(days: 1));
+    final p3At = qAt?.subtract(const Duration(hours: 4));
+    return [
+      _StartLightSession(
+        label: 'P1',
+        state: _lightStateFor(p1At, now, forceInactive: forceInactive),
+      ),
+      _StartLightSession(
+        label: 'P2',
+        state: _lightStateFor(p2At, now, forceInactive: forceInactive),
+      ),
+      _StartLightSession(
+        label: 'P3',
+        state: _lightStateFor(p3At, now, forceInactive: forceInactive),
+      ),
+      _StartLightSession(
+        label: 'Q',
+        state: _lightStateFor(qAt, now, forceInactive: forceInactive),
+      ),
+      _StartLightSession(
+        label: 'R',
+        state: _lightStateFor(rAt, now, forceInactive: forceInactive),
+      ),
+    ];
+  }
+
+  _StartLightState _lightStateFor(
+    DateTime? startsAt,
+    DateTime now, {
+    required bool forceInactive,
+    DateTime? endsAt,
+  }) {
+    if (forceInactive || startsAt == null) return _StartLightState.inactive;
+    final effectiveEndsAt = endsAt ?? startsAt.add(const Duration(hours: 2));
+    if (now.isBefore(startsAt)) return _StartLightState.upcoming;
+    if (now.isBefore(effectiveEndsAt)) return _StartLightState.live;
+    return _StartLightState.finished;
   }
 
   Widget _buildUpcomingContent(BuildContext context) {
@@ -680,6 +812,234 @@ class RaceCardNew extends StatelessWidget {
   }
 }
 
+enum _StartLightState { inactive, upcoming, live, finished }
+
+class _StartLightSession {
+  final String label;
+  final _StartLightState state;
+
+  const _StartLightSession({required this.label, required this.state});
+}
+
+class _StartLightsPanel extends StatelessWidget {
+  final List<_StartLightSession> sessions;
+
+  const _StartLightsPanel({required this.sessions});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF08080F), Color(0xFF050509)],
+        ),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x66000000),
+            offset: Offset(0, -2),
+            blurRadius: 4,
+            spreadRadius: -2,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          for (var i = 0; i < sessions.length; i++) ...[
+            Expanded(child: _StartLightColumn(session: sessions[i])),
+            if (i != sessions.length - 1) const SizedBox(width: 10),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StartLightColumn extends StatelessWidget {
+  final _StartLightSession session;
+
+  const _StartLightColumn({required this.session});
+
+  @override
+  Widget build(BuildContext context) {
+    final active = session.state == _StartLightState.live;
+    final labelColor = switch (session.state) {
+      _StartLightState.live => AppColors.lockOrange,
+      _StartLightState.finished => Colors.white.withValues(alpha: 0.32),
+      _StartLightState.upcoming => Colors.white.withValues(alpha: 0.55),
+      _StartLightState.inactive => Colors.white.withValues(alpha: 0.18),
+    };
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _StartLightBulb(state: session.state),
+        const SizedBox(height: 6),
+        Text(
+          session.label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.8,
+            color: labelColor,
+          ),
+        ),
+        if (active) const SizedBox(height: 0),
+      ],
+    );
+  }
+}
+
+class _StartLightBulb extends StatelessWidget {
+  final _StartLightState state;
+
+  const _StartLightBulb({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final (lit, color, glow) = switch (state) {
+      _StartLightState.finished => (
+        true,
+        const Color(0xFFFF1010),
+        const Color(0xFFFF3030),
+      ),
+      _StartLightState.live => (
+        true,
+        const Color(0xFFFFB800),
+        const Color(0xFFFFC83A),
+      ),
+      _StartLightState.upcoming => (
+        true,
+        AppColors.lockGreen,
+        const Color(0xFF3FE890),
+      ),
+      _StartLightState.inactive => (
+        false,
+        const Color(0xFF14141C),
+        Colors.transparent,
+      ),
+    };
+
+    final bulb = Container(
+      width: 18,
+      height: 18,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          center: const Alignment(-0.35, -0.4),
+          radius: 0.85,
+          colors: lit
+              ? [_lighten(color), color, _darken(color)]
+              : const [Color(0xFF2A2A36), Color(0xFF14141C), Color(0xFF08080C)],
+          stops: const [0, 0.45, 1],
+        ),
+        boxShadow: lit
+            ? [
+                BoxShadow(
+                  color: glow.withValues(alpha: 0.54),
+                  blurRadius: 12,
+                  spreadRadius: 1,
+                ),
+                BoxShadow(color: glow.withValues(alpha: 0.8), blurRadius: 5),
+                const BoxShadow(
+                  color: Color(0x80000000),
+                  offset: Offset(0, -1),
+                  blurRadius: 2,
+                  spreadRadius: -1,
+                ),
+              ]
+            : const [
+                BoxShadow(
+                  color: Color(0x99000000),
+                  blurRadius: 1,
+                  spreadRadius: 1,
+                ),
+              ],
+      ),
+      child: lit
+          ? Align(
+              alignment: const Alignment(-0.38, -0.52),
+              child: Container(
+                width: 7,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            )
+          : null,
+    );
+
+    if (state != _StartLightState.live) return bulb;
+
+    return _PulsingStartLight(child: bulb);
+  }
+
+  Color _lighten(Color color) {
+    return Color.fromARGB(
+      255,
+      (color.r * 255 + (255 - color.r * 255) * 0.4).round(),
+      (color.g * 255 + (255 - color.g * 255) * 0.4).round(),
+      (color.b * 255 + (255 - color.b * 255) * 0.4).round(),
+    );
+  }
+
+  Color _darken(Color color) {
+    return Color.fromARGB(
+      255,
+      (color.r * 255 * 0.55).round(),
+      (color.g * 255 * 0.55).round(),
+      (color.b * 255 * 0.55).round(),
+    );
+  }
+}
+
+class _PulsingStartLight extends StatefulWidget {
+  final Widget child;
+
+  const _PulsingStartLight({required this.child});
+
+  @override
+  State<_PulsingStartLight> createState() => _PulsingStartLightState();
+}
+
+class _PulsingStartLightState extends State<_PulsingStartLight>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    )..repeat(reverse: true);
+    _opacity = Tween<double>(
+      begin: 0.45,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(opacity: _opacity, child: widget.child);
+  }
+}
+
 class _CardAction extends StatelessWidget {
   final String label;
   final IconData? icon;
@@ -716,27 +1076,31 @@ class _CardAction extends StatelessWidget {
 }
 
 class _PredictionBadge extends StatelessWidget {
-  const _PredictionBadge();
+  final int saved;
+  final int total;
+
+  const _PredictionBadge({required this.saved, required this.total});
 
   @override
   Widget build(BuildContext context) {
-    const color = AppColors.lockOrange;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withValues(alpha: 0.7), width: 1),
-      ),
-      child: const Text(
-        'TAHMİN YAPILDI',
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
-          color: color,
-          letterSpacing: 0.8,
+    const iconColor = Color(0xB3FFFFFF);
+    const textColor = Color(0xCCFFFFFF);
+    final suffix = '$saved/$total';
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.check_circle_outline, size: 15, color: iconColor),
+        const SizedBox(width: 6),
+        Text(
+          'Tahmin yapıldı $suffix',
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+            color: textColor,
+            letterSpacing: 0.2,
+          ),
         ),
-      ),
+      ],
     );
   }
 }

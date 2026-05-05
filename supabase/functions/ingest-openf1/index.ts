@@ -24,8 +24,10 @@ interface OpenF1Meeting {
 }
 interface OpenF1Session {
   session_key: number;
+  session_name?: string;
   session_type: string;
   date_start: string;
+  date_end?: string | null;
 }
 interface OpenF1Result {
   position: number | null;
@@ -49,7 +51,7 @@ interface IngestBody {
   race_id?: string;
   dry_run?: boolean;
   force_sprint?: boolean;
-  mode?: "results" | "season-bootstrap";
+  mode?: "results" | "season-bootstrap" | "sync-sessions";
   year?: number;
 }
 
@@ -83,6 +85,11 @@ Deno.serve(async (req) => {
   if (body.mode === "season-bootstrap") {
     const year = body.year ?? new Date().getFullYear();
     return jsonResponse(await bootstrapSeason(c, year));
+  }
+
+  if (body.mode === "sync-sessions") {
+    const year = body.year ?? new Date().getFullYear();
+    return jsonResponse(await syncSeasonSessions(c, year));
   }
 
   const raceIds = await resolveRaceIds(c, body.race_id);
@@ -151,6 +158,7 @@ async function ingestRace(
   const raceSession = mainRace ??
     await findSession(meeting.meeting_key, "Race");
   if (!raceSession) throw new Error("Race session not found");
+  await syncRaceSessions(c, raceId, meeting.meeting_key);
   const qualSession = mainQuali ??
     await findSession(meeting.meeting_key, "Qualifying");
 
@@ -468,6 +476,96 @@ async function findMainQualifyingAndRace(meetingKey: number): Promise<{
   return { mainQuali, mainRace };
 }
 
+async function syncRaceSessions(
+  c: SupabaseClient,
+  raceId: string,
+  meetingKey: number,
+) {
+  const all = await fetchJson<OpenF1Session[]>(
+    `${OPENF1}/sessions?meeting_key=${meetingKey}`,
+  );
+  const sessions = all
+    .map((session) => canonicalSession(session))
+    .filter((session): session is NonNullable<typeof session> =>
+      session !== null
+    )
+    .sort((a, b) => a.sort_order - b.sort_order);
+
+  if (sessions.length === 0) return;
+
+  const rows = sessions.map((session) => ({
+    race_id: raceId,
+    session_key: session.session_key,
+    session_name: session.session_name,
+    session_type: session.session_type,
+    short_label: session.short_label,
+    sort_order: session.sort_order,
+    starts_at: session.starts_at,
+    ends_at: session.ends_at,
+    source: "openf1",
+    updated_at: new Date().toISOString(),
+  }));
+
+  const { error } = await c
+    .from("race_sessions")
+    .upsert(rows, { onConflict: "race_id,short_label" });
+  if (error) throw error;
+}
+
+function canonicalSession(session: OpenF1Session): {
+  session_key: number;
+  session_name: string;
+  session_type: string;
+  short_label: string;
+  sort_order: number;
+  starts_at: string;
+  ends_at: string | null;
+} | null {
+  const name = session.session_name ?? session.session_type;
+  const type = session.session_type;
+  const normalized = `${name} ${type}`.toLowerCase();
+
+  let shortLabel: string | null = null;
+  let sortOrder: number | null = null;
+
+  if (/practice\s*1|free practice\s*1|fp1/.test(normalized)) {
+    shortLabel = "P1";
+    sortOrder = 10;
+  } else if (/practice\s*2|free practice\s*2|fp2/.test(normalized)) {
+    shortLabel = "P2";
+    sortOrder = 20;
+  } else if (/practice\s*3|free practice\s*3|fp3/.test(normalized)) {
+    shortLabel = "P3";
+    sortOrder = 30;
+  } else if (/sprint.*(qualifying|shootout)/.test(normalized)) {
+    shortLabel = "SQ";
+    sortOrder = 20;
+  } else if (/^sprint$|sprint race/.test(name.toLowerCase())) {
+    shortLabel = "SR";
+    sortOrder = 30;
+  } else if (type === "Qualifying" && !/sprint/.test(normalized)) {
+    shortLabel = "Q";
+    sortOrder = 40;
+  } else if (type === "Race" && !/sprint/.test(normalized)) {
+    shortLabel = "R";
+    sortOrder = 50;
+  }
+
+  if (shortLabel == null || sortOrder == null || !session.date_start) {
+    return null;
+  }
+
+  return {
+    session_key: session.session_key,
+    session_name: name,
+    session_type: type,
+    short_label: shortLabel,
+    sort_order: sortOrder,
+    starts_at: session.date_start,
+    ends_at: session.date_end ?? null,
+  };
+}
+
 async function findFastestLap(sessionKey: number): Promise<OpenF1Lap | null> {
   const laps = await fetchJson<OpenF1Lap[]>(
     `${OPENF1}/laps?session_key=${sessionKey}`,
@@ -693,7 +791,7 @@ async function bootstrapSeason(c: SupabaseClient, year: number) {
 
     const hasSprint = !!(sprintQuali && sprintRace);
 
-    const { error: rErr } = await c.from("races").upsert(
+    const { data: raceRow, error: rErr } = await c.from("races").upsert(
       {
         season_id: year,
         round: i + 1,
@@ -706,8 +804,11 @@ async function bootstrapSeason(c: SupabaseClient, year: number) {
         sprint_race_at: sprintRace?.date_start ?? null,
       },
       { onConflict: "season_id,round" },
-    );
+    ).select("id").single();
     if (rErr) throw rErr;
+    if (raceRow?.id) {
+      await syncRaceSessions(c, raceRow.id as string, m.meeting_key);
+    }
     raceCount++;
     if (hasSprint) sprintCount++;
   }
@@ -719,4 +820,29 @@ async function bootstrapSeason(c: SupabaseClient, year: number) {
     races: raceCount,
     sprints: sprintCount,
   };
+}
+
+async function syncSeasonSessions(c: SupabaseClient, year: number) {
+  const { data: races, error } = await c
+    .from("races")
+    .select("id, race_at")
+    .eq("season_id", year)
+    .order("round", { ascending: true });
+  if (error) throw error;
+
+  let synced = 0;
+  const errors: unknown[] = [];
+  for (const race of races ?? []) {
+    try {
+      const meeting = await findMeeting(year, new Date(race.race_at as string));
+      if (!meeting) throw new Error("OpenF1 meeting not found");
+      await syncRaceSessions(c, race.id as string, meeting.meeting_key);
+      synced++;
+      await new Promise((r) => setTimeout(r, 250));
+    } catch (e) {
+      errors.push({ race_id: race.id, error: String(e) });
+    }
+  }
+
+  return { year, synced, errors };
 }
