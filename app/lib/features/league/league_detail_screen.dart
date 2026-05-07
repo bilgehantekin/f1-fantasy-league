@@ -8,9 +8,11 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/error_messages.dart';
+import '../../core/env.dart';
 import '../../core/supabase.dart';
 import '../../core/theme.dart';
 import '../../shared/models.dart';
+import '../../shared/turkish_text.dart';
 import '../../shared/widgets/app_state.dart';
 import '../../shared/widgets/race_card_new.dart';
 import '../calendar/calendar_controller.dart';
@@ -180,7 +182,8 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
     );
   }
 
-  String _inviteLinkFor(String inviteCode) => 'gridcall:///join/$inviteCode';
+  String _inviteLinkFor(String inviteCode) =>
+      Env.joinUri(inviteCode).toString();
 
   Future<void> _shareLeague(League league, List<StandingRow> standings) async {
     if (_sharing) return;
@@ -274,6 +277,8 @@ class _StandingsTabState extends ConsumerState<_StandingsTab> {
           child: _selectedIndex == 0
               ? _GeneralStandings(
                   standingsAsync: widget.standingsAsync,
+                  racesAsync: widget.racesAsync,
+                  leagueId: widget.leagueId,
                   myUserId: myUserId,
                 )
               : _WeeklyStandings(
@@ -365,11 +370,15 @@ class _StandingsSegmentButton extends StatelessWidget {
 }
 
 class _GeneralStandings extends StatelessWidget {
+  final String leagueId;
   final AsyncValue<List<StandingRow>> standingsAsync;
+  final AsyncValue<List<Race>> racesAsync;
   final String? myUserId;
 
   const _GeneralStandings({
+    required this.leagueId,
     required this.standingsAsync,
+    required this.racesAsync,
     required this.myUserId,
   });
 
@@ -378,12 +387,32 @@ class _GeneralStandings extends StatelessWidget {
     return standingsAsync.when(
       loading: () => const AppLoadingState(label: 'Sıralama yükleniyor'),
       error: (e, _) => AppErrorState(message: friendlyError(e)),
-      data: (rows) => _StandingsList(
-        rows: rows,
-        myUserId: myUserId,
-        emptyTitle: 'Henüz puan yok',
-        emptyMessage:
-            'İlk yarış sonucundan sonra lig sıralaması burada dolacak.',
+      data: (rows) => Consumer(
+        builder: (context, ref, _) {
+          final latestEvent = racesAsync.asData == null
+              ? null
+              : _latestScoredEvent(racesAsync.asData!.value);
+          final previousAsync = latestEvent == null
+              ? null
+              : ref.watch(
+                  previousSeasonStandingsProvider(
+                    PreviousStandingsKey(
+                      leagueId: leagueId,
+                      cutoff: latestEvent.at,
+                    ),
+                  ),
+                );
+          final previousRows =
+              previousAsync?.asData?.value ?? const <StandingRow>[];
+          return _StandingsList(
+            rows: rows,
+            myUserId: myUserId,
+            rankDeltas: _rankDeltas(rows, previousRows),
+            emptyTitle: 'Henüz puan yok',
+            emptyMessage:
+                'İlk yarış sonucundan sonra lig sıralaması burada dolacak.',
+          );
+        },
       ),
     );
   }
@@ -407,57 +436,121 @@ class _WeeklyStandings extends ConsumerWidget {
           const AppLoadingState(label: 'Haftalık sıralama yükleniyor'),
       error: (e, _) => AppErrorState(message: friendlyError(e)),
       data: (races) {
-        final race = _weeklyRaceFor(races);
-        if (race == null) {
+        final weeklyRace = _weeklyRaceFor(races);
+        if (weeklyRace == null) {
           return const AppEmptyState(
             icon: Icons.event_busy_outlined,
             title: 'Yarış bulunamadı',
             message: 'Bu hafta için gösterilecek yarış bulunamadı.',
           );
         }
-        final summaryAsync = ref.watch(
-          weeklySummaryProvider(
-            WeeklySummaryKey(leagueId: leagueId, raceId: race.id),
-          ),
+        final key = WeeklySummaryKey(
+          leagueId: leagueId,
+          raceId: weeklyRace.race.id,
+          sprint: weeklyRace.sprint,
         );
-        return summaryAsync.when(
+        final standingsAsync = ref.watch(
+          weeklyRace.weekend
+              ? weeklyWeekendStandingsProvider(key)
+              : weeklyStandingsProvider(key),
+        );
+        return standingsAsync.when(
           loading: () =>
               const AppLoadingState(label: 'Haftalık sıralama yükleniyor'),
           error: (e, _) => AppErrorState(message: friendlyError(e)),
-          data: (summary) => _StandingsList(
-            rows: summary.topStandings,
+          data: (rows) => _StandingsList(
+            rows: rows,
             myUserId: myUserId,
             emptyTitle: 'Bu hafta puan yok',
             emptyMessage:
-                '${race.name} skorları hesaplanınca burada görünecek.',
+                '${weeklyRace.race.name} skorları hesaplanınca burada görünecek.',
           ),
         );
       },
     );
   }
 
-  Race? _weeklyRaceFor(List<Race> races) {
+  ({Race race, bool sprint, bool weekend})? _weeklyRaceFor(List<Race> races) {
     if (races.isEmpty) return null;
     final now = DateTime.now();
     final sorted = [...races]..sort((a, b) => a.raceAt.compareTo(b.raceAt));
-    Race? latestStarted;
+    ({Race race, bool sprint, bool weekend})? latestStarted;
+    DateTime? latestAt;
+
+    void consider(Race race, {required bool sprint, required DateTime? at}) {
+      if (at == null) return;
+      final finished = sprint
+          ? race.sprintStatus == RaceStatus.finished
+          : race.status == RaceStatus.finished;
+      if (at.isAfter(now) && !finished) return;
+      if (latestAt == null || at.isAfter(latestAt!)) {
+        latestAt = at;
+        latestStarted = (
+          race: race,
+          sprint: sprint,
+          weekend: race.hasSprint && race.status == RaceStatus.finished,
+        );
+      }
+    }
+
     for (final race in sorted) {
-      if (!race.raceAt.isAfter(now)) latestStarted = race;
+      consider(race, sprint: true, at: race.sprintRaceAt);
+      consider(race, sprint: false, at: race.raceAt);
     }
     if (latestStarted != null) return latestStarted;
-    return sorted.first;
+    final first = sorted.first;
+    return (
+      race: first,
+      sprint: first.hasSprint && first.sprintRaceAt != null,
+      weekend: first.hasSprint,
+    );
   }
+}
+
+({Race race, bool sprint, DateTime at})? _latestScoredEvent(List<Race> races) {
+  ({Race race, bool sprint, DateTime at})? latest;
+
+  void consider(Race race, {required bool sprint, required DateTime? at}) {
+    if (at == null) return;
+    final finished = sprint
+        ? race.sprintStatus == RaceStatus.finished
+        : race.status == RaceStatus.finished;
+    if (!finished) return;
+    if (latest == null || at.isAfter(latest!.at)) {
+      latest = (race: race, sprint: sprint, at: at);
+    }
+  }
+
+  for (final race in races) {
+    consider(race, sprint: true, at: race.sprintRaceAt);
+    consider(race, sprint: false, at: race.raceAt);
+  }
+  return latest;
+}
+
+Map<String, int> _rankDeltas(
+  List<StandingRow> currentRows,
+  List<StandingRow> previousRows,
+) {
+  final previousByUser = {for (final row in previousRows) row.userId: row.rank};
+  return {
+    for (final row in currentRows)
+      if (previousByUser.containsKey(row.userId))
+        row.userId: previousByUser[row.userId]! - row.rank,
+  };
 }
 
 class _StandingsList extends StatelessWidget {
   final List<StandingRow> rows;
   final String? myUserId;
+  final Map<String, int> rankDeltas;
   final String emptyTitle;
   final String emptyMessage;
 
   const _StandingsList({
     required this.rows,
     required this.myUserId,
+    this.rankDeltas = const {},
     required this.emptyTitle,
     required this.emptyMessage,
   });
@@ -474,7 +567,11 @@ class _StandingsList extends StatelessWidget {
     return Column(
       children: [
         for (final row in rows)
-          _StandingRow(row: row, isMe: row.userId == myUserId),
+          _StandingRow(
+            row: row,
+            isMe: row.userId == myUserId,
+            rankDelta: rankDeltas[row.userId] ?? 0,
+          ),
       ],
     );
   }
@@ -512,7 +609,7 @@ class _RacesTab extends StatelessWidget {
           children: [
             for (var i = 0; i < visibleRaces.length; i++) ...[
               _RaceScopeLabel(
-                label: i == 0 && !visibleRaces[i].raceAt.isAfter(DateTime.now())
+                label: i == 0 && countsAsPreviousRace(visibleRaces[i])
                     ? 'Önceki yarış'
                     : 'Sonraki yarış',
               ),
@@ -541,6 +638,7 @@ class _RacesTab extends StatelessWidget {
                     predictionSaved: predictionSaved,
                     savedPredictionCount: savedPredictionCount,
                     totalPredictionCount: totalPredictionCount,
+                    keepStartLightsVisible: true,
                     actionLabel:
                         mainStatus == RaceStatus.upcoming ||
                             mainStatus == RaceStatus.locked
@@ -595,14 +693,17 @@ class _RacesTab extends StatelessWidget {
     }
     if (!context.mounted) return;
     final entry = (race: race, kind: kind);
-    final status = effectiveRaceCardStatus(entry);
+    final status = effectiveRaceCardNavigationStatus(entry);
     final modeQp = kind == RaceCardKind.sprint ? '?mode=sprint' : '';
     if (status == RaceStatus.finished) {
       context.push('/leagues/$leagueId/race/${race.id}/summary$modeQp');
     } else if (status == RaceStatus.cancelled) {
       context.push('/leagues/$leagueId/race/${race.id}/results$modeQp');
     } else if (status == RaceStatus.live) {
-      context.push('/race/${race.id}/live$modeQp');
+      final liveSeparator = modeQp.isEmpty ? '?' : '&';
+      context.push(
+        '/race/${race.id}/live$modeQp${liveSeparator}league=$leagueId',
+      );
     } else {
       context.push('/leagues/$leagueId/race/${race.id}/predict$modeQp');
     }
@@ -623,6 +724,9 @@ class _RacesTab extends StatelessWidget {
       ),
       builder: (sheetContext) {
         final sorted = [...races]..sort((a, b) => a.raceAt.compareTo(b.raceAt));
+        final pinnedRaceIds = buildPreviousAndNextRaces(
+          races,
+        ).map((race) => race.id).toSet();
         return DraggableScrollableSheet(
           expand: false,
           initialChildSize: 0.88,
@@ -679,6 +783,9 @@ class _RacesTab extends StatelessWidget {
                           predictionSaved: mainSaved || sprintSaved,
                           savedPredictionCount: savedPredictionCount,
                           totalPredictionCount: totalPredictionCount,
+                          keepStartLightsVisible: pinnedRaceIds.contains(
+                            race.id,
+                          ),
                           actionLabel: 'Tahmin Yap',
                           actionIcon: Icons.add_circle_outline,
                           onTap: () => _openLeagueRace(
@@ -686,8 +793,6 @@ class _RacesTab extends StatelessWidget {
                             race,
                             mainSaved: mainSaved,
                             sprintSaved: sprintSaved,
-                            pickerContext: sheetContext,
-                            closePickerContextBeforeNavigate: true,
                           ),
                         ),
                       );
@@ -713,7 +818,7 @@ class _RaceScopeLabel extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: Text(
-        label.toUpperCase(),
+        turkishUpper(label),
         style: const TextStyle(
           color: Color(0x99FFFFFF),
           fontSize: 11,
@@ -859,8 +964,13 @@ class _InviteCodeCardState extends State<_InviteCodeCard> {
 class _StandingRow extends StatelessWidget {
   final StandingRow row;
   final bool isMe;
+  final int rankDelta;
 
-  const _StandingRow({required this.row, required this.isMe});
+  const _StandingRow({
+    required this.row,
+    required this.isMe,
+    required this.rankDelta,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -910,14 +1020,17 @@ class _StandingRow extends StatelessWidget {
             child: Row(
               children: [
                 Flexible(
-                  child: Text(
-                    row.username,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      row.username,
+                      maxLines: 1,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
@@ -937,7 +1050,7 @@ class _StandingRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 14),
-          const _RankChangeChip(),
+          _RankChangeChip(delta: rankDelta),
           const SizedBox(width: 18),
           SizedBox(
             width: 56,
@@ -959,10 +1072,20 @@ class _StandingRow extends StatelessWidget {
 }
 
 class _RankChangeChip extends StatelessWidget {
-  const _RankChangeChip();
+  final int delta;
+
+  const _RankChangeChip({required this.delta});
 
   @override
   Widget build(BuildContext context) {
+    final isUp = delta > 0;
+    final isDown = delta < 0;
+    final color = isUp
+        ? AppColors.lockGreen
+        : isDown
+        ? AppColors.f1Red
+        : Colors.white.withValues(alpha: 0.42);
+    final label = delta == 0 ? '—' : '${isUp ? '+' : ''}$delta';
     return Container(
       width: 54,
       height: 36,
@@ -972,11 +1095,11 @@ class _RankChangeChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
       ),
       child: Text(
-        '—',
+        label,
         style: TextStyle(
-          fontSize: 20,
+          fontSize: delta == 0 ? 20 : 15,
           fontWeight: FontWeight.w900,
-          color: Colors.white.withValues(alpha: 0.42),
+          color: color,
         ),
       ),
     );

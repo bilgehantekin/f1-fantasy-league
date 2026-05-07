@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Yanıp sönen kırmızı LIVE noktası — figma React `<LiveIndicator/>` portu.
+/// Yanıp sönen kırmızı CANLI noktası — figma React `<LiveIndicator/>` portu.
 /// İç dolu daire sabit, dış halka her döngüde büyüyüp solar.
 class LivePulseDot extends StatefulWidget {
   final double size;

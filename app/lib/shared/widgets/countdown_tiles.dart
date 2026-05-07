@@ -26,7 +26,7 @@ class CountdownTiles extends StatelessWidget {
             const Icon(Icons.lock, color: Color(0xFFFF9F1C), size: 18),
             const SizedBox(width: 8),
             Text(
-              'KİLİTLİ',
+              'KİLİTLENDİ',
               style: tt.labelLarge?.copyWith(color: const Color(0xFFFF9F1C)),
             ),
           ],

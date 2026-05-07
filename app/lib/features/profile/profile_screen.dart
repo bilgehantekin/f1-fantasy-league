@@ -20,6 +20,7 @@ class ProfileScreen extends ConsumerWidget {
     final profileAsync = ref.watch(profileProvider);
     final statsAsync = ref.watch(profileStatsProvider);
     final myBadgesAsync = ref.watch(myBadgesProvider);
+    final allBadgesAsync = ref.watch(allBadgesProvider);
 
     return Scaffold(
       backgroundColor: AppColors.carbon,
@@ -89,11 +90,19 @@ class ProfileScreen extends ConsumerWidget {
                     _HeroProfile(profile: p),
                     statsAsync.when(
                       loading: () => const SizedBox.shrink(),
-                      error: (e, _) => Text('Stats hata: ${friendlyError(e)}'),
-                      data: (s) => Padding(
-                        padding: const EdgeInsets.only(bottom: 24),
-                        child: _StatsCards(stats: s),
-                      ),
+                      error: (e, _) =>
+                          Text('İstatistik hatası: ${friendlyError(e)}'),
+                      data: (s) {
+                        final leaguesAsync = ref.watch(myLeaguesProvider);
+                        final bestRank = leaguesAsync.maybeWhen(
+                          data: _bestLeagueRank,
+                          orElse: () => null,
+                        );
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 24),
+                          child: _StatsCards(stats: s, bestRank: bestRank),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -104,32 +113,12 @@ class ProfileScreen extends ConsumerWidget {
                 loading: () => const _Loading(),
                 error: (e, _) => _Error(e),
                 data: (myBadges) {
-                  final earnedBadges = myBadges
-                      .where((userBadge) => userBadge.badge != null)
-                      .toList();
-                  if (earnedBadges.isEmpty) {
-                    return const AppEmptyState(
-                      icon: Icons.emoji_events_outlined,
-                      title: 'Henüz rozet yok',
-                      message:
-                          'Yarış sonuçları geldikçe başarılarına göre rozet kazanacaksın.',
-                    );
-                  }
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
-                            childAspectRatio: 1,
-                          ),
-                      itemCount: earnedBadges.length,
-                      itemBuilder: (_, i) =>
-                          _BadgeTile(badge: earnedBadges[i].badge!),
+                  return allBadgesAsync.when(
+                    loading: () => const _Loading(),
+                    error: (e, _) => _Error(e),
+                    data: (allBadges) => _BadgesCarousel(
+                      allBadges: allBadges,
+                      myBadges: myBadges,
                     ),
                   );
                 },
@@ -417,31 +406,55 @@ class _HeroProfile extends StatelessWidget {
   }
 }
 
+_BestRankInfo? _bestLeagueRank(List<League> leagues) {
+  _BestRankInfo? best;
+  for (final league in leagues) {
+    final rank = league.myRank;
+    if (rank == null) continue;
+    if (best == null || rank < best.rank) {
+      best = _BestRankInfo(rank: rank, leagueName: league.name);
+    }
+  }
+  return best;
+}
+
+class _BestRankInfo {
+  final int rank;
+  final String leagueName;
+  const _BestRankInfo({required this.rank, required this.leagueName});
+}
+
 class _StatsCards extends StatelessWidget {
   final ProfileStats stats;
-  const _StatsCards({required this.stats});
+  final _BestRankInfo? bestRank;
+  const _StatsCards({required this.stats, this.bestRank});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: _StatCard(label: 'Genel Puan', value: '${stats.totalScore}'),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
             child: _StatCard(
-              label: 'En Yüksek Skor',
-              value: '${stats.bestScore}',
+              label: 'Toplam Puan',
+              value: '${stats.totalScore}',
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: _StatCard(
-              label: 'Skorlanan Etkinlik',
-              value: '${stats.eventsPredicted}',
+              label: 'En İyi Sıra',
+              value: bestRank == null ? '-' : '#${bestRank!.rank}',
+              subtitle: bestRank?.leagueName,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _StatCard(
+              label: 'Haftalık Rekor',
+              value: '${stats.bestScore}',
             ),
           ),
         ],
@@ -453,7 +466,8 @@ class _StatsCards extends StatelessWidget {
 class _StatCard extends StatelessWidget {
   final String label;
   final String value;
-  const _StatCard({required this.label, required this.value});
+  final String? subtitle;
+  const _StatCard({required this.label, required this.value, this.subtitle});
 
   @override
   Widget build(BuildContext context) {
@@ -476,6 +490,20 @@ class _StatCard extends StatelessWidget {
             color: Colors.white.withValues(alpha: 0.6),
           ),
         ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            subtitle!,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: Colors.white.withValues(alpha: 0.85),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -514,36 +542,217 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-class _BadgeTile extends StatelessWidget {
-  final AppBadge badge;
-  const _BadgeTile({required this.badge});
+class _BadgesCarousel extends StatefulWidget {
+  final List<AppBadge> allBadges;
+  final List<UserBadge> myBadges;
+
+  const _BadgesCarousel({required this.allBadges, required this.myBadges});
+
+  @override
+  State<_BadgesCarousel> createState() => _BadgesCarouselState();
+}
+
+class _BadgesCarouselState extends State<_BadgesCarousel> {
+  final PageController _controller = PageController();
+  int _page = 0;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A26),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(badge.icon, style: const TextStyle(fontSize: 30)),
-          const SizedBox(height: 8),
-          Text(
-            badge.name,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
+    final earnedBadges = widget.myBadges
+        .map((userBadge) => userBadge.badge)
+        .whereType<AppBadge>()
+        .toList();
+    final earnedBadgeIds = earnedBadges.map((badge) => badge.id).toSet();
+    final badges = [
+      ...earnedBadges,
+      ...widget.allBadges.where((badge) => !earnedBadgeIds.contains(badge.id)),
+    ];
+    final pages = <List<AppBadge>>[
+      for (var i = 0; i < badges.length; i += 3)
+        badges.sublist(i, (i + 3).clamp(0, badges.length)),
+    ];
+
+    if (badges.isEmpty) {
+      return const AppEmptyState(
+        icon: Icons.emoji_events_outlined,
+        title: 'Henüz rozet yok',
+        message:
+            'Yarış sonuçları geldikçe başarılarına göre rozet kazanacaksın.',
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const horizontalPadding = 16.0;
+        const gap = 12.0;
+        final cardWidth =
+            (constraints.maxWidth - (horizontalPadding * 2) - (gap * 2)) / 3;
+        final cardHeight = (cardWidth * 1.08).clamp(118.0, 160.0);
+
+        return SizedBox(
+          height: cardHeight + 24,
+          child: Column(
+            children: [
+              SizedBox(
+                height: cardHeight,
+                child: PageView.builder(
+                  controller: _controller,
+                  itemCount: pages.length,
+                  onPageChanged: (value) => setState(() => _page = value),
+                  itemBuilder: (_, pageIndex) {
+                    final pageBadges = pages[pageIndex];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: horizontalPadding,
+                      ),
+                      child: Row(
+                        children: [
+                          for (var i = 0; i < 3; i++) ...[
+                            if (i > 0) const SizedBox(width: gap),
+                            SizedBox(
+                              width: cardWidth,
+                              child: i < pageBadges.length
+                                  ? _BadgeTile(
+                                      badge: pageBadges[i],
+                                      isEarned: earnedBadgeIds.contains(
+                                        pageBadges[i].id,
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              if (pages.length > 1) ...[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    for (var i = 0; i < pages.length; i++)
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        width: i == _page ? 14 : 6,
+                        height: 6,
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        decoration: BoxDecoration(
+                          color: i == _page
+                              ? const Color(0xFFE10600)
+                              : Colors.white.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ],
           ),
-        ],
+        );
+      },
+    );
+  }
+}
+
+class _BadgeTile extends StatelessWidget {
+  final AppBadge badge;
+  final bool isEarned;
+
+  const _BadgeTile({required this.badge, this.isEarned = true});
+
+  @override
+  Widget build(BuildContext context) {
+    final display = _BadgeDisplay.fromBadge(badge);
+
+    return Opacity(
+      opacity: isEarned ? 1 : 0.42,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A26),
+          borderRadius: BorderRadius.circular(8),
+          border: isEarned
+              ? null
+              : Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(badge.icon, style: const TextStyle(fontSize: 28)),
+            const SizedBox(height: 6),
+            Flexible(
+              child: Center(
+                child: Text(
+                  display.name,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    height: 1.08,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            if (display.category != null) ...[
+              const SizedBox(height: 3),
+              Text(
+                display.category!,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 9,
+                  height: 1,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white.withValues(alpha: 0.52),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _BadgeDisplay {
+  final String name;
+  final String? category;
+
+  const _BadgeDisplay({required this.name, this.category});
+
+  factory _BadgeDisplay.fromBadge(AppBadge badge) {
+    const namesByBaseCode = {
+      'bullseye_podium': 'Podyum Tam İsabet',
+      'pole_caller': 'Pole Avcısı',
+      'dnf_oracle': 'DNF Kahini',
+      'weekly_winner': 'Hafta Şampiyonu',
+      'perfect_week': 'Mükemmel Hafta',
+      'three_in_row': 'Üçlü Seri',
+    };
+
+    final isSprint = badge.code.startsWith('sprint_');
+    final baseCode = isSprint
+        ? badge.code.substring('sprint_'.length)
+        : badge.code;
+    final sharedName = namesByBaseCode[baseCode];
+
+    if (sharedName == null) return _BadgeDisplay(name: badge.name);
+
+    return _BadgeDisplay(
+      name: sharedName,
+      category: isSprint ? 'Sprint' : 'Ana Yarış',
     );
   }
 }
@@ -554,13 +763,21 @@ class _SeasonStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bestEvent = stats.bestEventName == null
+        ? '-'
+        : stats.bestEventMode == 'sprint'
+        ? '${stats.bestEventName} — Sprint'
+        : stats.bestEventName!;
     final rows = [
-      ('Ana yarış skoru', '${stats.mainScore}'),
-      ('Sprint skoru', '${stats.sprintScore}'),
-      ('Ortalama puan', stats.averageScore.toStringAsFixed(1)),
-      ('En iyi skor', '${stats.bestScore}'),
-      ('Ana yarış tahmini', '${stats.mainEventsPredicted}'),
-      ('Sprint tahmini', '${stats.sprintEventsPredicted}'),
+      ('Ana yarış ortalama puanı', stats.mainAverageScore.toStringAsFixed(1)),
+      (
+        'Sprint yarışı ortalama puanı',
+        stats.sprintAverageScore.toStringAsFixed(1),
+      ),
+      ('Ortalama hafta puanı', stats.weeklyAverageScore.toStringAsFixed(1)),
+      ('Katıldığı hafta', '${stats.weeksParticipated}'),
+      ('En iyi GP', bestEvent),
+      ('Aktif seri', '${stats.activeStreak} hafta'),
       (
         'En iyi lig',
         stats.bestLeagueName == null
@@ -580,7 +797,7 @@ class _SeasonStats extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Genel puan, aynı etkinlik için farklı liglerdeki en iyi skor üzerinden hesaplanır. Lig performansı ise lig bazlı toplamı gösterir.',
+            'Sezon boyunca yaptığın tahminlerin ortalama performansı, katılım düzenin, en iyi yarış haftan ve liglerdeki durumun burada özetlenir.',
             style: TextStyle(
               fontSize: 12,
               color: Colors.white.withValues(alpha: 0.55),
@@ -592,20 +809,31 @@ class _SeasonStats extends StatelessWidget {
             Padding(
               padding: EdgeInsets.only(bottom: i < rows.length - 1 ? 12 : 0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    '${rows[i].$1}:',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withValues(alpha: 0.6),
+                  Expanded(
+                    child: Text(
+                      '${rows[i].$1}:',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white.withValues(alpha: 0.6),
+                      ),
                     ),
                   ),
-                  Text(
-                    rows[i].$2,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
+                  const SizedBox(width: 12),
+                  Flexible(
+                    child: Text(
+                      rows[i].$2,
+                      textAlign: TextAlign.right,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        height: 1.15,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],

@@ -17,11 +17,11 @@ class RaceCard extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final (statusLabel, statusColor) = switch (race.status) {
       RaceStatus.upcoming when race.isLocked => (
-        'KİLİTLİ',
+        'KİLİTLENDİ',
         AppColors.lockOrange,
       ),
       RaceStatus.upcoming => ('TAHMİN AÇIK', AppColors.lockGreen),
-      RaceStatus.locked => ('KİLİTLİ', AppColors.lockOrange),
+      RaceStatus.locked => ('KİLİTLENDİ', AppColors.lockOrange),
       RaceStatus.live => ('CANLI', AppColors.liveRed),
       RaceStatus.finished => ('TAMAMLANDI', AppColors.finished),
       RaceStatus.cancelled => ('İPTAL', AppColors.finished),

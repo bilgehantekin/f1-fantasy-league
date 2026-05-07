@@ -44,7 +44,7 @@ void main() {
       );
     });
 
-    test('sprint race uses sprint lock time independently', () {
+    test('sprint weekend locks sprint and main predictions at sprint lock', () {
       final now = DateTime.utc(2026, 5, 3, 12);
       final r = race(
         id: 'miami',
@@ -59,7 +59,7 @@ void main() {
       );
       expect(
         effectiveRaceCardStatus((race: r, kind: RaceCardKind.main), now: now),
-        RaceStatus.upcoming,
+        RaceStatus.locked,
       );
     });
 
@@ -91,6 +91,7 @@ void main() {
           id: 'past-1',
           lockAt: now,
           raceAt: now.subtract(const Duration(days: 7)),
+          status: RaceStatus.finished,
         ),
         race(
           id: 'future-1',
@@ -101,12 +102,51 @@ void main() {
           id: 'past-2',
           lockAt: now,
           raceAt: now.subtract(const Duration(days: 21)),
+          status: RaceStatus.finished,
         ),
       ];
 
       expect(buildPreviousAndNextRaces(races, now: now).map((r) => r.id), [
         'past-1',
         'future-1',
+      ]);
+    });
+
+    test('keeps a just-finished race as next until three hours pass', () {
+      final now = DateTime.utc(2026, 5, 10, 12);
+      final justFinished = race(
+        id: 'just-finished',
+        lockAt: now.subtract(const Duration(days: 1)),
+        raceAt: now.subtract(const Duration(hours: 2)),
+        status: RaceStatus.finished,
+      );
+      final previous = race(
+        id: 'previous',
+        lockAt: now.subtract(const Duration(days: 8)),
+        raceAt: now.subtract(const Duration(days: 7)),
+        status: RaceStatus.finished,
+      );
+
+      expect(
+        buildPreviousAndNextRaces([
+          previous,
+          justFinished,
+        ], now: now).map((r) => r.id),
+        ['previous', 'just-finished'],
+      );
+    });
+
+    test('moves a finished race to previous three hours after race time', () {
+      final now = DateTime.utc(2026, 5, 10, 12);
+      final finished = race(
+        id: 'finished',
+        lockAt: now.subtract(const Duration(days: 1)),
+        raceAt: now.subtract(const Duration(hours: 3)),
+        status: RaceStatus.finished,
+      );
+
+      expect(buildPreviousAndNextRaces([finished], now: now).map((r) => r.id), [
+        'finished',
       ]);
     });
   });

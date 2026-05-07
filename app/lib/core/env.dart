@@ -25,6 +25,18 @@ class Env {
     'ENABLE_DEMO_CONTENT',
     defaultValue: false,
   );
+  static const raceCardDebugRace = String.fromEnvironment(
+    'RACE_CARD_DEBUG_RACE',
+    defaultValue: '',
+  );
+  static const raceCardDebugStatus = String.fromEnvironment(
+    'RACE_CARD_DEBUG_STATUS',
+    defaultValue: '',
+  );
+  static const raceCardDebugSession = String.fromEnvironment(
+    'RACE_CARD_DEBUG_SESSION',
+    defaultValue: '',
+  );
 
   static const _isProductBuild = bool.fromEnvironment('dart.vm.product');
   static bool get isProd => appEnv == 'prod' || _isProductBuild;

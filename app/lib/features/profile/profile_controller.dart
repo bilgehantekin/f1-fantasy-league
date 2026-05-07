@@ -79,10 +79,17 @@ class ProfileStats {
   final int mainEventsPredicted;
   final int sprintEventsPredicted;
   final int bestScore;
+  final String? bestEventName;
+  final String? bestEventMode;
   final String? bestLeagueName;
   final int bestLeagueScore;
   final List<LeaguePerformance> leaguePerformances;
   final double averageScore;
+  final double mainAverageScore;
+  final double sprintAverageScore;
+  final double weeklyAverageScore;
+  final int weeksParticipated;
+  final int activeStreak;
   ProfileStats({
     required this.totalScore,
     required this.mainScore,
@@ -92,10 +99,17 @@ class ProfileStats {
     required this.mainEventsPredicted,
     required this.sprintEventsPredicted,
     required this.bestScore,
+    required this.bestEventName,
+    required this.bestEventMode,
     required this.bestLeagueName,
     required this.bestLeagueScore,
     required this.leaguePerformances,
     required this.averageScore,
+    required this.mainAverageScore,
+    required this.sprintAverageScore,
+    required this.weeklyAverageScore,
+    required this.weeksParticipated,
+    required this.activeStreak,
   });
 }
 
@@ -230,24 +244,39 @@ final profileStatsProvider = FutureProvider<ProfileStats>((ref) async {
       mainEventsPredicted: 0,
       sprintEventsPredicted: 0,
       bestScore: 0,
+      bestEventName: null,
+      bestEventMode: null,
       bestLeagueName: null,
       bestLeagueScore: 0,
       leaguePerformances: const [],
       averageScore: 0,
+      mainAverageScore: 0,
+      sprintAverageScore: 0,
+      weeklyAverageScore: 0,
+      weeksParticipated: 0,
+      activeStreak: 0,
     );
   }
   final mainPreds = await supabase
       .from('predictions')
-      .select('race_id, league_id, score, league:leagues(id, name)')
+      .select(
+        'race_id, league_id, score, race:races(name, round), league:leagues(id, name)',
+      )
       .eq('user_id', user.id);
   final sprintPreds = await supabase
       .from('sprint_predictions')
-      .select('race_id, league_id, score, league:leagues(id, name)')
+      .select(
+        'race_id, league_id, score, race:races(name, round), league:leagues(id, name)',
+      )
       .eq('user_id', user.id);
   final mainBestByEvent = <String, int>{};
   final sprintBestByEvent = <String, int>{};
+  final raceNameById = <String, String>{};
+  final raceRoundById = <String, int>{};
   final leagueTotals = <String, _LeaguePerformanceAccumulator>{};
   int best = 0;
+  String? bestEventName;
+  String? bestEventMode;
 
   void collectScores(
     Iterable<dynamic> rows,
@@ -260,6 +289,13 @@ final profileStatsProvider = FutureProvider<ProfileStats>((ref) async {
       final raceId = row['race_id'] as String;
       final leagueId = row['league_id'] as String?;
       final league = row['league'] as Map<String, dynamic>?;
+      final race = row['race'] as Map<String, dynamic>?;
+      if (race != null) {
+        final name = race['name'] as String?;
+        if (name != null) raceNameById[raceId] = name;
+        final round = race['round'];
+        if (round is num) raceRoundById[raceId] = round.toInt();
+      }
       final key = '$mode:$raceId';
       final prev = bestByEvent[key];
       if (prev == null || score > prev) {
@@ -282,12 +318,37 @@ final profileStatsProvider = FutureProvider<ProfileStats>((ref) async {
       }
       if (score > best) {
         best = score;
+        bestEventName = raceNameById[raceId];
+        bestEventMode = mode;
       }
     }
   }
 
   collectScores(mainPreds, 'main', mainBestByEvent);
   collectScores(sprintPreds, 'sprint', sprintBestByEvent);
+
+  // Bir önceki turda "race" join'i sonradan geldiyse en iyi etkinlik adını
+  // tekrar çözmeyi dene.
+  if (bestEventName == null && best > 0) {
+    for (final entry in mainBestByEvent.entries) {
+      if (entry.value == best) {
+        final raceId = entry.key.split(':').last;
+        bestEventName = raceNameById[raceId];
+        bestEventMode = 'main';
+        break;
+      }
+    }
+    if (bestEventName == null) {
+      for (final entry in sprintBestByEvent.entries) {
+        if (entry.value == best) {
+          final raceId = entry.key.split(':').last;
+          bestEventName = raceNameById[raceId];
+          bestEventMode = 'sprint';
+          break;
+        }
+      }
+    }
+  }
 
   final mainScore = mainBestByEvent.values.fold<int>(
     0,
@@ -299,6 +360,28 @@ final profileStatsProvider = FutureProvider<ProfileStats>((ref) async {
   );
   final total = mainScore + sprintScore;
   final scored = mainBestByEvent.length + sprintBestByEvent.length;
+  final raceIdsParticipated = <String>{
+    ...mainBestByEvent.keys.map((k) => k.split(':').last),
+    ...sprintBestByEvent.keys.map((k) => k.split(':').last),
+  };
+  final weeksParticipated = raceIdsParticipated.length;
+  final roundsParticipated = raceIdsParticipated
+      .map((id) => raceRoundById[id])
+      .whereType<int>()
+      .toSet()
+      .toList()
+    ..sort();
+  int activeStreak = 0;
+  if (roundsParticipated.isNotEmpty) {
+    activeStreak = 1;
+    for (var i = roundsParticipated.length - 1; i > 0; i--) {
+      if (roundsParticipated[i] - roundsParticipated[i - 1] == 1) {
+        activeStreak++;
+      } else {
+        break;
+      }
+    }
+  }
   final leaguePerformances =
       leagueTotals.values.map((e) => e.toPerformance()).toList()..sort((a, b) {
         final score = b.totalScore.compareTo(a.totalScore);
@@ -325,10 +408,23 @@ final profileStatsProvider = FutureProvider<ProfileStats>((ref) async {
     mainEventsPredicted: mainBestByEvent.length,
     sprintEventsPredicted: sprintBestByEvent.length,
     bestScore: best,
+    bestEventName: bestEventName,
+    bestEventMode: bestEventMode,
     bestLeagueName: bestLeague?.leagueName,
     bestLeagueScore: bestLeague?.totalScore ?? 0,
     leaguePerformances: rankedLeaguePerformances,
     averageScore: scored == 0 ? 0 : total / scored,
+    mainAverageScore: mainBestByEvent.isEmpty
+        ? 0
+        : mainScore / mainBestByEvent.length,
+    sprintAverageScore: sprintBestByEvent.isEmpty
+        ? 0
+        : sprintScore / sprintBestByEvent.length,
+    weeklyAverageScore: weeksParticipated == 0
+        ? 0
+        : total / weeksParticipated,
+    weeksParticipated: weeksParticipated,
+    activeStreak: activeStreak,
   );
 });
 

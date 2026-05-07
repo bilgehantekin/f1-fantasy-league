@@ -106,6 +106,8 @@ class _RaceInfoHeader extends StatelessWidget {
     final rDate = rAt != null
         ? DateFormat('d MMM HH:mm').format(rAt.toLocal())
         : '—';
+    final isLocked = sprintMode ? race.isSprintLocked : race.isLocked;
+    final accentColor = isLocked ? AppColors.lockOrange : AppColors.lockGreen;
 
     return Container(
       margin: const EdgeInsets.all(16),
@@ -113,12 +115,7 @@ class _RaceInfoHeader extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceLow,
         borderRadius: BorderRadius.circular(14),
-        border: Border(
-          left: BorderSide(
-            color: sprintMode ? AppColors.lockOrange : AppColors.lockGreen,
-            width: 4,
-          ),
-        ),
+        border: Border(left: BorderSide(color: accentColor, width: 4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,7 +153,7 @@ class _RaceInfoHeader extends StatelessWidget {
           Row(
             children: [
               _MetaPill(
-                label: sprintMode ? 'SPRINT QUALI' : 'SIRALAMA',
+                label: sprintMode ? 'SPRINT SIRALAMA' : 'SIRALAMA',
                 value: qDate,
               ),
               const SizedBox(width: 8),

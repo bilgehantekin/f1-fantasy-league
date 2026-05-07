@@ -11,6 +11,14 @@ enum RaceCardKind { main, sprint }
 
 typedef RaceCardEntry = ({Race race, RaceCardKind kind});
 
+const previousRaceDelay = Duration(hours: 3);
+
+bool countsAsPreviousRace(Race race, {DateTime? now}) {
+  final t = now ?? DateTime.now();
+  if (race.status == RaceStatus.cancelled) return true;
+  return !race.raceAt.add(previousRaceDelay).isAfter(t);
+}
+
 List<Race> buildPreviousAndNextRaces(List<Race> races, {DateTime? now}) {
   if (races.isEmpty) return const [];
   final t = now ?? DateTime.now();
@@ -18,7 +26,7 @@ List<Race> buildPreviousAndNextRaces(List<Race> races, {DateTime? now}) {
   Race? previous;
   Race? next;
   for (final race in sorted) {
-    if (!race.raceAt.isAfter(t)) {
+    if (countsAsPreviousRace(race, now: t)) {
       previous = race;
     } else {
       next ??= race;
@@ -85,7 +93,7 @@ Future<RaceCardKind?> showRaceKindPicker(
                 label: 'Sprint yarışı',
                 subtitle: _eventSubtitle(
                   race.sprintRaceAt,
-                  effectiveRaceCardStatus((
+                  effectiveRaceCardNavigationStatus((
                     race: race,
                     kind: RaceCardKind.sprint,
                   )),
@@ -99,7 +107,7 @@ Future<RaceCardKind?> showRaceKindPicker(
                 label: 'Ana yarış',
                 subtitle: _eventSubtitle(
                   race.raceAt,
-                  effectiveRaceCardStatus((
+                  effectiveRaceCardNavigationStatus((
                     race: race,
                     kind: RaceCardKind.main,
                   )),
@@ -119,7 +127,7 @@ Future<RaceCardKind?> showRaceKindPicker(
 String _eventSubtitle(DateTime? at, RaceStatus status) {
   final statusLabel = switch (status) {
     RaceStatus.upcoming => 'Tahmine açık',
-    RaceStatus.locked => 'Kilitli',
+    RaceStatus.locked => 'Kilitlendi',
     RaceStatus.live => 'Canlı',
     RaceStatus.finished => 'Tamamlandı',
     RaceStatus.cancelled => 'İptal',
@@ -270,18 +278,114 @@ List<RaceCardEntry> buildOrderedRaceCards(
 }
 
 RaceStatus effectiveRaceCardStatus(RaceCardEntry entry, {DateTime? now}) {
+  final t = now ?? DateTime.now();
   final rawStatus = entry.kind == RaceCardKind.sprint
       ? entry.race.sprintStatus
       : entry.race.status;
-  if (rawStatus != RaceStatus.upcoming) return rawStatus;
+  if (rawStatus == RaceStatus.finished || rawStatus == RaceStatus.cancelled) {
+    return rawStatus;
+  }
+
+  if (_isRaceEventActive(entry, t)) {
+    return RaceStatus.live;
+  }
+
+  if (rawStatus == RaceStatus.locked) return RaceStatus.locked;
 
   final lockAt = entry.kind == RaceCardKind.sprint
-      ? entry.race.sprintLockAt
-      : entry.race.lockAt;
+      ? entry.race.effectiveSprintLockAt
+      : entry.race.effectiveLockAt;
   if (lockAt == null) return RaceStatus.locked;
-  return (now ?? DateTime.now()).isAfter(lockAt)
-      ? RaceStatus.locked
-      : RaceStatus.upcoming;
+  return t.isAfter(lockAt) ? RaceStatus.locked : RaceStatus.upcoming;
+}
+
+RaceStatus effectiveRaceCardNavigationStatus(
+  RaceCardEntry entry, {
+  DateTime? now,
+}) {
+  final status = effectiveRaceCardStatus(entry, now: now);
+  if (status == RaceStatus.finished || status == RaceStatus.cancelled) {
+    return status;
+  }
+  return _debugStatusOverrideForEntry(entry) ?? status;
+}
+
+RaceStatus effectiveRaceCardDisplayStatus(
+  RaceCardEntry entry, {
+  DateTime? now,
+}) {
+  final ownStatus = effectiveRaceCardNavigationStatus(entry, now: now);
+  if (ownStatus == RaceStatus.live) return RaceStatus.live;
+
+  final t = now ?? DateTime.now();
+  if (entry.kind == RaceCardKind.main && entry.race.hasSprint) {
+    final sprintEntry = (race: entry.race, kind: RaceCardKind.sprint);
+    if (effectiveRaceCardNavigationStatus(sprintEntry, now: t) ==
+        RaceStatus.live) {
+      return RaceStatus.live;
+    }
+  }
+
+  return ownStatus;
+}
+
+RaceStatus? _debugStatusOverrideForEntry(RaceCardEntry entry) {
+  if (!_debugAppliesToRace(entry.race) ||
+      Env.raceCardDebugStatus.trim().isEmpty) {
+    return null;
+  }
+  final normalizedStatus = Env.raceCardDebugStatus.trim().toLowerCase();
+  final status = RaceStatus.values
+      .where((s) => s.name == normalizedStatus)
+      .firstOrNull;
+  if (status == null) return null;
+
+  if (status == RaceStatus.live) {
+    final session = Env.raceCardDebugSession.trim().toUpperCase();
+    if (session == 'SQ' || session == 'Q') return RaceStatus.locked;
+    if (session == 'SR') {
+      return entry.kind == RaceCardKind.sprint ? RaceStatus.live : null;
+    }
+    if (session == 'R') {
+      return entry.kind == RaceCardKind.main ? RaceStatus.live : null;
+    }
+    if (session.isNotEmpty) return null;
+  }
+
+  return status;
+}
+
+bool _debugAppliesToRace(Race race) {
+  if (Env.isProd || Env.raceCardDebugRace.trim().isEmpty) return false;
+  return race.name.toLowerCase().contains(
+    Env.raceCardDebugRace.trim().toLowerCase(),
+  );
+}
+
+bool _isRaceEventActive(RaceCardEntry entry, DateTime now) {
+  final startsAt = entry.kind == RaceCardKind.sprint
+      ? entry.race.sprintRaceAt
+      : entry.race.raceAt;
+  if (startsAt == null || now.isBefore(startsAt)) return false;
+
+  final sessionEndsAt = _matchingRaceSession(entry)?.endsAt;
+  final fallbackDuration = entry.kind == RaceCardKind.sprint
+      ? const Duration(hours: 2)
+      : const Duration(hours: 4);
+  final endsAt = sessionEndsAt ?? startsAt.add(fallbackDuration);
+  return now.isBefore(endsAt);
+}
+
+RaceSession? _matchingRaceSession(RaceCardEntry entry) {
+  final target = entry.kind == RaceCardKind.sprint
+      ? entry.race.sprintRaceAt
+      : entry.race.raceAt;
+  if (target == null) return null;
+
+  for (final session in entry.race.sessions) {
+    if (session.startsAt.isAtSameMomentAs(target)) return session;
+  }
+  return null;
 }
 
 class RaceCardNew extends StatelessWidget {
@@ -293,6 +397,7 @@ class RaceCardNew extends StatelessWidget {
   final int? totalPredictionCount;
   final String? actionLabel;
   final IconData? actionIcon;
+  final bool keepStartLightsVisible;
 
   /// Lig bağlamında mı gösteriliyor? Calendar (ana ekran) için false:
   /// biten yarışlarda kullanıcının skor/sıralamasını gizler, canlı yarışlarda
@@ -308,13 +413,16 @@ class RaceCardNew extends StatelessWidget {
     this.totalPredictionCount,
     this.actionLabel,
     this.actionIcon,
+    this.keepStartLightsVisible = false,
     this.showLeagueContext = true,
     this.kind = RaceCardKind.main,
   });
 
   bool get _isSprint => kind == RaceCardKind.sprint;
 
-  RaceStatus get _status => effectiveRaceCardStatus((race: race, kind: kind));
+  RaceStatus get _status => kind == RaceCardKind.main
+      ? effectiveRaceCardDisplayStatus((race: race, kind: kind))
+      : effectiveRaceCardNavigationStatus((race: race, kind: kind));
 
   DateTime? get _qualifyingAt =>
       _isSprint ? race.sprintQualifyingAt : race.qualifyingAt;
@@ -353,14 +461,14 @@ class RaceCardNew extends StatelessWidget {
         AppColors.lockOrange,
         AppColors.lockOrange,
         Icons.lock_outline,
-        'KİLİTLİ',
+        'KİLİTLENDİ',
       ),
       RaceStatus.live => (
         AppColors.surfaceLow,
         AppColors.liveRed,
         AppColors.liveRed,
         Icons.circle,
-        'LIVE',
+        'CANLI',
       ),
       RaceStatus.finished => (
         AppColors.surface,
@@ -411,7 +519,7 @@ class RaceCardNew extends StatelessWidget {
                         letterSpacing: 1.5,
                       ),
                     ),
-                    if (showLeagueContext && _predictionSavedCount > 0) ...[
+                    if (showLeagueContext) ...[
                       const Spacer(),
                       _PredictionBadge(
                         saved: _predictionSavedCount,
@@ -491,7 +599,22 @@ class RaceCardNew extends StatelessWidget {
   }
 
   List<_StartLightSession> _buildStartLightSessions(DateTime now) {
+    final pinnedLightState = _pinnedLightState(now);
+
     if (race.sessions.isNotEmpty) {
+      final completedOverride = pinnedLightState ?? _completedLightState(now);
+      if (completedOverride != null) {
+        return race.sessions
+            .take(5)
+            .map(
+              (session) => _StartLightSession(
+                label: session.shortLabel,
+                state: completedOverride,
+              ),
+            )
+            .toList();
+      }
+
       final isRaceWeek =
           now.isAfter(
             race.sessions.first.startsAt.subtract(const Duration(days: 1)),
@@ -502,7 +625,7 @@ class RaceCardNew extends StatelessWidget {
             ),
           );
       final forceInactive = !isRaceWeek || _status == RaceStatus.cancelled;
-      return race.sessions
+      final sessions = race.sessions
           .take(5)
           .map(
             (session) => _StartLightSession(
@@ -516,11 +639,13 @@ class RaceCardNew extends StatelessWidget {
             ),
           )
           .toList();
+      return _applyDebugSessionOverride(sessions);
     }
 
     final qAt = _qualifyingAt;
     final rAt = _raceAt;
     final useSprintWeekendLayout = race.hasSprint;
+    final completedOverride = pinnedLightState ?? _completedLightState(now);
     final firstKnownSession = useSprintWeekendLayout
         ? (race.sprintQualifyingAt ?? race.sprintRaceAt ?? qAt ?? rAt)
         : (qAt ?? rAt);
@@ -529,60 +654,125 @@ class RaceCardNew extends StatelessWidget {
         now.isAfter(firstKnownSession.subtract(const Duration(days: 3))) &&
         rAt != null &&
         now.isBefore(rAt.add(const Duration(hours: 4)));
-    final forceInactive = !isRaceWeek || _status == RaceStatus.cancelled;
+    final forceInactive =
+        !keepStartLightsVisible &&
+        (!isRaceWeek || _status == RaceStatus.cancelled);
 
     if (useSprintWeekendLayout) {
       final sqAt = race.sprintQualifyingAt ?? qAt;
       final srAt = race.sprintRaceAt;
       final p1At = sqAt?.subtract(const Duration(hours: 4));
-      return [
+      return _applyDebugSessionOverride([
         _StartLightSession(
           label: 'P1',
-          state: _lightStateFor(p1At, now, forceInactive: forceInactive),
+          state:
+              completedOverride ??
+              _lightStateFor(p1At, now, forceInactive: forceInactive),
         ),
         _StartLightSession(
           label: 'SQ',
-          state: _lightStateFor(sqAt, now, forceInactive: forceInactive),
+          state:
+              completedOverride ??
+              _lightStateFor(sqAt, now, forceInactive: forceInactive),
         ),
         _StartLightSession(
           label: 'SR',
-          state: _lightStateFor(srAt, now, forceInactive: forceInactive),
+          state:
+              completedOverride ??
+              _lightStateFor(srAt, now, forceInactive: forceInactive),
         ),
         _StartLightSession(
           label: 'Q',
-          state: _lightStateFor(qAt, now, forceInactive: forceInactive),
+          state:
+              completedOverride ??
+              _lightStateFor(qAt, now, forceInactive: forceInactive),
         ),
         _StartLightSession(
           label: 'R',
-          state: _lightStateFor(rAt, now, forceInactive: forceInactive),
+          state:
+              completedOverride ??
+              _lightStateFor(rAt, now, forceInactive: forceInactive),
         ),
-      ];
+      ]);
     }
 
     final p1At = qAt?.subtract(const Duration(days: 2));
     final p2At = qAt?.subtract(const Duration(days: 1));
     final p3At = qAt?.subtract(const Duration(hours: 4));
-    return [
+    return _applyDebugSessionOverride([
       _StartLightSession(
         label: 'P1',
-        state: _lightStateFor(p1At, now, forceInactive: forceInactive),
+        state:
+            completedOverride ??
+            _lightStateFor(p1At, now, forceInactive: forceInactive),
       ),
       _StartLightSession(
         label: 'P2',
-        state: _lightStateFor(p2At, now, forceInactive: forceInactive),
+        state:
+            completedOverride ??
+            _lightStateFor(p2At, now, forceInactive: forceInactive),
       ),
       _StartLightSession(
         label: 'P3',
-        state: _lightStateFor(p3At, now, forceInactive: forceInactive),
+        state:
+            completedOverride ??
+            _lightStateFor(p3At, now, forceInactive: forceInactive),
       ),
       _StartLightSession(
         label: 'Q',
-        state: _lightStateFor(qAt, now, forceInactive: forceInactive),
+        state:
+            completedOverride ??
+            _lightStateFor(qAt, now, forceInactive: forceInactive),
       ),
       _StartLightSession(
         label: 'R',
-        state: _lightStateFor(rAt, now, forceInactive: forceInactive),
+        state:
+            completedOverride ??
+            _lightStateFor(rAt, now, forceInactive: forceInactive),
       ),
+    ]);
+  }
+
+  _StartLightState? _completedLightState(DateTime now) {
+    if (_status != RaceStatus.finished) return null;
+    final finishedAt = _raceAt;
+    if (finishedAt == null) return _StartLightState.finished;
+    return now.isBefore(finishedAt.add(const Duration(days: 1)))
+        ? _StartLightState.finished
+        : _StartLightState.inactive;
+  }
+
+  _StartLightState? _pinnedLightState(DateTime now) {
+    if (!keepStartLightsVisible) return null;
+    final startsAt = _raceAt;
+    if (_status == RaceStatus.finished ||
+        _status == RaceStatus.cancelled ||
+        (startsAt != null && !startsAt.isAfter(now))) {
+      return _StartLightState.finished;
+    }
+    return _StartLightState.upcoming;
+  }
+
+  List<_StartLightSession> _applyDebugSessionOverride(
+    List<_StartLightSession> sessions,
+  ) {
+    final target = Env.raceCardDebugSession.trim().toUpperCase();
+    if (!_debugAppliesToRace(race) || target.isEmpty) return sessions;
+    final targetIndex = sessions.indexWhere(
+      (session) => session.label.toUpperCase() == target,
+    );
+    if (targetIndex == -1) return sessions;
+
+    return [
+      for (var i = 0; i < sessions.length; i++)
+        _StartLightSession(
+          label: sessions[i].label,
+          state: i < targetIndex
+              ? _StartLightState.finished
+              : i == targetIndex
+              ? _StartLightState.live
+              : _StartLightState.upcoming,
+        ),
     ];
   }
 
@@ -691,7 +881,7 @@ class RaceCardNew extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'LAP $currentLap/$totalLaps',
+              'TUR $currentLap/$totalLaps',
               style: tt.titleMedium?.copyWith(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
@@ -766,7 +956,7 @@ class RaceCardNew extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'PTS',
+                  'PUAN',
                   style: tt.bodySmall?.copyWith(
                     color: const Color(0x80FFFFFF),
                     fontSize: 14,
@@ -859,47 +1049,92 @@ class _StartLightsPanel extends StatelessWidget {
   }
 }
 
-class _StartLightColumn extends StatelessWidget {
+class _StartLightColumn extends StatefulWidget {
   final _StartLightSession session;
 
   const _StartLightColumn({required this.session});
 
   @override
+  State<_StartLightColumn> createState() => _StartLightColumnState();
+}
+
+class _StartLightColumnState extends State<_StartLightColumn> {
+  final _tooltipKey = GlobalKey<TooltipState>();
+  static const _liveLightColor = Color(0xFFFFD43B);
+
+  @override
   Widget build(BuildContext context) {
+    final session = widget.session;
     final active = session.state == _StartLightState.live;
     final labelColor = switch (session.state) {
-      _StartLightState.live => AppColors.lockOrange,
+      _StartLightState.live => _liveLightColor,
       _StartLightState.finished => Colors.white.withValues(alpha: 0.32),
       _StartLightState.upcoming => Colors.white.withValues(alpha: 0.55),
       _StartLightState.inactive => Colors.white.withValues(alpha: 0.18),
     };
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _StartLightBulb(state: session.state),
-        const SizedBox(height: 6),
-        Text(
-          session.label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.8,
-            color: labelColor,
-          ),
+    return Tooltip(
+      key: _tooltipKey,
+      message: '${session.label}: ${_startLightDescription(session.label)}',
+      preferBelow: false,
+      waitDuration: const Duration(milliseconds: 350),
+      showDuration: const Duration(seconds: 3),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A26),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      textStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+      ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _tooltipKey.currentState?.ensureTooltipVisible(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _StartLightBulb(state: session.state),
+            const SizedBox(height: 6),
+            Text(
+              session.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+                color: labelColor,
+              ),
+            ),
+            if (active) const SizedBox(height: 0),
+          ],
         ),
-        if (active) const SizedBox(height: 0),
-      ],
+      ),
     );
   }
+}
+
+String _startLightDescription(String label) {
+  return switch (label.trim().toUpperCase()) {
+    'P1' || 'FP1' || 'ANT1' => 'Antrenman 1',
+    'P2' || 'FP2' || 'ANT2' => 'Antrenman 2',
+    'P3' || 'FP3' || 'ANT3' => 'Antrenman 3',
+    'SQ' || 'SS' => 'Sprint Sıralama',
+    'SR' || 'S' => 'Sprint Yarışı',
+    'Q' => 'Sıralama',
+    'R' => 'Yarış',
+    _ => label,
+  };
 }
 
 class _StartLightBulb extends StatelessWidget {
   final _StartLightState state;
 
   const _StartLightBulb({required this.state});
+
+  static const _liveLightColor = Color(0xFFFFD43B);
 
   @override
   Widget build(BuildContext context) {
@@ -909,11 +1144,7 @@ class _StartLightBulb extends StatelessWidget {
         const Color(0xFFFF1010),
         const Color(0xFFFF3030),
       ),
-      _StartLightState.live => (
-        true,
-        const Color(0xFFFFB800),
-        const Color(0xFFFFC83A),
-      ),
+      _StartLightState.live => (true, _liveLightColor, const Color(0xFFFFE066)),
       _StartLightState.upcoming => (
         true,
         AppColors.lockGreen,
@@ -1086,13 +1317,20 @@ class _PredictionBadge extends StatelessWidget {
     const iconColor = Color(0xB3FFFFFF);
     const textColor = Color(0xCCFFFFFF);
     final suffix = '$saved/$total';
+    final hasPrediction = saved > 0;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(Icons.check_circle_outline, size: 15, color: iconColor),
+        Icon(
+          hasPrediction
+              ? Icons.check_circle_outline
+              : Icons.radio_button_unchecked,
+          size: 15,
+          color: iconColor,
+        ),
         const SizedBox(width: 6),
         Text(
-          'Tahmin yapıldı $suffix',
+          hasPrediction ? 'Tahmin yapıldı $suffix' : 'Tahmin Yapılmadı',
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w800,

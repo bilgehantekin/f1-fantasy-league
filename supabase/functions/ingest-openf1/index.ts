@@ -3,9 +3,10 @@
 //
 // Çağırma şekilleri:
 //   POST /ingest-openf1                      → son 72 saatte biten yarışları yeniden/idempotent çeker
+//   POST /ingest-openf1 {"audit":true}       → son 7 günde biten yarışları yeniden kontrol eder
 //   POST /ingest-openf1 {"race_id":"<uuid>"} → tek yarış
 //   POST /ingest-openf1 {"race_id":"...","dry_run":true} → DB'ye yazmaz, payload döner
-//   POST /ingest-openf1 {"race_id":"...","force_sprint":true} → sprint sonucunu da yeniden yazar
+//   POST /ingest-openf1 {"race_id":"...","force_sprint":false} → mevcut sprint sonucunu korur
 //
 // Cron: 0021_schedule_openf1_ingest.sql migration'ı pg_cron + pg_net ile bağlar.
 
@@ -15,6 +16,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 const OPENF1 = "https://api.openf1.org/v1";
 const TWO_WEEKS_MS = 14 * 24 * 3600 * 1000;
 const AUTO_REINGEST_WINDOW_MS = 72 * 3600 * 1000;
+const POST_RACE_AUDIT_WINDOW_MS = 7 * 24 * 3600 * 1000;
 
 interface OpenF1Meeting {
   meeting_key: number;
@@ -51,6 +53,7 @@ interface IngestBody {
   race_id?: string;
   dry_run?: boolean;
   force_sprint?: boolean;
+  audit?: boolean;
   mode?: "results" | "season-bootstrap" | "sync-sessions";
   year?: number;
 }
@@ -92,7 +95,8 @@ Deno.serve(async (req) => {
     return jsonResponse(await syncSeasonSessions(c, year));
   }
 
-  const raceIds = await resolveRaceIds(c, body.race_id);
+  const raceIds = await resolveRaceIds(c, body.race_id, body.audit ?? false);
+  const refreshSprint = body.force_sprint ?? true;
   const results: unknown[] = [];
   for (const id of raceIds) {
     try {
@@ -101,7 +105,7 @@ Deno.serve(async (req) => {
           c,
           id,
           body.dry_run ?? false,
-          body.force_sprint ?? false,
+          refreshSprint,
         ),
       );
     } catch (e) {
@@ -115,10 +119,12 @@ Deno.serve(async (req) => {
 async function resolveRaceIds(
   c: SupabaseClient,
   explicitId: string | undefined,
+  audit: boolean,
 ): Promise<string[]> {
   if (explicitId) return [explicitId];
 
-  const since = new Date(Date.now() - AUTO_REINGEST_WINDOW_MS).toISOString();
+  const windowMs = audit ? POST_RACE_AUDIT_WINDOW_MS : AUTO_REINGEST_WINDOW_MS;
+  const since = new Date(Date.now() - windowMs).toISOString();
   const now = new Date().toISOString();
   const { data: races } = await c
     .from("races")
@@ -373,8 +379,9 @@ async function ingestRace(
   const sprintToWrite = sprintPayload;
   const shouldWriteSprint = !!sprintToWrite && (!existingSprint || forceSprint);
 
-  // Sprint sonuçları dünkü ayrı oturumdan gelebilir; ana yarış ingest'i varsayılan
-  // olarak finalize edilmiş sprint skorlarını yeniden hesaplatmasın.
+  // Sprint sonuçları da yeniden yazılır; yarış sonrası cezalar ve klasman
+  // düzeltmeleri sprint puanlarına da yansısın. Gerekirse çağıran taraf
+  // force_sprint:false göndererek mevcut sprint sonucunu koruyabilir.
   if (shouldWriteSprint && sprintToWrite) {
     const { error: spErr } = await c.from("sprint_results").upsert(
       sprintToWrite,
@@ -587,7 +594,7 @@ async function findFastestLap(sessionKey: number): Promise<OpenF1Lap | null> {
 }
 
 function countDnfResults(results: OpenF1Result[]): number {
-  return results.filter((r) => r.dnf).length;
+  return results.filter((r) => r.dnf && !r.dns && !r.dsq).length;
 }
 
 function topScoringTeamId(

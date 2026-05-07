@@ -211,7 +211,7 @@ class _PodiumBar extends StatelessWidget {
             text: '${row.score}',
             children: [
               TextSpan(
-                text: ' PTS',
+                text: ' PUAN',
                 style: TextStyle(
                   fontSize: 18,
                   color: Colors.white.withValues(alpha: 0.5),

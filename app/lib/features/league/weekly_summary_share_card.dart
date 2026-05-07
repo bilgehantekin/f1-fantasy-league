@@ -23,21 +23,28 @@ class WeeklySummaryShareCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final best = summary.bestPrediction;
-    final picked = summary.mostPickedDriver;
-    final top = summary.topStandings.take(3).toList();
-    final modeLabel = sprintMode ? 'SPRINT' : 'YARIŞ';
+    final myStanding = summary.myStanding;
+    final items = summary.predictionItems;
+    final totalPossible = items.fold<int>(
+      0,
+      (sum, item) => sum + item.maxPoints,
+    );
+    final memberCount = league.memberCount ?? summary.topStandings.length;
+    final topRows = summary.topStandings.take(5).toList();
+    final isScored = sprintMode
+        ? race.sprintStatus == RaceStatus.finished
+        : race.status == RaceStatus.finished;
 
     return ShareStoryFrame(
       width: 1080,
       height: 1920,
-      padding: const EdgeInsets.fromLTRB(80, 120, 80, 100),
+      padding: const EdgeInsets.fromLTRB(78, 130, 78, 100),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const ShareGridCallLogo(fontSize: 32, bulbSize: 11),
+              const ShareGridCallLogo(fontSize: 42, bulbSize: 13),
               const Spacer(),
               Text(
                 'R${race.round}',
@@ -52,9 +59,9 @@ class WeeklySummaryShareCard extends StatelessWidget {
               Text(flagFor(race.name), style: const TextStyle(fontSize: 36)),
             ],
           ),
-          const SizedBox(height: 60),
+          const SizedBox(height: 72),
           Text(
-            '${league.name} · Haftalık Özet',
+            '${league.name} · $memberCount kişi',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -64,190 +71,127 @@ class WeeklySummaryShareCard extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.5),
             ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            race.name.toUpperCase(),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 78,
-              fontWeight: FontWeight.w900,
-              height: 0.95,
-              color: Colors.white,
-            ),
+          const SizedBox(height: 16),
+          _RaceTitle(raceName: race.name, sprintMode: sprintMode),
+          const SizedBox(height: 72),
+          _ScoreRankBlock(
+            row: myStanding,
+            isScored: isScored,
+            sprintMode: sprintMode,
           ),
-          const SizedBox(height: 18),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.f1Red,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              modeLabel,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 2,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          const SizedBox(height: 80),
-          _WinnerScoreBlock(best: best),
-          const SizedBox(height: 54),
+          const SizedBox(height: 52),
           Text(
-            'LİG ÖZETİ',
+            totalPossible == 0
+                ? 'TAHMİNLER'
+                : 'TAHMİNLER · ${myStanding?.score ?? 0}/$totalPossible PUAN',
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 26,
               fontWeight: FontWeight.w900,
               letterSpacing: 2.5,
               color: Colors.white.withValues(alpha: 0.55),
             ),
           ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: _SummaryStatTile(
-                  label: sprintMode ? 'TAHMİN' : 'JOKER',
-                  value: sprintMode
-                      ? '${summary.predictionCount}'
-                      : '${summary.jokerHitCount}',
-                  subvalue: sprintMode ? 'kayıtlı tahmin' : 'bilen kişi',
-                  color: sprintMode
-                      ? AppColors.lockOrange
-                      : AppColors.lockGreen,
-                ),
-              ),
-              const SizedBox(width: 18),
-              Expanded(
-                child: _SummaryStatTile(
-                  label: 'HAFTANIN SÜRÜCÜSÜ',
-                  value: picked?.code ?? '-',
-                  subvalue: picked == null
-                      ? 'tahmin yok'
-                      : '${picked.points} puan · ${picked.pickCount} seçim',
-                  color: _colorFromHex(picked?.color) ?? AppColors.f1Red,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 54),
-          Text(
-            'İLK 3',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 2.5,
-              color: Colors.white.withValues(alpha: 0.55),
-            ),
-          ),
-          const SizedBox(height: 18),
-          if (top.isEmpty)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(30),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-              ),
-              child: const Text(
-                'Bu yarış için skorlanmış tahmin yok.',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0x99FFFFFF),
-                ),
-              ),
-            )
+          const SizedBox(height: 24),
+          if (items.isEmpty)
+            _EmptyPredictionBox(sprintMode: sprintMode, isScored: isScored)
           else
-            for (final row in top)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 14),
-                child: ShareStandingLine(row: row, compact: true),
-              ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 28),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.04),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-            ),
-            child: Row(
-              children: [
-                Expanded(child: _BottomWinner(best: best)),
-                const SizedBox(width: 30),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'KOD',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 2,
-                        color: Colors.white.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      league.inviteCode,
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.f1Red,
-                        letterSpacing: 2.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+            _PredictionLights(items: items),
+          const SizedBox(height: 26),
+          _TopThreeRows(rows: topRows, myUserId: summary.myStanding?.userId),
         ],
       ),
     );
   }
 }
 
-class _WinnerScoreBlock extends StatelessWidget {
-  final StandingRow? best;
+class _RaceTitle extends StatelessWidget {
+  final String raceName;
+  final bool sprintMode;
 
-  const _WinnerScoreBlock({required this.best});
+  const _RaceTitle({required this.raceName, required this.sprintMode});
+
+  @override
+  Widget build(BuildContext context) {
+    const style = TextStyle(
+      fontSize: 78,
+      fontWeight: FontWeight.w900,
+      height: 0.95,
+      color: Colors.white,
+    );
+    if (!sprintMode) {
+      return Text(
+        raceName.toUpperCase(),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: style,
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          raceName.toUpperCase(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: style,
+        ),
+        Text('SPRINT', style: style),
+      ],
+    );
+  }
+}
+
+class _ScoreRankBlock extends StatelessWidget {
+  final StandingRow? row;
+  final bool isScored;
+  final bool sprintMode;
+
+  const _ScoreRankBlock({
+    required this.row,
+    required this.isScored,
+    required this.sprintMode,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(54, 46, 54, 46),
+      padding: const EdgeInsets.fromLTRB(58, 52, 58, 48),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.surface, AppColors.surfaceHi],
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            AppColors.surface.withValues(alpha: 0.96),
+            AppColors.surfaceHi.withValues(alpha: 0.92),
+            AppColors.f1Red.withValues(alpha: 0.18),
+          ],
         ),
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(30),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
-      child: best == null
-          ? const Text(
-              'Henüz skor hesaplanmadı.',
+      child: row == null
+          ? Text(
+              isScored
+                  ? (sprintMode
+                        ? 'Bu sprint için tahmin yapmadın.'
+                        : 'Bu yarış için tahmin yapmadın.')
+                  : 'Henüz skor hesaplanmadı.',
               style: TextStyle(
                 fontSize: 34,
                 fontWeight: FontWeight.w800,
-                color: Color(0xB3FFFFFF),
+                color: const Color(0xB3FFFFFF),
               ),
             )
           : Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'HAFTANIN KAZANANI',
+                        'SKOR',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w900,
@@ -255,41 +199,57 @@ class _WinnerScoreBlock extends StatelessWidget {
                           color: Colors.white.withValues(alpha: 0.6),
                         ),
                       ),
-                      const SizedBox(height: 18),
-                      Text(
-                        best!.username,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 68,
-                          fontWeight: FontWeight.w900,
-                          height: 0.95,
-                          color: Colors.white,
-                        ),
+                      const SizedBox(height: 26),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '${row!.score}',
+                            style: const TextStyle(
+                              fontSize: 142,
+                              fontWeight: FontWeight.w900,
+                              height: 0.78,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              'PUAN',
+                              style: TextStyle(
+                                fontSize: 34,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.5,
+                                color: Colors.white.withValues(alpha: 0.52),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 34),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '${best!.score}',
-                      style: const TextStyle(
-                        fontSize: 124,
+                      'SIRA',
+                      style: TextStyle(
+                        fontSize: 24,
                         fontWeight: FontWeight.w900,
-                        height: 0.9,
-                        color: AppColors.f1Red,
+                        letterSpacing: 2.5,
+                        color: Colors.white.withValues(alpha: 0.6),
                       ),
                     ),
+                    const SizedBox(height: 30),
                     Text(
-                      'PTS',
-                      style: TextStyle(
-                        fontSize: 30,
+                      row!.rank <= 0 ? '-' : '#${row!.rank}',
+                      style: const TextStyle(
+                        fontSize: 86,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 2,
-                        color: Colors.white.withValues(alpha: 0.5),
+                        height: 0.9,
+                        color: Colors.white,
                       ),
                     ),
                   ],
@@ -300,120 +260,275 @@ class _WinnerScoreBlock extends StatelessWidget {
   }
 }
 
-class _SummaryStatTile extends StatelessWidget {
-  final String label;
-  final String value;
-  final String subvalue;
-  final Color color;
+class _PredictionLights extends StatelessWidget {
+  final List<PredictionSummaryItem> items;
 
-  const _SummaryStatTile({
-    required this.label,
-    required this.value,
-    required this.subvalue,
-    required this.color,
-  });
+  const _PredictionLights({required this.items});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(26),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-      ),
+    final columns = items.length >= 9 ? 5 : 4;
+    const gap = 18.0;
+    final rows = <List<PredictionSummaryItem>>[
+      items.take(columns).toList(),
+      items.skip(columns).toList(),
+    ].where((row) => row.isNotEmpty).toList();
+    return SizedBox(
+      width: double.infinity,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 2,
-              color: Colors.white.withValues(alpha: 0.55),
+          for (var i = 0; i < rows.length; i++) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(30, 34, 30, 32),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.035),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+              ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final slotWidth =
+                      (constraints.maxWidth - (gap * (columns - 1))) / columns;
+                  final rowWidth =
+                      (slotWidth * rows[i].length) +
+                      (gap * (rows[i].length - 1));
+                  return Center(
+                    child: SizedBox(
+                      width: rowWidth,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (var j = 0; j < rows[i].length; j++) ...[
+                            SizedBox(
+                              width: slotWidth,
+                              child: _PredictionLight(item: rows[i][j]),
+                            ),
+                            if (j != rows[i].length - 1)
+                              const SizedBox(width: gap),
+                          ],
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 58,
-              fontWeight: FontWeight.w900,
-              color: color,
-              height: 1,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subvalue,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: Colors.white.withValues(alpha: 0.55),
-            ),
-          ),
+            if (i != rows.length - 1) const SizedBox(height: 18),
+          ],
         ],
       ),
     );
   }
 }
 
-class _BottomWinner extends StatelessWidget {
-  final StandingRow? best;
+class _PredictionLight extends StatelessWidget {
+  final PredictionSummaryItem item;
 
-  const _BottomWinner({required this.best});
+  const _PredictionLight({required this.item});
 
   @override
   Widget build(BuildContext context) {
-    if (best == null) {
-      return const Text(
-        'Skorlar hesaplanınca haftanın birincisi burada olacak.',
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.w800,
-          color: Color(0xCCFFFFFF),
-        ),
-      );
-    }
-
+    final color = switch (item.status) {
+      'correct' => AppColors.lockGreen,
+      'partial' => AppColors.lockOrange,
+      _ => AppColors.f1Red,
+    };
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
+        Container(
+          width: 54,
+          height: 54,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              center: const Alignment(-0.35, -0.45),
+              colors: [Colors.white.withValues(alpha: 0.82), color, color],
+              stops: const [0, 0.38, 1],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.58),
+                blurRadius: 22,
+                spreadRadius: 3,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
         Text(
-          'HAFTANIN BİRİNCİSİ',
+          _shortLabel(item.label),
+          maxLines: 2,
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w900,
-            letterSpacing: 2,
-            color: Colors.white.withValues(alpha: 0.5),
+            letterSpacing: 0.8,
+            height: 1,
+            color: Colors.white.withValues(alpha: 0.52),
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         Text(
-          '${best!.username} · ${best!.score}',
+          item.points > 0 ? '+${item.points}' : item.value,
           maxLines: 1,
+          textAlign: TextAlign.center,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontSize: 32,
+          style: TextStyle(
+            fontSize: 18,
             fontWeight: FontWeight.w900,
-            color: Colors.white,
+            color: item.points > 0
+                ? color
+                : Colors.white.withValues(alpha: 0.28),
+            height: 1,
           ),
         ),
       ],
     );
   }
+
+  static String _shortLabel(String label) {
+    return switch (label) {
+      'YARIŞ GALİBİ' || 'SPRINT GALİBİ' => 'KAZANAN',
+      'GÜVENLİK ARACI' => 'G. ARACI',
+      'PODYUM P1' => 'POD P1',
+      'PODYUM P2' => 'POD P2',
+      'PODYUM P3' => 'POD P3',
+      'PODYUM BONUS' => 'POD BONUS',
+      'SPRINT POLE' => 'POLE',
+      'TOP TEAM' => 'EN İYİ TAKIM',
+      _ => label,
+    };
+  }
 }
 
-Color? _colorFromHex(String? hex) {
-  if (hex == null || hex.isEmpty) return null;
-  final normalized = hex.replaceFirst('#', '');
-  final value = int.tryParse('FF$normalized', radix: 16);
-  return value == null ? null : Color(value);
+class _TopThreeRows extends StatelessWidget {
+  final List<StandingRow> rows;
+  final String? myUserId;
+
+  const _TopThreeRows({required this.rows, required this.myUserId});
+
+  @override
+  Widget build(BuildContext context) {
+    if (rows.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Divider(color: Colors.white.withValues(alpha: 0.08), height: 24),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Text(
+            'İLK 5',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 2.4,
+              color: Colors.white.withValues(alpha: 0.5),
+            ),
+          ),
+        ),
+        for (final row in rows)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+              decoration: BoxDecoration(
+                color: row.userId == myUserId
+                    ? AppColors.f1Red.withValues(alpha: 0.13)
+                    : Colors.white.withValues(alpha: 0.035),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: row.userId == myUserId
+                      ? AppColors.f1Red.withValues(alpha: 0.45)
+                      : Colors.white.withValues(alpha: 0.045),
+                ),
+              ),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 48,
+                    child: Text(
+                      '${row.rank}',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white.withValues(alpha: 0.48),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          row.username,
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            color: row.userId == myUserId
+                                ? Colors.white
+                                : Colors.white.withValues(alpha: 0.62),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${row.score}',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      color: row.userId == myUserId
+                          ? AppColors.f1Red
+                          : Colors.white.withValues(alpha: 0.48),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _EmptyPredictionBox extends StatelessWidget {
+  final bool sprintMode;
+  final bool isScored;
+
+  const _EmptyPredictionBox({required this.sprintMode, required this.isScored});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(30),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Text(
+        isScored
+            ? (sprintMode
+                  ? 'Sprint tahmini yapmadığın için bu GP’ye ait sprint skorun ve tahmin kırılımın gösterilemiyor.'
+                  : 'Tahmin yapmadığın için bu GP’ye ait skor ve tahmin kırılımı gösterilemiyor.')
+            : (sprintMode
+                  ? 'Sprint sonucu skorlanınca tahmin kırılımın burada olacak.'
+                  : 'Yarış sonucu skorlanınca tahmin kırılımın burada olacak.'),
+        style: const TextStyle(
+          fontSize: 26,
+          fontWeight: FontWeight.w700,
+          color: Color(0x99FFFFFF),
+        ),
+      ),
+    );
+  }
 }

@@ -65,7 +65,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         );
       }
     } on AuthException catch (e) {
-      setState(() => _error = e.message);
+      setState(() => _error = friendlyAuthError(e));
     } catch (e) {
       setState(() => _error = friendlyError(e));
     } finally {
@@ -88,7 +88,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             : null,
       );
     } on AuthException catch (e) {
-      setState(() => _error = e.message);
+      setState(() => _error = friendlyAuthError(e));
     } catch (e) {
       setState(() => _error = friendlyError(e));
     } finally {
@@ -121,7 +121,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         _info = 'Şifre sıfırlama bağlantısı e-posta adresine gönderildi.';
       });
     } on AuthException catch (e) {
-      setState(() => _error = e.message);
+      setState(() => _error = friendlyAuthError(e));
     } catch (e) {
       setState(() => _error = friendlyError(e));
     } finally {
@@ -141,11 +141,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       if (password.length < 8) {
         return 'Şifre en az 8 karakter olmalı.';
       }
-      if (username.length < 3 || username.length > 24) {
-        return 'Kullanıcı adı 3-24 karakter olmalı.';
-      }
-      if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(username)) {
-        return 'Kullanıcı adında sadece harf, rakam ve alt çizgi kullan.';
+      if (username.length < 3 || username.length > 16) {
+        return 'Kullanıcı adı 3-16 karakter olmalı.';
       }
     } else if (password.isEmpty) {
       return 'Şifreni yaz.';
@@ -201,8 +198,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       textInputAction: TextInputAction.next,
                       decoration: const InputDecoration(
                         labelText: 'Kullanıcı adı',
-                        helperText: '3-24 karakter, harf/rakam/_',
+                        helperText: '3-16 karakter',
                       ),
+                      maxLength: 16,
+                      buildCounter:
+                          (
+                            context, {
+                            required currentLength,
+                            required isFocused,
+                            maxLength,
+                          }) => null,
                     ),
                     const SizedBox(height: 12),
                   ],

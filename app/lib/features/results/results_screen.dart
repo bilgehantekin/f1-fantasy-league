@@ -183,13 +183,15 @@ class ResultsScreen extends ConsumerWidget {
                             result: result,
                             drivers: drivers,
                           )
-                        : const _NoPredictionMsg()
+                        : const _NoPredictionMsg(sprintMode: true)
                   else if (prediction != null)
                     _ScoreBreakdown(
                       prediction: prediction,
                       result: result,
                       drivers: drivers,
-                    ),
+                    )
+                  else
+                    const _NoPredictionMsg(sprintMode: false),
                   const SizedBox(height: 24),
                 ],
                 _SectionTitle(label: 'SONUÇLAR'),
@@ -281,7 +283,9 @@ class _HeroScore extends StatelessWidget {
 }
 
 class _NoPredictionMsg extends StatelessWidget {
-  const _NoPredictionMsg();
+  final bool sprintMode;
+
+  const _NoPredictionMsg({required this.sprintMode});
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(16),
@@ -289,10 +293,12 @@ class _NoPredictionMsg extends StatelessWidget {
       color: const Color(0xFF1A1A26),
       borderRadius: BorderRadius.circular(8),
     ),
-    child: const Text(
-      'Bu sprint için tahmin yapmamışsın.',
+    child: Text(
+      sprintMode
+          ? 'Bu sprint için tahmin yapmamışsın.'
+          : 'Bu yarış için tahmin yapmamışsın.',
       textAlign: TextAlign.center,
-      style: TextStyle(color: Color(0x99FFFFFF)),
+      style: const TextStyle(color: Color(0x99FFFFFF)),
     ),
   );
 }
@@ -353,7 +359,7 @@ class _SprintScoreBreakdown extends StatelessWidget {
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
               ),
               Text(
-                '${prediction.score ?? 0} PTS',
+                '${prediction.score ?? 0} PUAN',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
@@ -559,7 +565,7 @@ class _ScoreBreakdown extends StatelessWidget {
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
               ),
               Text(
-                '${prediction.score ?? 0} PTS',
+                '${prediction.score ?? 0} PUAN',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w900,

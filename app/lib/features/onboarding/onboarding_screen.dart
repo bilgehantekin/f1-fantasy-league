@@ -22,6 +22,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _hoursBeforeLock = 1;
   bool _busy = false;
   String? _error;
+  String? _usernameError;
+  bool _seededUsername = false;
 
   @override
   void dispose() {
@@ -30,9 +32,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _finish() async {
+    final username = _username.text.trim();
+    final validationError = _validateUsername(username);
+    if (validationError != null) {
+      setState(() {
+        _usernameError = validationError;
+        _error = null;
+      });
+      return;
+    }
+
     setState(() {
       _busy = true;
       _error = null;
+      _usernameError = null;
     });
     try {
       final reminderPrefs = ReminderPreferences(
@@ -60,9 +73,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         await reminderPrefs.save();
       }
 
-      await completeOnboarding(
-        username: _username.text.trim().isEmpty ? null : _username.text.trim(),
-      );
+      await completeOnboarding(username: username);
 
       ref.invalidate(profileProvider);
       final races = await ref.read(racesProvider.future);
@@ -77,10 +88,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
+  String? _validateUsername(String username) {
+    if (username.isEmpty) return 'Kullanıcı adı gerekli.';
+    if (username.length < 3) return 'En az 3 karakter gir.';
+    if (username.length > 16) return 'En fazla 16 karakter gir.';
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(profileProvider).asData?.value;
-    if (_username.text.isEmpty && profile?.username.isNotEmpty == true) {
+    if (!_seededUsername &&
+        _username.text.isEmpty &&
+        profile?.username.isNotEmpty == true) {
+      _seededUsername = true;
       _username.text = profile!.username;
     }
 
@@ -101,7 +122,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
             const SizedBox(height: 6),
             const Text(
-              'Arkadaşlarınla lig kur, yarıştan önce tahmin yap, sonuçlar gelince puanları karşılaştır.',
+              'Arkadaşlarınla özel lig kur, yarıştan önce tahminini yap, sonuçlar açıklanınca puanını karşılaştır.',
               style: TextStyle(fontSize: 15, color: Color(0xB3FFFFFF)),
             ),
             const SizedBox(height: 28),
@@ -110,26 +131,38 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const _StepTitle(number: '01', label: 'NASIL OYNANIR?'),
-                  const SizedBox(height: 14),
-                  const _HowItWorksItem(
+                  const SizedBox(height: 12),
+                  Text(
+                    'Her yarış haftası basit: ligine katıl, tahminini süre bitmeden kaydet, sonuçlar açıklanınca sıralamadaki yerini gör.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withValues(alpha: 0.68),
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const _HowItWorksCard(
+                    number: '1',
                     icon: Icons.groups_outlined,
-                    title: 'Ligini kur veya davet koduyla katıl',
+                    title: 'Lig kur veya davet koduyla katıl',
                     text:
-                        'Özel ligde arkadaşlarınla aynı yarış haftasında kapışırsın.',
+                        'Arkadaşlarınla aynı ligde yarış. Kendi ligini oluştur ya da gelen kodla hemen katıl.',
                   ),
                   const SizedBox(height: 12),
-                  const _HowItWorksItem(
-                    icon: Icons.sports_score_outlined,
-                    title: 'Kilitlenmeden önce tahminini yap',
+                  const _HowItWorksCard(
+                    number: '2',
+                    icon: Icons.edit_road_outlined,
+                    title: 'Süre bitmeden tahminini yap',
                     text:
-                        'Ana yarış ve sprint için seçimlerini kaydet; kilit saatinden sonra değişmez.',
+                        'Podyum, pole, DNF ve güvenlik aracı gibi tahminlerini seç.',
                   ),
                   const SizedBox(height: 12),
-                  const _HowItWorksItem(
-                    icon: Icons.ios_share_outlined,
-                    title: 'Puanları ve haftalık özeti paylaş',
+                  const _HowItWorksCard(
+                    number: '3',
+                    icon: Icons.leaderboard_outlined,
+                    title: 'Sonuçlar gelince puanını gör',
                     text:
-                        'Sonuçlar işlenince lig sıralaması, rozetler ve paylaşım kartları hazır olur.',
+                        'Skorların hesaplanır, lig sıralaması güncellenir ve haftalık paylaşım kartın hazır olur.',
                   ),
                 ],
               ),
@@ -143,10 +176,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   const SizedBox(height: 12),
                   TextField(
                     controller: _username,
+                    onChanged: (_) {
+                      if (_usernameError != null) {
+                        setState(() => _usernameError = null);
+                      }
+                    },
                     decoration: const InputDecoration(
                       labelText: 'Kullanıcı adı',
-                    ),
-                    maxLength: 24,
+                      helperText: 'Bu ad liglerde arkadaşlarına görünür.',
+                    ).copyWith(errorText: _usernameError),
+                    maxLength: 16,
+                    buildCounter:
+                        (
+                          context, {
+                          required currentLength,
+                          required isFocused,
+                          maxLength,
+                        }) => null,
                   ),
                 ],
               ),
@@ -156,16 +202,35 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _StepTitle(number: '03', label: 'BİLDİRİMLER'),
+                  const _StepTitle(number: '03', label: 'HATIRLATICILAR'),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tahmin yapmayı unutmaman için yarış tahminleri kapanmadan önce bildirim gönderebiliriz.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withValues(alpha: 0.68),
+                      height: 1.35,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   SwitchListTile(
                     value: _remindersEnabled,
                     onChanged: (v) => setState(() => _remindersEnabled = v),
                     title: const Text('Tahmin hatırlatmaları'),
-                    subtitle: const Text('Kilitlenmeden önce haber ver'),
                     contentPadding: EdgeInsets.zero,
                   ),
                   if (_remindersEnabled) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'HATIRLATMA ZAMANI',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
+                        color: Colors.white.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     SegmentedButton<int>(
                       segments: const [
                         ButtonSegment(value: 1, label: Text('1 saat')),
@@ -184,6 +249,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       controlAffinity: ListTileControlAffinity.leading,
                     ),
                   ],
+                  Text(
+                    'Bu tercihi daha sonra bildirim ayarlarından değiştirebilirsin.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.55),
+                      height: 1.35,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -234,56 +307,93 @@ class _Panel extends StatelessWidget {
   );
 }
 
-class _HowItWorksItem extends StatelessWidget {
+class _HowItWorksCard extends StatelessWidget {
+  final String number;
   final IconData icon;
   final String title;
   final String text;
 
-  const _HowItWorksItem({
+  const _HowItWorksCard({
+    required this.number,
     required this.icon,
     required this.title,
     required this.text,
   });
 
   @override
-  Widget build(BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: AppColors.f1Red.withValues(alpha: 0.14),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, size: 19, color: AppColors.f1Red),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Stack(
+          clipBehavior: Clip.none,
           children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                height: 1.2,
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppColors.f1Red.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(10),
               ),
+              child: Icon(icon, size: 21, color: AppColors.f1Red),
             ),
-            const SizedBox(height: 3),
-            Text(
-              text,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.64),
-                height: 1.35,
+            Positioned(
+              right: -5,
+              top: -5,
+              child: Container(
+                width: 20,
+                height: 20,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: AppColors.f1Red,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  number,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ),
           ],
         ),
-      ),
-    ],
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  height: 1.15,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                text,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.64),
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
   );
 }
 

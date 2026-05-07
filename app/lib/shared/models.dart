@@ -1,5 +1,7 @@
 // GridCall — domain modelleri (POCO; fromJson Supabase select sonuçlarına eşlenir)
 
+import '../core/env.dart';
+
 class Profile {
   final String id;
   final String username;
@@ -146,17 +148,65 @@ class Race {
     );
   }
 
-  bool get isLocked => DateTime.now().isAfter(lockAt);
+  // Tahmin kilidi mantığı:
+  // Sprint olan hafta: tüm tahminler Sprint Qualifying'den 1 saat önce kilitlenir.
+  // Sprint olmayan hafta: tüm tahminler Qualifying'den 1 saat önce kilitlenir.
+  static const Duration predictionLockLead = Duration(hours: 1);
+
+  DateTime get effectiveLockAt {
+    if (hasSprint && sprintQualifyingAt != null) {
+      return sprintQualifyingAt!.subtract(predictionLockLead);
+    }
+    return qualifyingAt.subtract(predictionLockLead);
+  }
+
+  DateTime? get effectiveSprintLockAt {
+    if (!hasSprint || sprintQualifyingAt == null) return null;
+    return sprintQualifyingAt!.subtract(predictionLockLead);
+  }
+
+  bool get isLocked =>
+      _debugPredictionsLocked || DateTime.now().isAfter(effectiveLockAt);
   bool get isCancelled => status == RaceStatus.cancelled;
-  bool get isSprintLocked =>
-      sprintLockAt == null ? true : DateTime.now().isAfter(sprintLockAt!);
-  Duration get timeUntilLock => lockAt.difference(DateTime.now());
-  Duration? get timeUntilSprintLock => sprintLockAt?.difference(DateTime.now());
+  bool get isSprintLocked => effectiveSprintLockAt == null
+      ? true
+      : _debugPredictionsLocked ||
+            DateTime.now().isAfter(effectiveSprintLockAt!);
+  Duration get timeUntilLock => effectiveLockAt.difference(DateTime.now());
+  Duration? get timeUntilSprintLock =>
+      effectiveSprintLockAt?.difference(DateTime.now());
 
   static const Duration jokerLeadTime = Duration(hours: 24);
-  DateTime get jokerOpensAt => lockAt.subtract(jokerLeadTime);
+  DateTime get jokerOpensAt => effectiveLockAt.subtract(jokerLeadTime);
   bool get isJokerWindowOpen => !DateTime.now().isBefore(jokerOpensAt);
   Duration get timeUntilJokerOpens => jokerOpensAt.difference(DateTime.now());
+
+  bool get _debugPredictionsLocked {
+    if (Env.isProd || Env.raceCardDebugRace.trim().isEmpty) return false;
+    if (!name.toLowerCase().contains(
+      Env.raceCardDebugRace.trim().toLowerCase(),
+    )) {
+      return false;
+    }
+
+    final status = Env.raceCardDebugStatus.trim().toLowerCase();
+    if (status == 'locked' || status == 'finished') return true;
+    if (status != 'live') return false;
+
+    final session = Env.raceCardDebugSession.trim().toUpperCase();
+    final lockSessionIndex = hasSprint ? 1 : 3;
+    final sessionIndex = switch (session) {
+      'P1' || 'FP1' || 'ANT1' => 0,
+      'SQ' || 'SS' => 1,
+      'SR' || 'S' => 2,
+      'P2' || 'FP2' || 'ANT2' => 1,
+      'P3' || 'FP3' || 'ANT3' => 2,
+      'Q' => 3,
+      'R' => 4,
+      _ => hasSprint ? 1 : 3,
+    };
+    return sessionIndex >= lockSessionIndex;
+  }
 }
 
 class RaceSession {
@@ -417,7 +467,7 @@ class League {
   final String id;
   final String name;
   final String type;
-  final String ownerId;
+  final String? ownerId;
   final String inviteCode;
   final int seasonId;
   final int? memberCount;
@@ -436,8 +486,8 @@ class League {
     id: j['id'] as String,
     name: j['name'] as String,
     type: j['type'] as String,
-    ownerId: j['owner_id'] as String,
-    inviteCode: j['invite_code'] as String,
+    ownerId: j['owner_id'] as String?,
+    inviteCode: (j['invite_code'] as String?) ?? '',
     seasonId: j['season_id'] as int,
     memberCount: (j['member_count'] as num?)?.toInt(),
     myRank: (j['my_rank'] as num?)?.toInt(),

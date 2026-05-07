@@ -244,9 +244,7 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
       ref.invalidate(leaguePredictionStatusProvider(leagueId));
       if (!mounted) return;
       _showInfo(
-        isSprint
-            ? 'Sprint tahminin temizlendi'
-            : 'Yarış tahminin temizlendi',
+        isSprint ? 'Sprint tahminin temizlendi' : 'Yarış tahminin temizlendi',
       );
     } catch (e) {
       if (!mounted) return;
@@ -553,7 +551,7 @@ class _PredictionBody extends StatelessWidget {
     ),
     _Section(
       badge: '02',
-      label: 'PODYUM (SIRALI)',
+      label: 'PODYUM',
       points: 'isim +5 / sıra +2 / tam +3',
       child: _PodiumPicker(
         drivers: drivers,
@@ -647,7 +645,7 @@ class _PredictionBody extends StatelessWidget {
       ),
       _Section(
         badge: '02',
-        label: 'SPRINT PODYUM (SIRALI)',
+        label: 'SPRINT PODYUM',
         points: 'isim +4 / sıra +1 / tam +2',
         child: _SprintPodiumPicker(
           drivers: drivers,
@@ -916,6 +914,15 @@ class _Header extends StatelessWidget {
             style: const TextStyle(fontSize: 14, color: Color(0x99FFFFFF)),
           ),
           const SizedBox(height: 12),
+          const Text(
+            'Tahminlerin kapanmasına kalan süre',
+            style: TextStyle(
+              color: Color(0xB3FFFFFF),
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
           CountdownTiles(remaining: remaining, locked: locked),
         ],
       ),
@@ -1013,7 +1020,7 @@ class _SaveButtonContent extends StatelessWidget {
         ],
         Text(
           locked
-              ? 'KİLİTLİ'
+              ? 'KİLİTLENDİ'
               : (recentlySaved ? 'KAYDEDİLDİ' : 'TAHMİNİMİ KAYDET'),
           style: const TextStyle(
             fontSize: 15,
@@ -1054,14 +1061,14 @@ class _ModeToggle extends StatelessWidget {
           children: [
             _ToggleSegment(
               label: 'ANA YARIŞ',
-              sub: mainLocked ? 'KİLİTLİ' : 'TAHMİN AÇIK',
+              sub: mainLocked ? 'KİLİTLENDİ' : 'TAHMİN AÇIK',
               selected: mode == _PredictionMode.main,
               locked: mainLocked,
               onTap: () => onChanged(_PredictionMode.main),
             ),
             _ToggleSegment(
               label: 'SPRINT',
-              sub: sprintLocked ? 'KİLİTLİ' : 'TAHMİN AÇIK',
+              sub: sprintLocked ? 'KİLİTLENDİ' : 'TAHMİN AÇIK',
               selected: mode == _PredictionMode.sprint,
               locked: sprintLocked,
               onTap: () => onChanged(_PredictionMode.sprint),
@@ -1172,20 +1179,30 @@ class _Section extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 2,
+                    overflow: TextOverflow.visible,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
-                const Spacer(),
-                Text(
-                  points,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0x80FFFFFF), // white/50
+                const SizedBox(width: 8),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 210),
+                  child: Text(
+                    points,
+                    textAlign: TextAlign.right,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0x80FFFFFF), // white/50
+                    ),
                   ),
                 ),
               ],
@@ -2311,4 +2328,184 @@ class _PreviewBanner extends StatelessWidget {
       ),
     );
   }
+}
+
+List<_TeamChoice> _teamsFromDrivers(List<Driver> drivers) {
+  final byId = <String, _TeamChoice>{};
+  for (final d in drivers) {
+    final id = d.teamId;
+    if (id == null || byId.containsKey(id)) continue;
+    byId[id] = _TeamChoice(
+      id: id,
+      code: d.teamCode ?? d.teamName ?? 'TEAM',
+      name: d.teamName ?? d.teamCode ?? 'Takım',
+      color: d.teamColor,
+    );
+  }
+  return byId.values.toList()..sort((a, b) => a.name.compareTo(b.name));
+}
+
+Driver? _driverById(List<Driver> drivers, String? id) {
+  if (id == null) return null;
+  for (final d in drivers) {
+    if (d.id == id) return d;
+  }
+  return null;
+}
+
+_TeamChoice? _teamById(List<_TeamChoice> teams, String? id) {
+  if (id == null) return null;
+  for (final t in teams) {
+    if (t.id == id) return t;
+  }
+  return null;
+}
+
+/// Tahmin ekranındaki ana yarış bölümlerini salt-okunur (kilitli) modda
+/// üreten yardımcı. Canlı ekranda kayıtlı tahminin tahmin formuyla aynı
+/// görünmesi için kullanılır.
+List<Widget> buildReadOnlyMainPredictionSections({
+  required Prediction prediction,
+  required List<Driver> drivers,
+  required Race race,
+  JokerQuestion? joker,
+}) {
+  final teams = _teamsFromDrivers(drivers);
+  return [
+    _Section(
+      badge: '01',
+      label: 'KAZANAN',
+      points: '+10',
+      child: DriverChipSlot(
+        driver: _driverById(drivers, prediction.winnerDriverId),
+        hint: 'Yarışı kim kazanır?',
+        enabled: false,
+      ),
+    ),
+    _Section(
+      badge: '02',
+      label: 'PODYUM',
+      points: 'isim +5 / sıra +2 / tam +3',
+      child: _PodiumPicker(
+        drivers: drivers,
+        draft: prediction,
+        locked: true,
+        onChanged: (_) {},
+      ),
+    ),
+    _Section(
+      badge: '03',
+      label: 'EN ÇOK PUAN ALAN TAKIM',
+      points: '+10',
+      child: _TeamChipSlot(
+        team: _teamById(teams, prediction.topTeamId),
+        hint: 'En çok puanı hangi takım toplar?',
+        enabled: false,
+      ),
+    ),
+    _Section(
+      badge: '04',
+      label: 'POLE POZİSYONU',
+      points: '+8',
+      child: DriverChipSlot(
+        driver: _driverById(drivers, prediction.poleDriverId),
+        hint: 'Pole pozisyonunu kim alır?',
+        enabled: false,
+      ),
+    ),
+    _Section(
+      badge: '05',
+      label: 'DNF SAYISI',
+      points: 'tam +6 / ±1 +3',
+      child: _DnfSlider(draft: prediction, locked: true, onChanged: (_) {}),
+    ),
+    _Section(
+      badge: '06',
+      label: 'GÜVENLİK ARACI ÇIKAR MI?',
+      points: '+3',
+      child: _SafetyCarPicker(
+        value: prediction.safetyCar,
+        locked: true,
+        onChanged: (_) {},
+      ),
+    ),
+    if (joker != null && race.isJokerWindowOpen)
+      _JokerCard(
+        joker: joker,
+        draft: prediction,
+        locked: true,
+        onChanged: (_) {},
+      ),
+  ];
+}
+
+/// Tahmin ekranındaki sprint bölümlerini salt-okunur modda üreten yardımcı.
+List<Widget> buildReadOnlySprintPredictionSections({
+  required SprintPrediction prediction,
+  required List<Driver> drivers,
+}) {
+  final teams = _teamsFromDrivers(drivers);
+  return [
+    _Section(
+      badge: '01',
+      label: 'SPRINT KAZANANI',
+      points: '+8',
+      child: DriverChipSlot(
+        driver: _driverById(drivers, prediction.winnerDriverId),
+        hint: 'Sprintı kim kazanır?',
+        enabled: false,
+      ),
+    ),
+    _Section(
+      badge: '02',
+      label: 'SPRINT PODYUM',
+      points: 'isim +4 / sıra +1 / tam +2',
+      child: _SprintPodiumPicker(
+        drivers: drivers,
+        draft: prediction,
+        locked: true,
+        onChanged: (_) {},
+      ),
+    ),
+    _Section(
+      badge: '03',
+      label: 'EN ÇOK PUAN ALAN TAKIM',
+      points: '+8',
+      child: _TeamChipSlot(
+        team: _teamById(teams, prediction.topTeamId),
+        hint: 'Sprintte en çok puanı hangi takım toplar?',
+        enabled: false,
+      ),
+    ),
+    _Section(
+      badge: '04',
+      label: 'SPRINT POLE',
+      points: '+6',
+      child: DriverChipSlot(
+        driver: _driverById(drivers, prediction.poleDriverId),
+        hint: 'Sprint pole kimde?',
+        enabled: false,
+      ),
+    ),
+    _Section(
+      badge: '05',
+      label: 'SPRINT DNF SAYISI',
+      points: 'tam +4 / ±1 +2',
+      child: _SprintDnfSlider(
+        draft: prediction,
+        locked: true,
+        onChanged: (_) {},
+      ),
+    ),
+    _Section(
+      badge: '06',
+      label: 'GÜVENLİK ARACI ÇIKAR MI?',
+      points: '+2',
+      child: _SafetyCarPicker(
+        value: prediction.safetyCar,
+        locked: true,
+        onChanged: (_) {},
+      ),
+    ),
+  ];
 }

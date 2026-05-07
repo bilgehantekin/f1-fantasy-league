@@ -62,7 +62,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/race/:id/live',
-        builder: (_, s) => LiveRaceScreen(raceId: s.pathParameters['id']!),
+        builder: (_, s) => LiveRaceScreen(
+          raceId: s.pathParameters['id']!,
+          leagueId: s.uri.queryParameters['league'],
+          sprintMode: s.uri.queryParameters['mode'] == 'sprint',
+        ),
       ),
       GoRoute(
         path: '/race/:id/lineup',

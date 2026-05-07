@@ -8,6 +8,7 @@ import '../../core/theme.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets/app_state.dart';
 import '../../shared/widgets/race_card_new.dart';
+import '../../shared/turkish_text.dart';
 import '../admin/admin_controller.dart';
 import '../league/league_action_dialogs.dart';
 import '../profile/profile_controller.dart';
@@ -466,9 +467,7 @@ class _RacesSection extends StatelessWidget {
               children: [
                 for (var i = 0; i < visibleRaces.length; i++) ...[
                   _RaceScopeLabel(
-                    label:
-                        i == 0 &&
-                            !visibleRaces[i].raceAt.isAfter(DateTime.now())
+                    label: i == 0 && countsAsPreviousRace(visibleRaces[i])
                         ? 'Önceki yarış'
                         : 'Sonraki yarış',
                   ),
@@ -476,6 +475,7 @@ class _RacesSection extends StatelessWidget {
                   RaceCardNew(
                     race: visibleRaces[i],
                     showLeagueContext: false,
+                    keepStartLightsVisible: true,
                     onTap: () => _openCalendarRace(context, visibleRaces[i]),
                   ),
                   const SizedBox(height: 12),
@@ -514,7 +514,7 @@ class _RacesSection extends StatelessWidget {
     }
     if (!context.mounted) return;
     final entry = (race: race, kind: kind);
-    final status = effectiveRaceCardStatus(entry);
+    final status = effectiveRaceCardNavigationStatus(entry);
     final modeQp = kind == RaceCardKind.sprint ? '?mode=sprint' : '';
     if (status == RaceStatus.finished || status == RaceStatus.cancelled) {
       context.push('/race/${race.id}/results$modeQp');
@@ -536,6 +536,9 @@ class _RacesSection extends StatelessWidget {
       ),
       builder: (sheetContext) {
         final sorted = [...races]..sort((a, b) => a.raceAt.compareTo(b.raceAt));
+        final pinnedRaceIds = buildPreviousAndNextRaces(
+          races,
+        ).map((race) => race.id).toSet();
         return DraggableScrollableSheet(
           expand: false,
           initialChildSize: 0.88,
@@ -579,12 +582,10 @@ class _RacesSection extends StatelessWidget {
                         child: RaceCardNew(
                           race: race,
                           showLeagueContext: false,
-                          onTap: () => _openCalendarRace(
-                            pageContext,
-                            race,
-                            pickerContext: sheetContext,
-                            closePickerContextBeforeNavigate: true,
+                          keepStartLightsVisible: pinnedRaceIds.contains(
+                            race.id,
                           ),
+                          onTap: () => _openCalendarRace(pageContext, race),
                         ),
                       );
                     },
@@ -609,7 +610,7 @@ class _RaceScopeLabel extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: Text(
-        label.toUpperCase(),
+        turkishUpper(label),
         style: const TextStyle(
           color: Color(0x99FFFFFF),
           fontSize: 11,

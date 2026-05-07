@@ -1,3 +1,41 @@
+/// Supabase AuthException mesajlarını Türkçe'ye çevirir.
+String friendlyAuthError(Object e) {
+  final raw = e.toString().toLowerCase();
+  if (raw.contains('invalid login credentials') ||
+      raw.contains('invalid_credentials') ||
+      raw.contains('email or password')) {
+    return 'E-posta veya şifre hatalı.';
+  }
+  if (raw.contains('email not confirmed') || raw.contains('not confirmed')) {
+    return 'E-posta adresin henüz doğrulanmamış. Gelen kutunu kontrol et.';
+  }
+  if (raw.contains('user already registered') ||
+      raw.contains('already registered') ||
+      raw.contains('already exists')) {
+    return 'Bu e-posta adresi zaten kayıtlı.';
+  }
+  if (raw.contains('rate limit') || raw.contains('too many requests')) {
+    return 'Çok fazla deneme yapıldı. Lütfen biraz bekleyip tekrar dene.';
+  }
+  if (raw.contains('password') && raw.contains('6')) {
+    return 'Şifre en az 6 karakter olmalı.';
+  }
+  if (raw.contains('signup_disabled') || raw.contains('signup disabled')) {
+    return 'Kayıt şu an kapalı.';
+  }
+  if (raw.contains('weak_password') || raw.contains('weak password')) {
+    return 'Şifre çok zayıf. Daha güçlü bir şifre seç.';
+  }
+  if (raw.contains('network') ||
+      raw.contains('socket') ||
+      raw.contains('connection')) {
+    return 'Bağlantı hatası. İnternetini kontrol edip tekrar dene.';
+  }
+  final cleaned = e.toString().replaceFirst('Exception: ', '');
+  if (cleaned.length > 140) return '${cleaned.substring(0, 140)}…';
+  return cleaned;
+}
+
 /// Provider hatalarını ya da yakalanan exception'ları kullanıcıya gösterilecek
 /// kısa Türkçe mesaja çevirir. Ham PostgrestException, SocketException ve
 /// JWT hatalarını anlamlı hale getirir; tanımadıklarını kısaltarak döner.

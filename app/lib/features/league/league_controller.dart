@@ -38,7 +38,11 @@ final myLeaguesProvider = FutureProvider<List<League>>((ref) async {
 
 final leagueProvider = FutureProvider.family<League, String>((ref, id) async {
   final row = await supabase.from('leagues').select().eq('id', id).single();
-  return League.fromJson(row);
+  final members = await supabase
+      .from('league_memberships')
+      .select('user_id')
+      .eq('league_id', id);
+  return League.fromJson(row).copyWith(memberCount: members.length);
 });
 
 final seasonStandingsProvider =
@@ -50,6 +54,102 @@ final seasonStandingsProvider =
       return (rows as List)
           .map((e) => StandingRow.season(e as Map<String, dynamic>))
           .toList();
+    });
+
+final previousSeasonStandingsProvider =
+    FutureProvider.family<List<StandingRow>, PreviousStandingsKey>((
+      ref,
+      key,
+    ) async {
+      final rows = await supabase.rpc(
+        'league_season_standings_before',
+        params: {
+          'p_league_id': key.leagueId,
+          'p_season_id': Env.seasonId,
+          'p_cutoff': key.cutoff.toUtc().toIso8601String(),
+        },
+      );
+      return (rows as List)
+          .map((e) => StandingRow.season(e as Map<String, dynamic>))
+          .toList();
+    });
+
+final weeklyStandingsProvider =
+    FutureProvider.family<List<StandingRow>, WeeklySummaryKey>((
+      ref,
+      key,
+    ) async {
+      final rows = await supabase.rpc(
+        'league_weekly_standings',
+        params: {
+          'p_league_id': key.leagueId,
+          'p_race_id': key.raceId,
+          'p_sprint': key.sprint,
+        },
+      );
+      return (rows as List)
+          .map((e) => StandingRow.weekly(e as Map<String, dynamic>))
+          .toList();
+    });
+
+final weeklyWeekendStandingsProvider =
+    FutureProvider.family<List<StandingRow>, WeeklySummaryKey>((
+      ref,
+      key,
+    ) async {
+      final results = await Future.wait([
+        supabase.rpc(
+          'league_weekly_standings',
+          params: {
+            'p_league_id': key.leagueId,
+            'p_race_id': key.raceId,
+            'p_sprint': false,
+          },
+        ),
+        supabase.rpc(
+          'league_weekly_standings',
+          params: {
+            'p_league_id': key.leagueId,
+            'p_race_id': key.raceId,
+            'p_sprint': true,
+          },
+        ),
+      ]);
+
+      final scoresByUser = <String, ({String username, int score})>{};
+      for (final result in results) {
+        for (final item in result as List) {
+          final row = StandingRow.weekly(item as Map<String, dynamic>);
+          final current = scoresByUser[row.userId];
+          scoresByUser[row.userId] = (
+            username: row.username,
+            score: (current?.score ?? 0) + row.score,
+          );
+        }
+      }
+
+      final sorted = scoresByUser.entries.toList()
+        ..sort((a, b) {
+          final score = b.value.score.compareTo(a.value.score);
+          if (score != 0) return score;
+          return a.value.username.toLowerCase().compareTo(
+            b.value.username.toLowerCase(),
+          );
+        });
+
+      final rows = <StandingRow>[];
+      for (var i = 0; i < sorted.length; i++) {
+        final entry = sorted[i];
+        rows.add(
+          StandingRow(
+            userId: entry.key,
+            username: entry.value.username,
+            score: entry.value.score,
+            rank: i + 1,
+          ),
+        );
+      }
+      return rows;
     });
 
 final leagueMembersProvider = FutureProvider.family<List<LeagueMember>, String>(
@@ -65,7 +165,7 @@ final leagueMembersProvider = FutureProvider.family<List<LeagueMember>, String>(
 );
 
 final weeklySummaryProvider =
-    FutureProvider.family<LeagueWeeklySummary, WeeklySummaryKey>((
+    FutureProvider.autoDispose.family<LeagueWeeklySummary, WeeklySummaryKey>((
       ref,
       key,
     ) async {
@@ -78,6 +178,39 @@ final weeklySummaryProvider =
         },
       );
       return LeagueWeeklySummary.fromJson(res as Map<String, dynamic>);
+    });
+
+final weeklyWeekendSummaryProvider =
+    FutureProvider.autoDispose.family<LeagueWeeklySummary, WeeklySummaryKey>((
+      ref,
+      key,
+    ) async {
+      final results = await Future.wait([
+        supabase.rpc(
+          'league_weekly_summary',
+          params: {
+            'p_league_id': key.leagueId,
+            'p_race_id': key.raceId,
+            'p_sprint': false,
+          },
+        ),
+        supabase.rpc(
+          'league_weekly_summary',
+          params: {
+            'p_league_id': key.leagueId,
+            'p_race_id': key.raceId,
+            'p_sprint': true,
+          },
+        ),
+      ]);
+      return LeagueWeeklySummary.combine(
+        results
+            .map(
+              (res) =>
+                  LeagueWeeklySummary.fromJson(res as Map<String, dynamic>),
+            )
+            .toList(),
+      );
     });
 
 final leaguePredictionStatusProvider =
@@ -200,6 +333,23 @@ class WeeklySummaryKey {
   int get hashCode => Object.hash(leagueId, raceId, sprint);
 }
 
+class PreviousStandingsKey {
+  final String leagueId;
+  final DateTime cutoff;
+
+  const PreviousStandingsKey({required this.leagueId, required this.cutoff});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PreviousStandingsKey &&
+          leagueId == other.leagueId &&
+          cutoff == other.cutoff;
+
+  @override
+  int get hashCode => Object.hash(leagueId, cutoff);
+}
+
 class LeaguePredictionStatus {
   final Set<String> mainRaceIds;
   final Set<String> sprintRaceIds;
@@ -219,21 +369,26 @@ class LeaguePredictionStatus {
 
 class LeagueWeeklySummary {
   final StandingRow? bestPrediction;
+  final StandingRow? myStanding;
   final int jokerHitCount;
   final SummaryDriver? mostPickedDriver;
   final List<StandingRow> topStandings;
   final int predictionCount;
+  final List<PredictionSummaryItem> predictionItems;
 
   LeagueWeeklySummary({
     required this.bestPrediction,
+    required this.myStanding,
     required this.jokerHitCount,
     required this.mostPickedDriver,
     required this.topStandings,
     required this.predictionCount,
+    required this.predictionItems,
   });
 
   factory LeagueWeeklySummary.fromJson(Map<String, dynamic> j) {
     final best = j['best_prediction'] as Map<String, dynamic>? ?? {};
+    final mine = j['my_standing'] as Map<String, dynamic>? ?? {};
     final mostPicked = j['most_picked_driver'] as Map<String, dynamic>? ?? {};
     final rows = (j['top_standings'] as List? ?? [])
         .map(
@@ -245,6 +400,9 @@ class LeagueWeeklySummary {
           ),
         )
         .toList();
+    final predictionItems = (j['prediction_items'] as List? ?? [])
+        .map((e) => PredictionSummaryItem.fromJson(e as Map<String, dynamic>))
+        .toList();
     return LeagueWeeklySummary(
       bestPrediction: best['user_id'] == null
           ? null
@@ -252,7 +410,15 @@ class LeagueWeeklySummary {
               userId: best['user_id'] as String,
               username: best['username'] as String,
               score: ((best['score'] ?? 0) as num).toInt(),
-              rank: 1,
+              rank: ((best['rank'] ?? 1) as num).toInt(),
+            ),
+      myStanding: mine['user_id'] == null
+          ? null
+          : StandingRow(
+              userId: mine['user_id'] as String,
+              username: mine['username'] as String,
+              score: ((mine['score'] ?? 0) as num).toInt(),
+              rank: ((mine['rank'] ?? 0) as num).toInt(),
             ),
       jokerHitCount: ((j['joker_hit_count'] ?? 0) as num).toInt(),
       mostPickedDriver: mostPicked['id'] == null
@@ -260,8 +426,144 @@ class LeagueWeeklySummary {
           : SummaryDriver.fromJson(mostPicked),
       topStandings: rows,
       predictionCount: ((j['prediction_count'] ?? 0) as num).toInt(),
+      predictionItems: predictionItems,
     );
   }
+
+  factory LeagueWeeklySummary.combine(List<LeagueWeeklySummary> summaries) {
+    final scoresByUser = <String, ({String username, int score})>{};
+    final driversById =
+        <String, ({SummaryDriver driver, int points, int pickCount})>{};
+    var predictionCount = 0;
+    var jokerHitCount = 0;
+    StandingRow? myStandingSeed;
+    var myScore = 0;
+    List<PredictionSummaryItem> predictionItems = const [];
+
+    for (final summary in summaries) {
+      predictionCount += summary.predictionCount;
+      jokerHitCount += summary.jokerHitCount;
+      if (summary.myStanding != null) {
+        myStandingSeed ??= summary.myStanding;
+        myScore += summary.myStanding!.score;
+      }
+      if (predictionItems.isEmpty && summary.predictionItems.isNotEmpty) {
+        predictionItems = summary.predictionItems;
+      }
+      final picked = summary.mostPickedDriver;
+      if (picked != null) {
+        final current = driversById[picked.id];
+        driversById[picked.id] = (
+          driver: picked,
+          points: (current?.points ?? 0) + picked.points,
+          pickCount: (current?.pickCount ?? 0) + picked.pickCount,
+        );
+      }
+      for (final row in summary.topStandings) {
+        final current = scoresByUser[row.userId];
+        scoresByUser[row.userId] = (
+          username: row.username,
+          score: (current?.score ?? 0) + row.score,
+        );
+      }
+    }
+
+    final sorted = scoresByUser.entries.toList()
+      ..sort((a, b) {
+        final score = b.value.score.compareTo(a.value.score);
+        if (score != 0) return score;
+        return a.value.username.toLowerCase().compareTo(
+          b.value.username.toLowerCase(),
+        );
+      });
+
+    final rows = <StandingRow>[];
+    for (var i = 0; i < sorted.length; i++) {
+      final entry = sorted[i];
+      rows.add(
+        StandingRow(
+          userId: entry.key,
+          username: entry.value.username,
+          score: entry.value.score,
+          rank: i + 1,
+        ),
+      );
+    }
+
+    StandingRow? myStanding;
+    if (myStandingSeed != null) {
+      final matched = rows.where((row) => row.userId == myStandingSeed!.userId);
+      myStanding = matched.isEmpty
+          ? StandingRow(
+              userId: myStandingSeed.userId,
+              username: myStandingSeed.username,
+              score: myScore,
+              rank: 0,
+            )
+          : matched.first;
+    }
+
+    SummaryDriver? bestDriver;
+    if (driversById.isNotEmpty) {
+      final best = driversById.values.toList()
+        ..sort((a, b) {
+          final points = b.points.compareTo(a.points);
+          if (points != 0) return points;
+          final picks = b.pickCount.compareTo(a.pickCount);
+          if (picks != 0) return picks;
+          return a.driver.code.compareTo(b.driver.code);
+        });
+      final top = best.first;
+      bestDriver = SummaryDriver(
+        id: top.driver.id,
+        code: top.driver.code,
+        fullName: top.driver.fullName,
+        color: top.driver.color,
+        pickCount: top.pickCount,
+        points: top.points,
+      );
+    }
+
+    return LeagueWeeklySummary(
+      bestPrediction: rows.isEmpty ? null : rows.first,
+      myStanding: myStanding,
+      jokerHitCount: jokerHitCount,
+      mostPickedDriver: bestDriver,
+      topStandings: rows.take(5).toList(),
+      predictionCount: predictionCount,
+      predictionItems: predictionItems,
+    );
+  }
+}
+
+class PredictionSummaryItem {
+  final String label;
+  final String value;
+  final bool hit;
+  final String status;
+  final int points;
+  final int maxPoints;
+
+  const PredictionSummaryItem({
+    required this.label,
+    required this.value,
+    required this.hit,
+    required this.status,
+    required this.points,
+    required this.maxPoints,
+  });
+
+  factory PredictionSummaryItem.fromJson(Map<String, dynamic> j) =>
+      PredictionSummaryItem(
+        label: (j['label'] as String?) ?? '',
+        value: (j['value'] as String?) ?? '-',
+        status:
+            (j['status'] as String?) ??
+            ((j['hit'] as bool?) == true ? 'correct' : 'wrong'),
+        hit: (j['hit'] as bool?) ?? ((j['status'] as String?) != 'wrong'),
+        points: ((j['points'] ?? 0) as num).toInt(),
+        maxPoints: ((j['max_points'] ?? 0) as num).toInt(),
+      );
 }
 
 class SummaryDriver {

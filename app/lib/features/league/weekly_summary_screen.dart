@@ -39,15 +39,12 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
   Widget build(BuildContext context) {
     final leagueAsync = ref.watch(leagueProvider(widget.leagueId));
     final raceAsync = ref.watch(raceProvider(widget.raceId));
-    final summaryAsync = ref.watch(
-      weeklySummaryProvider(
-        WeeklySummaryKey(
-          leagueId: widget.leagueId,
-          raceId: widget.raceId,
-          sprint: widget.sprintMode,
-        ),
-      ),
+    final summaryKey = WeeklySummaryKey(
+      leagueId: widget.leagueId,
+      raceId: widget.raceId,
+      sprint: widget.sprintMode,
     );
+    final summaryAsync = ref.watch(weeklySummaryProvider(summaryKey));
 
     final league = leagueAsync.asData?.value;
     final race = raceAsync.asData?.value;
@@ -59,6 +56,14 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
         title: const Text('HAFTALIK ÖZET'),
         actions: [
           IconButton(
+            tooltip: 'Paylaşım önizlemesi',
+            icon: const Icon(Icons.visibility_outlined, size: 21),
+            onPressed: (league == null || race == null || summary == null)
+                ? null
+                : () => _openSharePreview(league, race, summary),
+          ),
+          IconButton(
+            tooltip: 'Paylaş',
             icon: _sharing
                 ? const SizedBox(
                     width: 18,
@@ -108,6 +113,26 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _openSharePreview(
+    League league,
+    Race race,
+    LeagueWeeklySummary summary,
+  ) {
+    return Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (_) => _SharePreviewPage(
+          league: league,
+          race: race,
+          summary: summary,
+          sprintMode: widget.sprintMode,
+          sharing: _sharing,
+          onShare: () => _share(league, race, summary),
+        ),
       ),
     );
   }
@@ -171,6 +196,83 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
         ? 'Henüz skor yok'
         : '${summary.bestPrediction!.username} (${summary.bestPrediction!.score} puan)';
     return '$leagueName · $raceName\nKazanan: $winner\nGridCall';
+  }
+}
+
+class _SharePreviewPage extends StatelessWidget {
+  final League league;
+  final Race race;
+  final LeagueWeeklySummary summary;
+  final bool sprintMode;
+  final bool sharing;
+  final Future<void> Function() onShare;
+
+  const _SharePreviewPage({
+    required this.league,
+    required this.race,
+    required this.summary,
+    required this.sprintMode,
+    required this.sharing,
+    required this.onShare,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.carbon,
+      appBar: AppBar(
+        title: const Text('PAYLAŞIM ÖNİZLEME'),
+        actions: [
+          IconButton(
+            tooltip: 'Paylaş',
+            icon: sharing
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.ios_share, size: 20),
+            onPressed: sharing ? null : onShare,
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            var width = constraints.maxWidth - 28;
+            var height = width * 16 / 9;
+            final maxHeight = constraints.maxHeight - 28;
+            if (height > maxHeight) {
+              height = maxHeight;
+              width = height * 9 / 16;
+            }
+
+            return Center(
+              child: InteractiveViewer(
+                minScale: 1,
+                maxScale: 4,
+                child: SizedBox(
+                  width: width,
+                  height: height,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: FittedBox(
+                      fit: BoxFit.contain,
+                      child: WeeklySummaryShareCard(
+                        league: league,
+                        race: race,
+                        summary: summary,
+                        sprintMode: sprintMode,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 }
 
@@ -373,7 +475,7 @@ class _SummaryStandingRow extends StatelessWidget {
             ),
           ),
           Text(
-            '$score PTS',
+            '$score PUAN',
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
           ),
         ],

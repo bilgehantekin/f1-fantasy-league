@@ -159,7 +159,7 @@ class NotificationService {
             sprint: false,
           );
           if (!completedKeys.contains(mainKey)) {
-            final lockReminder = race.lockAt.subtract(
+            final lockReminder = race.effectiveLockAt.subtract(
               Duration(hours: prefs.hoursBeforeLock),
             );
             if (lockReminder.isAfter(now)) {
@@ -177,7 +177,7 @@ class NotificationService {
         }
 
         if (race.hasSprint &&
-            race.sprintLockAt != null &&
+            race.effectiveSprintLockAt != null &&
             race.sprintStatus != RaceStatus.finished &&
             race.sprintStatus != RaceStatus.cancelled) {
           final sprintKey = _predictionKey(
@@ -186,7 +186,7 @@ class NotificationService {
             sprint: true,
           );
           if (!completedKeys.contains(sprintKey)) {
-            final sprintReminder = race.sprintLockAt!.subtract(
+            final sprintReminder = race.effectiveSprintLockAt!.subtract(
               Duration(hours: prefs.hoursBeforeLock),
             );
             if (sprintReminder.isAfter(now)) {

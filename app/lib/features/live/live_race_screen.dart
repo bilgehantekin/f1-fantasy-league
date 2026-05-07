@@ -9,18 +9,28 @@ import '../../shared/models.dart';
 import '../../shared/widgets/app_state.dart';
 import '../../shared/widgets/live_pulse_dot.dart';
 import '../prediction/prediction_controller.dart';
+import '../prediction/prediction_screen.dart';
 import 'live_controller.dart';
 
 class LiveRaceScreen extends ConsumerWidget {
   final String raceId;
-  const LiveRaceScreen({super.key, required this.raceId});
+  final String? leagueId;
+  final bool sprintMode;
+  const LiveRaceScreen({
+    super.key,
+    required this.raceId,
+    this.leagueId,
+    this.sprintMode = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final raceAsync = ref.watch(raceProvider(raceId));
     final driversAsync = ref.watch(driversProvider);
-    final predictionAsync = ref.watch(
-      predictionProvider(PredictionKey(raceId: raceId)),
+    final predictionKey = PredictionKey(raceId: raceId, leagueId: leagueId);
+    final predictionAsync = ref.watch(predictionProvider(predictionKey));
+    final sprintPredictionAsync = ref.watch(
+      sprintPredictionProvider(predictionKey),
     );
     final positionsAsync = ref.watch(livePositionsProvider(raceId));
 
@@ -43,8 +53,8 @@ class LiveRaceScreen extends ConsumerWidget {
             Flexible(
               child: Text(
                 raceAsync.maybeWhen(
-                  data: (r) => 'LIVE · ${r.name.toUpperCase()}',
-                  orElse: () => 'LIVE',
+                  data: (r) => 'CANLI · ${r.name.toUpperCase()}',
+                  orElse: () => 'CANLI',
                 ),
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -81,12 +91,22 @@ class LiveRaceScreen extends ConsumerWidget {
               onRetry: () => ref.invalidate(livePositionsProvider(raceId)),
             ),
             data: (positions) {
-              final prediction = predictionAsync.asData?.value;
-              final comparisons = buildComparisons(
-                prediction: prediction,
-                positions: positions,
-                drivers: drivers,
-              );
+              final mainPrediction = predictionAsync.asData?.value;
+              final sprintPrediction = sprintPredictionAsync.asData?.value;
+              final showPredictionSections = leagueId != null;
+              final useSprintPrediction = sprintMode && race.hasSprint;
+              final predictionSections = useSprintPrediction
+                  ? buildReadOnlySprintPredictionSections(
+                      prediction:
+                          sprintPrediction ?? SprintPrediction(raceId: raceId),
+                      drivers: drivers,
+                    )
+                  : buildReadOnlyMainPredictionSections(
+                      prediction: mainPrediction ?? Prediction(raceId: raceId),
+                      drivers: drivers,
+                      race: race,
+                      joker: ref.watch(jokerProvider(raceId)).asData?.value,
+                    );
               return ListView(
                 padding: EdgeInsets.zero,
                 children: [
@@ -111,13 +131,12 @@ class LiveRaceScreen extends ConsumerWidget {
                     const _FastestLap(),
                     const SizedBox(height: 24),
                   ],
-                  _SectionTitle(label: 'SENİN TAHMİNİN'),
-                  comparisons.any((c) => c.predicted != null)
-                      ? _PredictionComparison(comparisons: comparisons)
-                      : Env.enableDemoContent
-                      ? const _PredictionComparisonMock()
-                      : const _NoPredictionLiveCard(),
-                  const SizedBox(height: 24),
+                  if (showPredictionSections) ...[
+                    _SectionTitle(label: 'SENİN TAHMİNİN'),
+                    const SizedBox(height: 12),
+                    ...predictionSections,
+                    const SizedBox(height: 24),
+                  ],
                   if (Env.enableDemoContent) ...[
                     _SectionTitle(label: 'SON OLAYLAR'),
                     const _LatestEvents(),
@@ -386,64 +405,6 @@ class _TopPositions extends StatelessWidget {
   }
 }
 
-class _PredictionComparison extends StatelessWidget {
-  final List<LiveComparison> comparisons;
-  const _PredictionComparison({required this.comparisons});
-
-  @override
-  Widget build(BuildContext context) {
-    final relevantComparisons = comparisons
-        .where((c) => c.predicted != null)
-        .toList();
-
-    if (relevantComparisons.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A26),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (var i = 0; i < relevantComparisons.length; i++)
-            Padding(
-              padding: EdgeInsets.only(
-                bottom: i < relevantComparisons.length - 1 ? 8 : 0,
-              ),
-              child: _ComparisonRow(comparison: relevantComparisons[i]),
-            ),
-          const Padding(
-            padding: EdgeInsets.only(top: 12, bottom: 8),
-            child: Divider(color: Color(0xFF15151E), height: 1),
-          ),
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Tahmini Skor',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-              ),
-              Text(
-                '28-48 PTS',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFFE10600),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _FastestLap extends StatelessWidget {
   const _FastestLap();
 
@@ -497,20 +458,15 @@ class _LatestEvents extends StatelessWidget {
   const _LatestEvents();
 
   static const _events = <_EventItem>[
-    _EventItem(
-      lap: 67,
-      code: 'PER',
-      text: 'DNF (Crash)',
-      teamColor: 0xFF3671C6,
-    ),
+    _EventItem(lap: 67, code: 'PER', text: 'DNF (Kaza)', teamColor: 0xFF3671C6),
     _EventItem(
       lap: 65,
       code: 'NOR',
       text: 'En Hızlı Tur',
       teamColor: 0xFFFF8000,
     ),
-    _EventItem(lap: 58, code: 'HAM', text: 'Pit Stop', teamColor: 0xFF27F4D2),
-    _EventItem(lap: 52, code: 'SAI', text: 'Pit Stop', teamColor: 0xFFE8002D),
+    _EventItem(lap: 58, code: 'HAM', text: 'Pit stop', teamColor: 0xFF27F4D2),
+    _EventItem(lap: 52, code: 'SAI', text: 'Pit stop', teamColor: 0xFFE8002D),
   ];
 
   @override
@@ -592,188 +548,4 @@ class _EventItem {
     required this.text,
     required this.teamColor,
   });
-}
-
-enum _MockStatus { correct, wrong, partial, pending }
-
-class _PredictionComparisonMock extends StatelessWidget {
-  const _PredictionComparisonMock();
-
-  @override
-  Widget build(BuildContext context) {
-    const rows = <(String, String, _MockStatus)>[
-      ('Kazanan', 'VER', _MockStatus.correct),
-      ('Podyum', 'VER LEC SAI', _MockStatus.partial),
-      ('Pole', 'LEC', _MockStatus.correct),
-      ('En Hızlı Tur', 'NOR', _MockStatus.correct),
-      ('DNF', '3 (şimdi: 1)', _MockStatus.pending),
-      ('Joker', 'Red Bull', _MockStatus.pending),
-    ];
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A26),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (var i = 0; i < rows.length; i++)
-            Padding(
-              padding: EdgeInsets.only(bottom: i < rows.length - 1 ? 8 : 0),
-              child: _MockRow(
-                label: rows[i].$1,
-                value: rows[i].$2,
-                status: rows[i].$3,
-              ),
-            ),
-          const Padding(
-            padding: EdgeInsets.only(top: 12, bottom: 8),
-            child: Divider(color: Color(0xFF15151E), height: 1),
-          ),
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Tahmini Skor',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-              ),
-              Text(
-                '28-48 PUAN',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFFE10600),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NoPredictionLiveCard extends StatelessWidget {
-  const _NoPredictionLiveCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A26),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: const Text(
-        'Bu yarış için kayıtlı tahmin bulunamadı.',
-        textAlign: TextAlign.center,
-        style: TextStyle(color: Color(0x99FFFFFF)),
-      ),
-    );
-  }
-}
-
-class _MockRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final _MockStatus status;
-  const _MockRow({
-    required this.label,
-    required this.value,
-    required this.status,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final (icon, color) = switch (status) {
-      _MockStatus.correct => ('✓', const Color(0xFF00D26A)),
-      _MockStatus.wrong => ('✗', const Color(0xFFFF2D55)),
-      _MockStatus.partial => ('~', const Color(0xFFFF9F1C)),
-      _MockStatus.pending => ('~', const Color(0x66FFFFFF)),
-    };
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          '$label:',
-          style: const TextStyle(
-            fontSize: 14,
-            color: Color(0x99FFFFFF),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        Row(
-          children: [
-            Text(
-              value,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              icon,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _ComparisonRow extends StatelessWidget {
-  final LiveComparison comparison;
-  const _ComparisonRow({required this.comparison});
-
-  @override
-  Widget build(BuildContext context) {
-    final statusIcon = comparison.matches == null
-        ? '~'
-        : comparison.matches!
-        ? '✓'
-        : '✗';
-
-    final statusColor = comparison.matches == null
-        ? const Color(0x66FFFFFF) // white/40
-        : comparison.matches!
-        ? const Color(0xFF00D26A)
-        : const Color(0xFFFF2D55);
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          '${comparison.label}:',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.white.withValues(alpha: 0.6),
-          ),
-        ),
-        Row(
-          children: [
-            Text(
-              comparison.predicted?.code ?? '—',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              statusIcon,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: statusColor,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 }
