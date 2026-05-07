@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/error_messages.dart';
 import '../../core/supabase.dart';
 import '../../core/theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../shared/widgets/app_state.dart';
 import 'league_controller.dart';
 
@@ -17,12 +18,13 @@ class LeagueSettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final leagueAsync = ref.watch(leagueProvider(leagueId));
     final membersAsync = ref.watch(leagueMembersProvider(leagueId));
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.carbon,
-      appBar: AppBar(title: const Text('LİG AYARLARI')),
+      appBar: AppBar(title: Text(l.leagueSettings)),
       body: leagueAsync.when(
-        loading: () => const AppLoadingState(label: 'Lig ayarları yükleniyor'),
+        loading: () => AppLoadingState(label: l.leagueSettingsLoading),
         error: (e, _) => AppErrorState(
           message: friendlyError(e),
           onRetry: () => ref.invalidate(leagueProvider(leagueId)),
@@ -37,7 +39,7 @@ class LeagueSettingsScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _SectionTitle(label: 'GENEL'),
+                    _SectionTitle(label: l.general),
                     const SizedBox(height: 12),
                     Text(
                       league.name,
@@ -48,7 +50,7 @@ class LeagueSettingsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Davet kodu: ${league.inviteCode}',
+                      l.inviteCodeValue(league.inviteCode),
                       style: const TextStyle(color: Color(0x99FFFFFF)),
                     ),
                     const SizedBox(height: 16),
@@ -56,19 +58,19 @@ class LeagueSettingsScreen extends ConsumerWidget {
                       FilledButton.icon(
                         onPressed: () => _rename(context, ref, league.name),
                         icon: const Icon(Icons.edit_outlined),
-                        label: const Text('LİG ADINI DEĞİŞTİR'),
+                        label: Text(l.changeLeagueName),
                       ),
                       const SizedBox(height: 8),
                       OutlinedButton.icon(
                         onPressed: () => _regenerateCode(context, ref),
                         icon: const Icon(Icons.refresh),
-                        label: const Text('DAVET KODUNU YENİLE'),
+                        label: Text(l.refreshInviteCode),
                       ),
                     ] else
                       OutlinedButton.icon(
                         onPressed: () => _leave(context, ref),
                         icon: const Icon(Icons.logout),
-                        label: const Text('LİGDEN AYRIL'),
+                        label: Text(l.leaveLeague),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.liveRed,
                         ),
@@ -77,11 +79,10 @@ class LeagueSettingsScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              const _SectionTitle(label: 'ÜYELER'),
+              _SectionTitle(label: l.members),
               const SizedBox(height: 12),
               membersAsync.when(
-                loading: () =>
-                    const AppLoadingState(label: 'Üyeler yükleniyor'),
+                loading: () => AppLoadingState(label: l.membersLoading),
                 error: (e, _) => AppErrorState(
                   message: friendlyError(e),
                   onRetry: () =>
@@ -117,20 +118,22 @@ class LeagueSettingsScreen extends ConsumerWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Lig adı'),
+        title: Text(AppLocalizations.of(context).leagueName),
         content: TextField(
           controller: ctrl,
           maxLength: 60,
-          decoration: const InputDecoration(labelText: 'Yeni lig adı'),
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).newLeagueName,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('İptal'),
+            child: Text(AppLocalizations.of(context).cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Kaydet'),
+            child: Text(AppLocalizations.of(context).save),
           ),
         ],
       ),
@@ -144,8 +147,8 @@ class LeagueSettingsScreen extends ConsumerWidget {
   Future<void> _regenerateCode(BuildContext context, WidgetRef ref) async {
     final ok = await _confirm(
       context,
-      'Davet kodu yenilensin mi?',
-      'Eski davet kodu artık çalışmayacak.',
+      AppLocalizations.of(context).refreshInviteCodeQuestion,
+      AppLocalizations.of(context).refreshInviteCodeBody,
     );
     if (!ok) return;
     await regenerateLeagueInviteCode(leagueId);
@@ -156,8 +159,8 @@ class LeagueSettingsScreen extends ConsumerWidget {
   Future<void> _leave(BuildContext context, WidgetRef ref) async {
     final ok = await _confirm(
       context,
-      'Ligden ayrılmak istiyor musun?',
-      'Tekrar katılmak için yeni davet koduna ihtiyacın olacak.',
+      AppLocalizations.of(context).leaveLeagueQuestion,
+      AppLocalizations.of(context).leaveLeagueBody,
     );
     if (!ok) return;
     await leaveLeague(leagueId);
@@ -174,8 +177,8 @@ class LeagueSettingsScreen extends ConsumerWidget {
   ) async {
     final ok = await _confirm(
       context,
-      '${member.username} çıkarılsın mı?',
-      'Üye ligden kaldırılacak.',
+      AppLocalizations.of(context).removeMemberQuestion(member.username),
+      AppLocalizations.of(context).removeMemberBody,
     );
     if (!ok) return;
     await removeLeagueMember(leagueId, member.userId);
@@ -191,8 +194,8 @@ class LeagueSettingsScreen extends ConsumerWidget {
   ) async {
     final ok = await _confirm(
       context,
-      'Sahiplik devredilsin mi?',
-      '${member.username} lig sahibi olacak.',
+      AppLocalizations.of(context).transferOwnershipQuestion,
+      AppLocalizations.of(context).transferOwnershipBody(member.username),
     );
     if (!ok) return;
     await transferLeagueOwnership(leagueId, member.userId);
@@ -214,11 +217,11 @@ class LeagueSettingsScreen extends ConsumerWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('İptal'),
+                child: Text(AppLocalizations.of(context).cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Devam'),
+                child: Text(AppLocalizations.of(context).continueAction),
               ),
             ],
           ),
@@ -282,12 +285,15 @@ class _MemberTile extends StatelessWidget {
                 if (value == 'remove') onRemove();
                 if (value == 'transfer') onTransfer();
               },
-              itemBuilder: (_) => const [
+              itemBuilder: (context) => [
                 PopupMenuItem(
                   value: 'transfer',
-                  child: Text('Sahipliği devret'),
+                  child: Text(AppLocalizations.of(context).transferOwnership),
                 ),
-                PopupMenuItem(value: 'remove', child: Text('Üyeyi çıkar')),
+                PopupMenuItem(
+                  value: 'remove',
+                  child: Text(AppLocalizations.of(context).removeMember),
+                ),
               ],
             ),
         ],

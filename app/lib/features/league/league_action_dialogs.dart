@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../core/error_messages.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'league_controller.dart';
 
 Future<void> showCreateLeagueDialog(BuildContext context, WidgetRef ref) async {
@@ -62,7 +63,7 @@ class _CreateLeagueDialogState extends State<_CreateLeagueDialog> {
       if (mounted) {
         setState(() {
           _busy = false;
-          _error = _humanizeError(e);
+          _error = _humanizeError(context, e);
         });
       }
     }
@@ -70,6 +71,7 @@ class _CreateLeagueDialogState extends State<_CreateLeagueDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Dialog(
       backgroundColor: const Color(0xFF15151E),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -79,8 +81,8 @@ class _CreateLeagueDialogState extends State<_CreateLeagueDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'ÖZEL LİG OLUŞTUR',
+            Text(
+              l.createPrivateLeague,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
@@ -89,7 +91,7 @@ class _CreateLeagueDialogState extends State<_CreateLeagueDialog> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Arkadaşlarınla yarışmak için özel ligini oluştur. Lig davet koduyla paylaşılır.',
+              l.createPrivateLeagueBody,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.white.withValues(alpha: 0.6),
@@ -97,7 +99,7 @@ class _CreateLeagueDialogState extends State<_CreateLeagueDialog> {
             ),
             const SizedBox(height: 24),
             Text(
-              'LİG ADI',
+              l.leagueNameUpper,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
@@ -113,7 +115,7 @@ class _CreateLeagueDialogState extends State<_CreateLeagueDialog> {
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _submit(),
               decoration: InputDecoration(
-                hintText: 'Örn: Arkadaşlar Ligi',
+                hintText: l.leagueNameHint,
                 filled: true,
                 fillColor: const Color(0xFF1A1A26),
                 border: OutlineInputBorder(
@@ -139,7 +141,7 @@ class _CreateLeagueDialogState extends State<_CreateLeagueDialog> {
               const SizedBox(height: 12),
             ] else
               Text(
-                'Lig oluşturulduktan sonra davet kodu alacaksın',
+                l.inviteCodeAfterCreate,
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.white.withValues(alpha: 0.4),
@@ -163,7 +165,7 @@ class _CreateLeagueDialogState extends State<_CreateLeagueDialog> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text('İPTAL'),
+                    child: Text(l.cancel.toUpperCase()),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -199,7 +201,7 @@ class _CreateLeagueDialogState extends State<_CreateLeagueDialog> {
                               color: Colors.black,
                             ),
                           )
-                        : const Text('OLUŞTUR'),
+                        : Text(l.create),
                   ),
                 ),
               ],
@@ -247,7 +249,7 @@ class _JoinLeagueDialogState extends State<_JoinLeagueDialog> {
       if (mounted) {
         setState(() {
           _busy = false;
-          _error = _humanizeError(e);
+          _error = _humanizeError(context, e);
         });
       }
     }
@@ -255,6 +257,7 @@ class _JoinLeagueDialogState extends State<_JoinLeagueDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Dialog(
       backgroundColor: const Color(0xFF15151E),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -264,8 +267,8 @@ class _JoinLeagueDialogState extends State<_JoinLeagueDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'DAVET KODU İLE KATIL',
+            Text(
+              l.joinWithInviteCode,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
@@ -274,7 +277,7 @@ class _JoinLeagueDialogState extends State<_JoinLeagueDialog> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Arkadaşının sana verdiği davet kodunu gir',
+              l.enterInviteCode,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.white.withValues(alpha: 0.6),
@@ -289,7 +292,7 @@ class _JoinLeagueDialogState extends State<_JoinLeagueDialog> {
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _submit(),
               decoration: InputDecoration(
-                hintText: 'DAVET KODU',
+                hintText: l.inviteCode,
                 filled: true,
                 fillColor: const Color(0xFF1A1A26),
                 border: OutlineInputBorder(
@@ -337,7 +340,7 @@ class _JoinLeagueDialogState extends State<_JoinLeagueDialog> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text('İPTAL'),
+                    child: Text(l.cancel.toUpperCase()),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -370,7 +373,7 @@ class _JoinLeagueDialogState extends State<_JoinLeagueDialog> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text('KATIL'),
+                        : Text(l.join),
                   ),
                 ),
               ],
@@ -418,25 +421,26 @@ class _InlineError extends StatelessWidget {
   }
 }
 
-String _humanizeError(Object e) {
+String _humanizeError(BuildContext context, Object e) {
+  final l = AppLocalizations.of(context);
   final raw = e.toString();
   if (raw.contains('Invalid invite code') ||
       raw.contains('invite_code') && raw.contains('null')) {
-    return 'Geçersiz davet kodu. Kodu kontrol edip tekrar dene.';
+    return l.invalidInviteCode;
   }
   if (raw.contains('Authentication required') ||
       raw.contains('JWT') ||
       raw.contains('not authenticated')) {
-    return 'Oturum süren dolmuş olabilir. Tekrar giriş yapmayı dene.';
+    return l.sessionExpired;
   }
   if (raw.contains('SocketException') ||
       raw.contains('Failed host lookup') ||
       raw.contains('Network is unreachable') ||
       raw.contains('Connection') && raw.contains('refused')) {
-    return 'Bağlantı hatası. İnternetini kontrol et ve tekrar dene.';
+    return l.connectionError;
   }
   if (raw.contains('duplicate key') || raw.contains('already')) {
-    return 'Bu lige zaten üyesin.';
+    return l.alreadyLeagueMember;
   }
   return friendlyError(e);
 }

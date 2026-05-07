@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/error_messages.dart';
 import '../../core/theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'league_controller.dart';
 
 class JoinLeagueScreen extends ConsumerStatefulWidget {
@@ -41,10 +42,11 @@ class _JoinLeagueScreenState extends ConsumerState<JoinLeagueScreen> {
   Widget build(BuildContext context) {
     final code = widget.inviteCode.toUpperCase();
     final tt = Theme.of(context).textTheme;
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.carbon,
-      appBar: AppBar(title: const Text('LİGE KATIL')),
+      appBar: AppBar(title: Text(l.joinLeague)),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -65,7 +67,7 @@ class _JoinLeagueScreenState extends ConsumerState<JoinLeagueScreen> {
                     child: Column(
                       children: [
                         Text(
-                          'DAVET KODU',
+                          l.inviteCode,
                           style: tt.labelLarge?.copyWith(
                             color: const Color(0x99FFFFFF),
                             letterSpacing: 1.5,
@@ -83,7 +85,7 @@ class _JoinLeagueScreenState extends ConsumerState<JoinLeagueScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Bu davet koduyla özel lige katılacaksın.',
+                          l.joinLeagueBody,
                           textAlign: TextAlign.center,
                           style: tt.bodyMedium?.copyWith(
                             color: const Color(0xB3FFFFFF),
@@ -110,11 +112,11 @@ class _JoinLeagueScreenState extends ConsumerState<JoinLeagueScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.groups_2_outlined),
-                    label: Text(_joining ? 'KATILINIYOR...' : 'LİGE KATIL'),
+                    label: Text(_joining ? l.joining : l.joinLeague),
                   ),
                   TextButton(
                     onPressed: _joining ? null : () => context.go('/calendar'),
-                    child: const Text('Şimdilik geç'),
+                    child: Text(l.skipForNow),
                   ),
                 ],
               ),

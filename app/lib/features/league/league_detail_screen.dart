@@ -11,6 +11,7 @@ import '../../core/error_messages.dart';
 import '../../core/env.dart';
 import '../../core/supabase.dart';
 import '../../core/theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../shared/models.dart';
 import '../../shared/turkish_text.dart';
 import '../../shared/widgets/app_state.dart';
@@ -56,6 +57,7 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
     final tt = Theme.of(context).textTheme;
     final league = leagueAsync.asData?.value;
     final standings = standingsAsync.asData?.value ?? <StandingRow>[];
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.carbon,
@@ -65,7 +67,7 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
         toolbarHeight: 56,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 20),
-          tooltip: 'Geri',
+          tooltip: l.back,
           onPressed: () =>
               context.canPop() ? context.pop() : context.go('/calendar'),
         ),
@@ -79,12 +81,12 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
             ),
           ),
           loading: () => const Text('...'),
-          error: (error, stackTrace) => const Text('LIG'),
+          error: (error, stackTrace) => Text(l.leagueFallback.toUpperCase()),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined, size: 20),
-            tooltip: 'Lig ayarları',
+            tooltip: l.leagueSettingsTooltip,
             onPressed: () =>
                 context.push('/leagues/${widget.leagueId}/settings'),
           ),
@@ -136,9 +138,9 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
-                  tabs: const [
-                    Tab(text: 'SIRALAMA'),
-                    Tab(text: 'YARIŞLAR'),
+                  tabs: [
+                    Tab(text: l.standings),
+                    Tab(text: l.leagueTabRaces),
                   ],
                 ),
               ),
@@ -194,13 +196,13 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
           _shareCardKey.currentContext?.findRenderObject()
               as RenderRepaintBoundary?;
       if (boundary == null) {
-        throw StateError('Paylaşım kartı hazırlanamadı');
+        throw StateError('Share card could not be prepared');
       }
       final image = await boundary.toImage(pixelRatio: 1);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       final bytes = byteData?.buffer.asUint8List();
       if (bytes == null) {
-        throw StateError('Paylaşım görseli oluşturulamadı');
+        throw StateError('Share image could not be created');
       }
 
       final fileName = 'gridcall_${league.inviteCode.toLowerCase()}_league.png';
@@ -209,9 +211,9 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
       final box = context.findRenderObject() as RenderBox?;
       await Share.shareXFiles(
         [XFile.fromData(bytes, mimeType: 'image/png', name: fileName)],
-        subject: '${league.name} ligine katıl',
+        subject: 'Join ${league.name}',
         text:
-            'GridCall ligime katıl: ${_inviteLinkFor(league.inviteCode)}\nDavet kodu: ${league.inviteCode}',
+            'Join my GridCall league: ${_inviteLinkFor(league.inviteCode)}\nInvite code: ${league.inviteCode}',
         fileNameOverrides: [fileName],
         sharePositionOrigin: box == null
             ? null
@@ -220,7 +222,7 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Paylaşım hatası: ${friendlyError(e)}')),
+        SnackBar(content: Text('Share error: ${friendlyError(e)}')),
       );
     } finally {
       if (mounted) setState(() => _sharing = false);
@@ -303,7 +305,10 @@ class _StandingsSegmentedControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const labels = ['Genel', 'Bu Hafta'];
+    final labels = [
+      AppLocalizations.of(context).overall,
+      AppLocalizations.of(context).thisWeek,
+    ];
     return Row(
       children: [
         for (var i = 0; i < labels.length; i++) ...[
@@ -385,7 +390,7 @@ class _GeneralStandings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return standingsAsync.when(
-      loading: () => const AppLoadingState(label: 'Sıralama yükleniyor'),
+      loading: () => const AppLoadingState(label: 'Standings loading'),
       error: (e, _) => AppErrorState(message: friendlyError(e)),
       data: (rows) => Consumer(
         builder: (context, ref, _) {
@@ -408,9 +413,9 @@ class _GeneralStandings extends StatelessWidget {
             rows: rows,
             myUserId: myUserId,
             rankDeltas: _rankDeltas(rows, previousRows),
-            emptyTitle: 'Henüz puan yok',
+            emptyTitle: 'No points yet',
             emptyMessage:
-                'İlk yarış sonucundan sonra lig sıralaması burada dolacak.',
+                'League standings will appear here after the first race result.',
           );
         },
       ),
@@ -432,16 +437,15 @@ class _WeeklyStandings extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return racesAsync.when(
-      loading: () =>
-          const AppLoadingState(label: 'Haftalık sıralama yükleniyor'),
+      loading: () => const AppLoadingState(label: 'Weekly standings loading'),
       error: (e, _) => AppErrorState(message: friendlyError(e)),
       data: (races) {
         final weeklyRace = _weeklyRaceFor(races);
         if (weeklyRace == null) {
           return const AppEmptyState(
             icon: Icons.event_busy_outlined,
-            title: 'Yarış bulunamadı',
-            message: 'Bu hafta için gösterilecek yarış bulunamadı.',
+            title: 'Race not found',
+            message: 'No race was found to show for this week.',
           );
         }
         final key = WeeklySummaryKey(
@@ -456,14 +460,14 @@ class _WeeklyStandings extends ConsumerWidget {
         );
         return standingsAsync.when(
           loading: () =>
-              const AppLoadingState(label: 'Haftalık sıralama yükleniyor'),
+              const AppLoadingState(label: 'Weekly standings loading'),
           error: (e, _) => AppErrorState(message: friendlyError(e)),
           data: (rows) => _StandingsList(
             rows: rows,
             myUserId: myUserId,
             emptyTitle: 'Bu hafta puan yok',
             emptyMessage:
-                '${weeklyRace.race.name} skorları hesaplanınca burada görünecek.',
+                'This will appear when ${weeklyRace.race.name} scores are calculated.',
           ),
         );
       },
@@ -591,14 +595,14 @@ class _RacesTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return racesAsync.when(
-      loading: () => const AppLoadingState(label: 'Yarışlar yükleniyor'),
+      loading: () => const AppLoadingState(label: 'Races loading'),
       error: (e, _) => AppErrorState(message: friendlyError(e)),
       data: (races) {
         if (races.isEmpty) {
           return const AppEmptyState(
             icon: Icons.event_busy_outlined,
-            title: 'Yarış bulunamadı',
-            message: 'Bu sezon için gösterilecek yarış takvimi yok.',
+            title: 'Race not found',
+            message: 'There is no race calendar to show for this season.',
           );
         }
         final visibleRaces = buildPreviousAndNextRaces(races);
@@ -610,8 +614,8 @@ class _RacesTab extends StatelessWidget {
             for (var i = 0; i < visibleRaces.length; i++) ...[
               _RaceScopeLabel(
                 label: i == 0 && countsAsPreviousRace(visibleRaces[i])
-                    ? 'Önceki yarış'
-                    : 'Sonraki yarış',
+                    ? 'Previous race'
+                    : 'Next race',
               ),
               const SizedBox(height: 8),
               Builder(
@@ -642,7 +646,7 @@ class _RacesTab extends StatelessWidget {
                     actionLabel:
                         mainStatus == RaceStatus.upcoming ||
                             mainStatus == RaceStatus.locked
-                        ? 'Tahmin Yap'
+                        ? 'Make Prediction'
                         : null,
                     actionIcon: Icons.add_circle_outline,
                     onTap: () => _openLeagueRace(
@@ -662,7 +666,7 @@ class _RacesTab extends StatelessWidget {
                 onPressed: () =>
                     _showAllLeagueRacesSheet(context, races, predictionStatus),
                 icon: const Icon(Icons.calendar_month_outlined, size: 18),
-                label: const Text('Tüm yarışlar'),
+                label: const Text('All races'),
               ),
             ),
           ],
@@ -683,7 +687,7 @@ class _RacesTab extends StatelessWidget {
     final kind = await showRaceKindPicker(
       sourceContext,
       race: race,
-      title: 'Yarış seç',
+      title: 'Select race',
       mainSaved: mainSaved,
       sprintSaved: sprintSaved,
     );
@@ -748,9 +752,7 @@ class _RacesTab extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(16, 18, 8, 12),
                   child: Row(
                     children: [
-                      const Expanded(
-                        child: _SheetHeader(title: 'TÜM YARIŞLAR'),
-                      ),
+                      const Expanded(child: _SheetHeader(title: 'ALL RACES')),
                       IconButton(
                         icon: const Icon(Icons.close, size: 20),
                         onPressed: () => Navigator.of(sheetContext).pop(),
@@ -786,7 +788,7 @@ class _RacesTab extends StatelessWidget {
                           keepStartLightsVisible: pinnedRaceIds.contains(
                             race.id,
                           ),
-                          actionLabel: 'Tahmin Yap',
+                          actionLabel: 'Make Prediction',
                           actionIcon: Icons.add_circle_outline,
                           onTap: () => _openLeagueRace(
                             pageContext,
@@ -882,7 +884,7 @@ class _InviteCodeCardState extends State<_InviteCodeCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'DAVET KODU',
+                    AppLocalizations.of(context).inviteCode,
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
@@ -923,7 +925,7 @@ class _InviteCodeCardState extends State<_InviteCodeCard> {
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                'Kopyalandı!',
+                AppLocalizations.of(context).copied,
                 style: TextStyle(fontSize: 12, color: const Color(0xFF00D26A)),
               ),
             ),
@@ -939,7 +941,11 @@ class _InviteCodeCardState extends State<_InviteCodeCard> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.ios_share, size: 18),
-              label: Text(widget.sharing ? 'HAZIRLANIYOR...' : 'LİGİ PAYLAŞ'),
+              label: Text(
+                widget.sharing
+                    ? AppLocalizations.of(context).preparing
+                    : AppLocalizations.of(context).shareLeague,
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFE10600),
                 foregroundColor: Colors.white,
@@ -1036,8 +1042,8 @@ class _StandingRow extends StatelessWidget {
                 ),
                 if (isMe) ...[
                   const SizedBox(width: 8),
-                  const Text(
-                    'SEN',
+                  Text(
+                    AppLocalizations.of(context).you,
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w900,

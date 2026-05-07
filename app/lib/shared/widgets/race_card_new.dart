@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/env.dart';
 import '../../core/theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../country_flags.dart';
 import '../models.dart';
 import 'live_pulse_dot.dart';
@@ -90,8 +91,9 @@ Future<RaceCardKind?> showRaceKindPicker(
               ),
               const SizedBox(height: 16),
               _RaceKindOption(
-                label: 'Sprint yarışı',
+                label: AppLocalizations.of(context).sprintRace,
                 subtitle: _eventSubtitle(
+                  context,
                   race.sprintRaceAt,
                   effectiveRaceCardNavigationStatus((
                     race: race,
@@ -104,8 +106,9 @@ Future<RaceCardKind?> showRaceKindPicker(
               ),
               const SizedBox(height: 10),
               _RaceKindOption(
-                label: 'Ana yarış',
+                label: AppLocalizations.of(context).mainRace,
                 subtitle: _eventSubtitle(
+                  context,
                   race.raceAt,
                   effectiveRaceCardNavigationStatus((
                     race: race,
@@ -124,16 +127,20 @@ Future<RaceCardKind?> showRaceKindPicker(
   );
 }
 
-String _eventSubtitle(DateTime? at, RaceStatus status) {
+String _eventSubtitle(BuildContext context, DateTime? at, RaceStatus status) {
+  final l = AppLocalizations.of(context);
   final statusLabel = switch (status) {
-    RaceStatus.upcoming => 'Tahmine açık',
-    RaceStatus.locked => 'Kilitlendi',
-    RaceStatus.live => 'Canlı',
-    RaceStatus.finished => 'Tamamlandı',
-    RaceStatus.cancelled => 'İptal',
+    RaceStatus.upcoming => l.openForPredictions,
+    RaceStatus.locked => l.locked,
+    RaceStatus.live => l.live,
+    RaceStatus.finished => l.finished,
+    RaceStatus.cancelled => l.canceled,
   };
   if (at == null) return statusLabel;
-  final date = DateFormat('d MMM HH:mm', 'tr_TR').format(at.toLocal());
+  final date = DateFormat(
+    'd MMM HH:mm',
+    Intl.getCurrentLocale(),
+  ).format(at.toLocal());
   return '$date · $statusLabel';
 }
 
@@ -223,7 +230,7 @@ class _RaceKindOption extends StatelessWidget {
   }
 }
 
-/// Bir Race listesini sprint kartlarını da üreterek sıralar.
+/// Bir Race listesini sprint kartlarını da üreterek positionlar.
 ///
 /// `pinFeaturedRace = false` (ana ekran): tüm kartlar kronolojik (eski → yeni).
 ///
@@ -231,8 +238,8 @@ class _RaceKindOption extends StatelessWidget {
 /// kalır (sprint + ana yarış, sprint daima ana yarıştan önce). Featured =
 /// ana yarış bitiminden 24 saat geçmemiş ilk yarış. Bu sayede:
 ///   - Yarış haftası boyunca (sprint bitse bile) iki kart da üstte kalır.
-///   - Ana yarış bitiminden 24 saat sonra featured otomatik olarak bir
-///     sonraki yarışa kayar; eski yarış kronolojik sırasına düşer.
+///   - Main race bitiminden 24 saat sonra featured otomatik olarak bir
+///     sonraki yarışa kayar; eski yarış kronolojik positionsına düşer.
 ///   - Bu hafta yarış yoksa en yakın gelecek yarış featured olur.
 List<RaceCardEntry> buildOrderedRaceCards(
   List<Race> races, {
@@ -400,7 +407,7 @@ class RaceCardNew extends StatelessWidget {
   final bool keepStartLightsVisible;
 
   /// Lig bağlamında mı gösteriliyor? Calendar (ana ekran) için false:
-  /// biten yarışlarda kullanıcının skor/sıralamasını gizler, canlı yarışlarda
+  /// biten yarışlarda kullanıcının skor/positionlamasını gizler, canlı yarışlarda
   /// ilerleme bilgisini göstermez.
   final bool showLeagueContext;
 
@@ -441,6 +448,7 @@ class RaceCardNew extends StatelessWidget {
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
     final status = _status;
+    final l = AppLocalizations.of(context);
 
     final (
       bgColor,
@@ -454,35 +462,35 @@ class RaceCardNew extends StatelessWidget {
         AppColors.lockGreen,
         AppColors.lockGreen,
         Icons.flag_outlined,
-        'TAHMİNE AÇIK',
+        l.openForPicks,
       ),
       RaceStatus.locked => (
         AppColors.surfaceLow,
         AppColors.lockOrange,
         AppColors.lockOrange,
         Icons.lock_outline,
-        'KİLİTLENDİ',
+        l.locked.toUpperCase(),
       ),
       RaceStatus.live => (
         AppColors.surfaceLow,
         AppColors.liveRed,
         AppColors.liveRed,
         Icons.circle,
-        'CANLI',
+        l.liveUpper,
       ),
       RaceStatus.finished => (
         AppColors.surface,
         AppColors.finished,
         AppColors.finished,
         Icons.check_circle_outline,
-        'BİTTİ',
+        l.finished.toUpperCase(),
       ),
       RaceStatus.cancelled => (
         AppColors.surface,
         AppColors.finished,
         AppColors.finished,
         Icons.block,
-        'İPTAL',
+        l.canceled.toUpperCase(),
       ),
     };
 
@@ -809,10 +817,22 @@ class RaceCardNew extends StatelessWidget {
     if (qAt == null || rAt == null) {
       return const SizedBox.shrink();
     }
-    final qDate = DateFormat('d MMM', 'tr_TR').format(qAt.toLocal());
-    final qTime = DateFormat('HH:mm', 'tr_TR').format(qAt.toLocal());
-    final rDate = DateFormat('d MMM', 'tr_TR').format(rAt.toLocal());
-    final rTime = DateFormat('HH:mm', 'tr_TR').format(rAt.toLocal());
+    final qDate = DateFormat(
+      'd MMM',
+      Intl.getCurrentLocale(),
+    ).format(qAt.toLocal());
+    final qTime = DateFormat(
+      'HH:mm',
+      Intl.getCurrentLocale(),
+    ).format(qAt.toLocal());
+    final rDate = DateFormat(
+      'd MMM',
+      Intl.getCurrentLocale(),
+    ).format(rAt.toLocal());
+    final rTime = DateFormat(
+      'HH:mm',
+      Intl.getCurrentLocale(),
+    ).format(rAt.toLocal());
 
     return Container(
       padding: const EdgeInsets.only(top: 12),
@@ -823,7 +843,7 @@ class RaceCardNew extends StatelessWidget {
       child: Row(
         children: [
           Text(
-            'Sıralama: ',
+            'Qualifying: ',
             style: tt.bodySmall?.copyWith(
               fontWeight: FontWeight.w700,
               color: const Color(0xB3FFFFFF),
@@ -839,7 +859,7 @@ class RaceCardNew extends StatelessWidget {
           ),
           const SizedBox(width: 16),
           Text(
-            'Yarış: ',
+            'Race: ',
             style: tt.bodySmall?.copyWith(
               fontWeight: FontWeight.w700,
               color: const Color(0xB3FFFFFF),
@@ -863,7 +883,7 @@ class RaceCardNew extends StatelessWidget {
 
     if (!Env.enableDemoContent) {
       return Text(
-        _isSprint ? 'Sprint canlı — aç' : 'Canlı ekranı aç',
+        _isSprint ? 'Sprint live - open' : 'Open live screen',
         style: tt.bodyMedium?.copyWith(
           color: const Color(0x99FFFFFF),
           fontSize: 14,
@@ -917,7 +937,7 @@ class RaceCardNew extends StatelessWidget {
 
     if (!Env.enableDemoContent) {
       return Text(
-        'Haftalık özeti gör',
+        AppLocalizations.of(context).viewWeeklySummary,
         style: tt.bodyMedium?.copyWith(
           color: const Color(0x99FFFFFF),
           fontSize: 14,
@@ -935,7 +955,7 @@ class RaceCardNew extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Skorun',
+              AppLocalizations.of(context).yourScore,
               style: tt.bodyMedium?.copyWith(
                 color: const Color(0x99FFFFFF),
                 fontSize: 14,
@@ -956,7 +976,7 @@ class RaceCardNew extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'PUAN',
+                  'PTS',
                   style: tt.bodySmall?.copyWith(
                     color: const Color(0x80FFFFFF),
                     fontSize: 14,
@@ -970,7 +990,7 @@ class RaceCardNew extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              'Sıran',
+              'Your rank',
               style: tt.bodyMedium?.copyWith(
                 color: const Color(0x99FFFFFF),
                 fontSize: 14,
@@ -1118,13 +1138,13 @@ class _StartLightColumnState extends State<_StartLightColumn> {
 
 String _startLightDescription(String label) {
   return switch (label.trim().toUpperCase()) {
-    'P1' || 'FP1' || 'ANT1' => 'Antrenman 1',
-    'P2' || 'FP2' || 'ANT2' => 'Antrenman 2',
-    'P3' || 'FP3' || 'ANT3' => 'Antrenman 3',
-    'SQ' || 'SS' => 'Sprint Sıralama',
-    'SR' || 'S' => 'Sprint Yarışı',
-    'Q' => 'Sıralama',
-    'R' => 'Yarış',
+    'P1' || 'FP1' || 'ANT1' => 'Practice 1',
+    'P2' || 'FP2' || 'ANT2' => 'Practice 2',
+    'P3' || 'FP3' || 'ANT3' => 'Practice 3',
+    'SQ' || 'SS' => 'Sprint Qualifying',
+    'SR' || 'S' => 'Sprint Race',
+    'Q' => 'Qualifying',
+    'R' => 'Race',
     _ => label,
   };
 }
@@ -1330,7 +1350,7 @@ class _PredictionBadge extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Text(
-          hasPrediction ? 'Tahmin yapıldı $suffix' : 'Tahmin Yapılmadı',
+          hasPrediction ? 'Prediction made $suffix' : 'No prediction',
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w800,

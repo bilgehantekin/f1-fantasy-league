@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../shared/models.dart';
 import 'share_card_atoms.dart';
 
@@ -20,9 +21,10 @@ class LeagueShareCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final topRows = standings.take(3).toList();
     final others = standings.skip(3).take(3).toList();
+    final l = AppLocalizations.of(context);
     final memberText = league.memberCount == null
-        ? '${standings.length} oyuncu'
-        : '${league.memberCount} oyuncu';
+        ? l.playersCount(standings.length)
+        : l.playersCount(league.memberCount!);
 
     return ShareStoryFrame(
       width: 1080,
@@ -35,12 +37,12 @@ class LeagueShareCard extends StatelessWidget {
             children: [
               const ShareGridCallLogo(fontSize: 40, bulbSize: 14),
               const Spacer(),
-              ShareSeasonPill(label: 'SEZON ${league.seasonId}'),
+              ShareSeasonPill(label: l.season(league.seasonId)),
             ],
           ),
           const SizedBox(height: 80),
           Text(
-            'LİGİN ADI',
+            l.leagueNameUpper,
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w800,
@@ -72,8 +74,8 @@ class LeagueShareCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(22),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
               ),
-              child: const Text(
-                'İlk yarış sonucundan sonra sıralama burada görünecek.',
+              child: Text(
+                l.leagueShareEmpty,
                 style: TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.w700,
@@ -95,7 +97,7 @@ class LeagueShareCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                '$memberText · ${standings.length} sıralama',
+                '$memberText · ${l.standingsCount(standings.length)}',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
@@ -211,7 +213,7 @@ class _PodiumBar extends StatelessWidget {
             text: '${row.score}',
             children: [
               TextSpan(
-                text: ' PUAN',
+                text: ' PTS',
                 style: TextStyle(
                   fontSize: 18,
                   color: Colors.white.withValues(alpha: 0.5),

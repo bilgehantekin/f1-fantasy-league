@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/error_messages.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../shared/models.dart';
 import 'admin_controller.dart';
 
@@ -13,17 +14,17 @@ class AdminJokersScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isAdmin = ref.watch(isAdminProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Admin · Joker Soruları')),
+      appBar: AppBar(title: const Text('Admin · Joker Questions')),
       body: isAdmin.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
+        error: (e, _) => Center(child: Text('Error: ${friendlyError(e)}')),
         data: (admin) {
           if (!admin) {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(32),
                 child: Text(
-                  'Bu sayfayı görmek için admin yetkisi gerekiyor. '
+                  'You need admin permission to view this page. '
                   'Studio\'dan profiles.is_admin = true ayarla.',
                 ),
               ),
@@ -37,7 +38,7 @@ class AdminJokersScreen extends ConsumerWidget {
                 const TabBar(
                   tabs: [
                     Tab(text: 'JOKER'),
-                    Tab(text: 'VERİ'),
+                    Tab(text: 'DATA'),
                   ],
                 ),
                 Expanded(
@@ -45,7 +46,7 @@ class AdminJokersScreen extends ConsumerWidget {
                     loading: () =>
                         const Center(child: CircularProgressIndicator()),
                     error: (e, _) =>
-                        Center(child: Text('Hata: ${friendlyError(e)}')),
+                        Center(child: Text('Error: ${friendlyError(e)}')),
                     data: (list) => TabBarView(
                       children: [
                         ListView.builder(
@@ -85,7 +86,7 @@ class _RaceDataTile extends ConsumerWidget {
         ),
         error: (e, _) => ListTile(
           title: Text('R${race.round} · ${race.name}'),
-          subtitle: Text('Hata: ${friendlyError(e)}'),
+          subtitle: Text('Error: ${friendlyError(e)}'),
         ),
         data: (a) => ListTile(
           title: Text('R${race.round} · ${race.name}'),
@@ -125,7 +126,7 @@ class _RaceDataTile extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ingest hatası: ${friendlyError(e)}')),
+          SnackBar(content: Text('Ingest error: ${friendlyError(e)}')),
         );
       }
     }
@@ -182,18 +183,20 @@ class _RaceJokerTile extends ConsumerWidget {
               TextField(
                 controller: optsCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Opsiyonlar (virgülle)',
+                  labelText: 'Options (comma-separated)',
                 ),
               ),
               TextField(
                 controller: correctCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Doğru cevap (yarış sonrası)',
+                  labelText: 'Correct answer (after race)',
                 ),
               ),
               TextField(
                 controller: pointsCtrl,
-                decoration: const InputDecoration(labelText: 'Puan'),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).points,
+                ),
                 keyboardType: TextInputType.number,
               ),
             ],
@@ -202,11 +205,11 @@ class _RaceJokerTile extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('İptal'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Kaydet'),
+            child: Text(AppLocalizations.of(context).save),
           ),
         ],
       ),
@@ -232,7 +235,7 @@ class _RaceJokerTile extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Hata: ${friendlyError(e)}')));
+        ).showSnackBar(SnackBar(content: Text('Error: ${friendlyError(e)}')));
       }
     }
   }

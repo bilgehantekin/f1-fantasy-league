@@ -164,11 +164,8 @@ final leagueMembersProvider = FutureProvider.family<List<LeagueMember>, String>(
   },
 );
 
-final weeklySummaryProvider =
-    FutureProvider.autoDispose.family<LeagueWeeklySummary, WeeklySummaryKey>((
-      ref,
-      key,
-    ) async {
+final weeklySummaryProvider = FutureProvider.autoDispose
+    .family<LeagueWeeklySummary, WeeklySummaryKey>((ref, key) async {
       final res = await supabase.rpc(
         'league_weekly_summary',
         params: {
@@ -180,11 +177,8 @@ final weeklySummaryProvider =
       return LeagueWeeklySummary.fromJson(res as Map<String, dynamic>);
     });
 
-final weeklyWeekendSummaryProvider =
-    FutureProvider.autoDispose.family<LeagueWeeklySummary, WeeklySummaryKey>((
-      ref,
-      key,
-    ) async {
+final weeklyWeekendSummaryProvider = FutureProvider.autoDispose
+    .family<LeagueWeeklySummary, WeeklySummaryKey>((ref, key) async {
       final results = await Future.wait([
         supabase.rpc(
           'league_weekly_summary',

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/error_messages.dart';
 import '../../core/theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../shared/widgets/app_state.dart';
 import 'league_controller.dart';
 
@@ -19,6 +20,7 @@ class _LeaguesScreenState extends ConsumerState<LeaguesScreen> {
   Widget build(BuildContext context) {
     final leagues = ref.watch(myLeaguesProvider);
     final tt = Theme.of(context).textTheme;
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.carbon,
@@ -28,12 +30,12 @@ class _LeaguesScreenState extends ConsumerState<LeaguesScreen> {
         toolbarHeight: 56,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 20),
-          tooltip: 'Geri',
+          tooltip: l.back,
           onPressed: () =>
               context.canPop() ? context.pop() : context.go('/calendar'),
         ),
         title: Text(
-          'LİGLERİM',
+          l.myLeagues,
           style: tt.titleLarge?.copyWith(
             fontSize: 18,
             fontWeight: FontWeight.w900,
@@ -48,21 +50,20 @@ class _LeaguesScreenState extends ConsumerState<LeaguesScreen> {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
         children: [
-          _SectionTitle(label: 'AKTİF LİGLERİM'),
+          _SectionTitle(label: l.activeLeagues),
           const SizedBox(height: 12),
           leagues.when(
-            loading: () => const AppLoadingState(label: 'Ligler yükleniyor'),
+            loading: () => AppLoadingState(label: l.leaguesLoading),
             error: (e, _) => AppErrorState(
               message: friendlyError(e),
               onRetry: () => ref.invalidate(myLeaguesProvider),
             ),
             data: (list) {
               if (list.isEmpty) {
-                return const AppEmptyState(
+                return AppEmptyState(
                   icon: Icons.groups_outlined,
-                  title: 'Henüz bir ligin yok',
-                  message:
-                      'Ana ekrandan lig oluşturabilir veya davet koduyla lige katılabilirsin.',
+                  title: l.noLeagueYet,
+                  message: l.noLeagueYetMessage,
                 );
               }
               return Column(
@@ -119,7 +120,9 @@ class _LeaguesScreenState extends ConsumerState<LeaguesScreen> {
                                             ),
                                             const SizedBox(width: 4),
                                             Text(
-                                              '${league.memberCount ?? 0} üye',
+                                              l.membersCount(
+                                                league.memberCount ?? 0,
+                                              ),
                                               style: tt.bodySmall?.copyWith(
                                                 fontSize: 12,
                                                 color: const Color(0x99FFFFFF),
@@ -142,7 +145,7 @@ class _LeaguesScreenState extends ConsumerState<LeaguesScreen> {
                                         ),
                                       ),
                                       Text(
-                                        'SIRALAMA',
+                                        l.standing,
                                         style: TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.w700,
@@ -167,7 +170,7 @@ class _LeaguesScreenState extends ConsumerState<LeaguesScreen> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    'Detayları gör',
+                                    l.viewDetails,
                                     style: tt.bodySmall?.copyWith(
                                       fontSize: 14,
                                       color: const Color(0x99FFFFFF),

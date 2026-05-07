@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../../core/env.dart';
 import '../../core/error_messages.dart';
 import '../../core/legal_links.dart';
@@ -55,8 +56,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         );
         if (!mounted) return;
         setState(() {
-          _info =
-              'Kayıt alındı. E-posta doğrulaması açıksa gelen kutundaki bağlantıyla hesabını onayla.';
+          _info = AppLocalizations.of(context).signUpReceived;
         });
       } else {
         await supabase.auth.signInWithPassword(
@@ -65,7 +65,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         );
       }
     } on AuthException catch (e) {
-      setState(() => _error = friendlyAuthError(e));
+      setState(() => _error = friendlyAuthError(e, isSignIn: !_isSignUp));
     } catch (e) {
       setState(() => _error = friendlyError(e));
     } finally {
@@ -98,12 +98,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   Future<void> _resetPassword() async {
     final email = _email.text.trim();
+    final l = AppLocalizations.of(context);
     if (email.isEmpty) {
-      setState(() => _error = 'Şifre sıfırlama için e-posta adresini yaz.');
+      setState(() => _error = l.resetEmailRequired);
       return;
     }
     if (!_isValidEmail(email)) {
-      setState(() => _error = 'Geçerli bir e-posta adresi yaz.');
+      setState(() => _error = l.validEmailRequired);
       return;
     }
     setState(() {
@@ -118,7 +119,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       );
       if (!mounted) return;
       setState(() {
-        _info = 'Şifre sıfırlama bağlantısı e-posta adresine gönderildi.';
+        _info = l.resetLinkSent;
       });
     } on AuthException catch (e) {
       setState(() => _error = friendlyAuthError(e));
@@ -135,17 +136,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final username = _username.text.trim();
 
     if (!_isValidEmail(email)) {
-      return 'Geçerli bir e-posta adresi yaz.';
+      return AppLocalizations.of(context).validEmailRequired;
     }
     if (_isSignUp) {
       if (password.length < 8) {
-        return 'Şifre en az 8 karakter olmalı.';
+        return AppLocalizations.of(context).passwordMin8;
       }
       if (username.length < 3 || username.length > 16) {
-        return 'Kullanıcı adı 3-16 karakter olmalı.';
+        return AppLocalizations.of(context).usernameLength;
       }
     } else if (password.isEmpty) {
-      return 'Şifreni yaz.';
+      return AppLocalizations.of(context).passwordRequired;
     }
     return null;
   }
@@ -156,6 +157,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
+    final l = AppLocalizations.of(context);
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -183,7 +185,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'F1 tahmin ligin, cebinde.',
+                    l.authTagline,
                     textAlign: TextAlign.center,
                     style: tt.bodyMedium?.copyWith(
                       letterSpacing: 1.5,
@@ -196,9 +198,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       controller: _username,
                       autofillHints: const [AutofillHints.username],
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Kullanıcı adı',
-                        helperText: '3-16 karakter',
+                      decoration: InputDecoration(
+                        labelText: l.username,
+                        helperText: '3-16',
                       ),
                       maxLength: 16,
                       buildCounter:
@@ -216,7 +218,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     keyboardType: TextInputType.emailAddress,
                     autofillHints: const [AutofillHints.email],
                     textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(labelText: 'E-posta'),
+                    decoration: InputDecoration(labelText: l.email),
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -230,8 +232,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       if (!_busy) _submit();
                     },
                     decoration: InputDecoration(
-                      labelText: 'Şifre',
-                      helperText: _isSignUp ? 'En az 8 karakter' : null,
+                      labelText: l.password,
+                      helperText: _isSignUp ? l.atLeast8 : null,
                       suffixIcon: IconButton(
                         icon: Icon(
                           _passwordVisible
@@ -264,12 +266,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   FilledButton(
                     onPressed: _busy ? null : _submit,
                     child: Text(
-                      _busy ? '...' : (_isSignUp ? 'KAYIT OL' : 'GIRIŞ YAP'),
+                      _busy ? '...' : (_isSignUp ? l.signUp : l.signIn),
                     ),
                   ),
                   const SizedBox(height: 12),
                   _OAuthButton(
-                    label: 'Google ile devam et',
+                    label: l.continueGoogle,
                     icon: Icons.g_mobiledata,
                     onPressed: _busy
                         ? null
@@ -277,7 +279,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   ),
                   const SizedBox(height: 8),
                   _OAuthButton(
-                    label: 'Apple ile devam et',
+                    label: l.continueApple,
                     icon: Icons.apple,
                     onPressed: _busy
                         ? null
@@ -288,18 +290,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         ? null
                         : () => setState(() => _isSignUp = !_isSignUp),
                     child: Text(
-                      _isSignUp
-                          ? 'Hesabın var mı? Giriş yap'
-                          : 'Hesabın yok mu? Kayıt ol',
+                      _isSignUp ? l.alreadyHaveAccount : l.noAccount,
                       style: const TextStyle(color: Colors.white70),
                     ),
                   ),
                   if (!_isSignUp)
                     TextButton(
                       onPressed: _busy ? null : _resetPassword,
-                      child: const Text(
-                        'Şifremi unuttum',
-                        style: TextStyle(color: Colors.white70),
+                      child: Text(
+                        l.forgotPassword,
+                        style: const TextStyle(color: Colors.white70),
                       ),
                     ),
                   const SizedBox(height: 12),
@@ -324,23 +324,29 @@ class _AuthLegalNotice extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Text(
-          'Devam ederek ',
+          AppLocalizations.of(context).legalPrefix,
           style: TextStyle(
             fontSize: 12,
             color: Colors.white.withValues(alpha: 0.55),
           ),
         ),
-        _LegalTextButton(label: 'Kullanım Şartları', uri: LegalLinks.terms),
+        _LegalTextButton(
+          label: AppLocalizations.of(context).terms,
+          uri: LegalLinks.terms,
+        ),
         Text(
-          ' ve ',
+          AppLocalizations.of(context).legalAnd,
           style: TextStyle(
             fontSize: 12,
             color: Colors.white.withValues(alpha: 0.55),
           ),
         ),
-        _LegalTextButton(label: 'Gizlilik Politikası', uri: LegalLinks.privacy),
+        _LegalTextButton(
+          label: AppLocalizations.of(context).privacy,
+          uri: LegalLinks.privacy,
+        ),
         Text(
-          'nı kabul etmiş olursun.',
+          AppLocalizations.of(context).legalSuffix,
           style: TextStyle(
             fontSize: 12,
             color: Colors.white.withValues(alpha: 0.55),

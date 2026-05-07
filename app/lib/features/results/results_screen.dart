@@ -4,6 +4,7 @@ import '../../core/error_messages.dart';
 import '../../core/navigation.dart';
 import '../../core/supabase.dart';
 import '../../core/theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets/app_state.dart';
 import '../prediction/prediction_controller.dart';
@@ -63,6 +64,7 @@ class ResultsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final predictionKey = PredictionKey(raceId: raceId, leagueId: leagueId);
     final raceAsync = ref.watch(raceProvider(raceId));
+    final l = AppLocalizations.of(context);
     final driversAsync = ref.watch(driversProvider);
     final predictionAsync = ref.watch(predictionProvider(predictionKey));
     final sprintPredictionAsync = ref.watch(
@@ -88,7 +90,7 @@ class ResultsScreen extends ConsumerWidget {
         leadingWidth: 56,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 20),
-          tooltip: 'Geri',
+          tooltip: l.back,
           onPressed: () => safeBack(
             context,
             fallbackLocation: leagueId == null
@@ -98,7 +100,9 @@ class ResultsScreen extends ConsumerWidget {
         ),
         title: raceAsync.maybeWhen(
           data: (race) => Text(
-            sprintMode ? '${race.name} - Sprint' : '${race.name} - Sonuçlar',
+            sprintMode
+                ? l.sprintResultsTitle(race.name)
+                : l.resultsTitle(race.name),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
@@ -109,7 +113,7 @@ class ResultsScreen extends ConsumerWidget {
             ),
           ),
           orElse: () => Text(
-            sprintMode ? 'SPRINT SONUÇLAR' : 'SONUÇLAR',
+            sprintMode ? 'SPRINT RESULTS' : 'RESULTS',
             textAlign: TextAlign.center,
           ),
         ),
@@ -120,13 +124,13 @@ class ResultsScreen extends ConsumerWidget {
         ),
       ),
       body: raceAsync.when(
-        loading: () => const AppLoadingState(label: 'Sonuçlar yükleniyor'),
+        loading: () => const AppLoadingState(label: 'Results loading'),
         error: (e, _) => AppErrorState(
           message: friendlyError(e),
           onRetry: () => ref.invalidate(raceProvider(raceId)),
         ),
         data: (race) => driversAsync.when(
-          loading: () => const AppLoadingState(label: 'Sürücüler yükleniyor'),
+          loading: () => const AppLoadingState(label: 'Drivers loading'),
           error: (e, _) => AppErrorState(
             message: friendlyError(e),
             onRetry: () => ref.invalidate(driversProvider),
@@ -146,7 +150,7 @@ class ResultsScreen extends ConsumerWidget {
             final classification =
                 classificationAsync.asData?.value ?? const [];
 
-            // İptal durumu: ana yarış için race.isCancelled, sprint için
+            // Cancel durumu: ana yarış için race.isCancelled, sprint için
             // sprintStatus == cancelled.
             final isCancelled = sprintMode
                 ? race.sprintStatus == RaceStatus.cancelled
@@ -162,7 +166,7 @@ class ResultsScreen extends ConsumerWidget {
             }
 
             // Lig bağlamı dışında (ana takvimden açıldığında) sadece
-            // resmi yarış sonuçları gösterilir; kişisel skor / kırılım gizli.
+            // resmi yarış sonuçları gösterilir; peoplesel skor / kırılım gizli.
             final showPersonal = leagueId != null;
             final personalScore = sprintMode
                 ? sprintPrediction?.score
@@ -175,7 +179,7 @@ class ResultsScreen extends ConsumerWidget {
                   if (personalScore != null)
                     _HeroScore(score: personalScore, leagueId: leagueId),
                   const SizedBox(height: 24),
-                  _SectionTitle(label: 'PUAN DAĞITIMI'),
+                  _SectionTitle(label: 'POINTS BREAKDOWN'),
                   if (sprintMode)
                     sprintPrediction != null
                         ? _SprintScoreBreakdown(
@@ -194,7 +198,7 @@ class ResultsScreen extends ConsumerWidget {
                     const _NoPredictionMsg(sprintMode: false),
                   const SizedBox(height: 24),
                 ],
-                _SectionTitle(label: 'SONUÇLAR'),
+                _SectionTitle(label: 'RESULTS'),
                 if (result != null)
                   _ActualResults(
                     result: result,
@@ -206,7 +210,7 @@ class ResultsScreen extends ConsumerWidget {
                   const _NoResultYet(),
                 if (classification.isNotEmpty) ...[
                   const SizedBox(height: 24),
-                  _SectionTitle(label: 'TÜM SIRALAMA'),
+                  _SectionTitle(label: 'FULL STANDINGS'),
                   _FullClassification(rows: classification, byId: byId),
                 ],
                 const SizedBox(height: 24),
@@ -240,7 +244,7 @@ class _HeroScore extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'SENİN SKORUN',
+            'YOUR SCORE',
             style: TextStyle(
               fontSize: 14,
               color: Colors.white.withValues(alpha: 0.6),
@@ -258,7 +262,7 @@ class _HeroScore extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'PUAN',
+            'PTS',
             style: TextStyle(
               fontSize: 18,
               color: Colors.white.withValues(alpha: 0.6),
@@ -267,7 +271,7 @@ class _HeroScore extends StatelessWidget {
           if (leagueId != null) ...[
             const SizedBox(height: 16),
             const Text(
-              'Lig sıralaması haftalık özet ekranında gösterilir.',
+              'League standings are shown on the weekly summary screen.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -295,8 +299,8 @@ class _NoPredictionMsg extends StatelessWidget {
     ),
     child: Text(
       sprintMode
-          ? 'Bu sprint için tahmin yapmamışsın.'
-          : 'Bu yarış için tahmin yapmamışsın.',
+          ? 'You did not make a prediction for this sprint.'
+          : 'You did not make a prediction for this race.',
       textAlign: TextAlign.center,
       style: const TextStyle(color: Color(0x99FFFFFF)),
     ),
@@ -316,9 +320,10 @@ class _SprintScoreBreakdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final items = result == null
         ? const <_BreakdownData>[]
-        : _build(prediction, result!, drivers);
+        : _build(context, prediction, result!, drivers);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -328,10 +333,10 @@ class _SprintScoreBreakdown extends StatelessWidget {
       child: Column(
         children: [
           if (items.isEmpty)
-            const Text(
-              'Puan kırılımı resmi sprint sonucu geldikten sonra gösterilecek.',
+            Text(
+              l.sprintPointsBreakdownPending,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0x99FFFFFF)),
+              style: const TextStyle(color: Color(0x99FFFFFF)),
             )
           else
             for (var i = 0; i < items.length; i++) ...[
@@ -354,12 +359,12 @@ class _SprintScoreBreakdown extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'TOPLAM',
+              Text(
+                l.total,
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
               ),
               Text(
-                '${prediction.score ?? 0} PUAN',
+                '${prediction.score ?? 0} PTS',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
@@ -374,10 +379,12 @@ class _SprintScoreBreakdown extends StatelessWidget {
   }
 
   List<_BreakdownData> _build(
+    BuildContext context,
     SprintPrediction p,
     Map<String, dynamic> r,
     List<Driver> drivers,
   ) {
+    final l = AppLocalizations.of(context);
     String code(String? id) {
       if (id == null) return '-';
       for (final d in drivers) {
@@ -417,29 +424,29 @@ class _SprintScoreBreakdown extends StatelessWidget {
 
     return [
       _BreakdownData(
-        label: 'Sprint kazanan: ${code(p.winnerDriverId)}',
+        label: l.sprintWinnerResult(code(p.winnerDriverId)),
         points: p.winnerDriverId == r['p1'] ? 8 : 0,
         status: p.winnerDriverId == r['p1'] ? 'correct' : 'wrong',
         note: p.winnerDriverId == r['p1']
             ? null
-            : '(Doğru: ${code(r['p1'] as String?)})',
+            : '(Correct: ${code(r['p1'] as String?)})',
       ),
       _BreakdownData(
-        label: 'Sprint podyum: ${podiumNames.map(code).join(' ')}',
+        label: l.sprintPodiumResult(podiumNames.map(code).join(' ')),
         points: sprintPodiumPoints,
         status: podiumExact
             ? 'correct'
             : (podiumHits > 0 ? 'partial' : 'wrong'),
         note:
-            '$podiumHits/3 isim · $exactPodiumHits/3 sıra${podiumExact ? ' · tam bonus' : ''}',
+            '$podiumHits/3 names · $exactPodiumHits/3 position${podiumExact ? ' · perfect bonus' : ''}',
       ),
       _BreakdownData(
-        label: 'Takım: ${teamName(p.topTeamId)}',
+        label: 'Team: ${teamName(p.topTeamId)}',
         points: p.topTeamId == r['top_team_id'] ? 8 : 0,
         status: p.topTeamId == r['top_team_id'] ? 'correct' : 'wrong',
         note: p.topTeamId == r['top_team_id']
             ? null
-            : '(Doğru: ${teamName(r['top_team_id'] as String?)})',
+            : '(Correct: ${teamName(r['top_team_id'] as String?)})',
       ),
       _BreakdownData(
         label: 'Sprint pole: ${code(p.poleDriverId)}',
@@ -447,17 +454,17 @@ class _SprintScoreBreakdown extends StatelessWidget {
         status: p.poleDriverId == r['pole'] ? 'correct' : 'wrong',
         note: p.poleDriverId == r['pole']
             ? null
-            : '(Doğru: ${code(r['pole'] as String?)})',
+            : '(Correct: ${code(r['pole'] as String?)})',
       ),
       _BreakdownData(
         label: 'Sprint DNF: ${p.dnfCount ?? '-'}',
         points: dnfDiff == 0 ? 4 : (dnfDiff == 1 ? 2 : 0),
         status: dnfDiff == 0 ? 'correct' : (dnfDiff == 1 ? 'partial' : 'wrong'),
-        note: actualDnf == null ? null : '(Gerçek: $actualDnf)',
+        note: actualDnf == null ? null : '(Actual: $actualDnf)',
       ),
       _BreakdownData(
         label:
-            'Güvenlik aracı: ${p.safetyCar == null ? '-' : (p.safetyCar! ? 'Evet' : 'Hayır')}',
+            'Safety car: ${p.safetyCar == null ? '-' : (p.safetyCar! ? 'Yes' : 'No')}',
         points:
             p.safetyCar != null &&
                 actualSafetyCar != null &&
@@ -469,7 +476,7 @@ class _SprintScoreBreakdown extends StatelessWidget {
             : (p.safetyCar == actualSafetyCar ? 'correct' : 'wrong'),
         note: actualSafetyCar == null
             ? null
-            : '(Gerçek: ${actualSafetyCar ? 'Evet' : 'Hayır'})',
+            : '(Actual: ${actualSafetyCar ? 'Yes' : 'No'})',
       ),
     ];
   }
@@ -521,9 +528,10 @@ class _ScoreBreakdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final items = result == null
         ? const <_BreakdownData>[]
-        : _buildBreakdownItems(prediction, result!, drivers);
+        : _buildBreakdownItems(context, prediction, result!, drivers);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -534,10 +542,10 @@ class _ScoreBreakdown extends StatelessWidget {
       child: Column(
         children: [
           if (items.isEmpty)
-            const Text(
-              'Puan kırılımı resmi sonuç geldikten sonra gösterilecek.',
+            Text(
+              l.pointsBreakdownPending,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0x99FFFFFF)),
+              style: const TextStyle(color: Color(0x99FFFFFF)),
             )
           else
             for (var i = 0; i < items.length; i++) ...[
@@ -560,12 +568,12 @@ class _ScoreBreakdown extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'TOPLAM',
+              Text(
+                l.total,
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
               ),
               Text(
-                '${prediction.score ?? 0} PUAN',
+                '${prediction.score ?? 0} PTS',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
@@ -580,10 +588,12 @@ class _ScoreBreakdown extends StatelessWidget {
   }
 
   List<_BreakdownData> _buildBreakdownItems(
+    BuildContext context,
     Prediction prediction,
     Map<String, dynamic> result,
     List<Driver> drivers,
   ) {
+    final l = AppLocalizations.of(context);
     String code(String? id) {
       if (id == null) return '-';
       for (final d in drivers) {
@@ -623,31 +633,31 @@ class _ScoreBreakdown extends StatelessWidget {
 
     return [
       _BreakdownData(
-        label: 'Kazanan: ${code(prediction.winnerDriverId)}',
+        label: l.winnerBreakdown(code(prediction.winnerDriverId)),
         points: prediction.winnerDriverId == result['p1'] ? 10 : 0,
         status: prediction.winnerDriverId == result['p1'] ? 'correct' : 'wrong',
         note: prediction.winnerDriverId == result['p1']
             ? null
-            : '(Doğru: ${code(result['p1'] as String?)})',
+            : '(Correct: ${code(result['p1'] as String?)})',
       ),
       _BreakdownData(
-        label: 'Podyum: ${podiumNames.map(code).join(' ')}',
+        label: l.podiumBreakdown(podiumNames.map(code).join(' ')),
         points: podiumPoints,
         status: podiumExact
             ? 'correct'
             : (podiumHits > 0 ? 'partial' : 'wrong'),
         note:
-            '$podiumHits/3 isim · $exactPodiumHits/3 sıra${podiumExact ? ' · tam bonus' : ''}',
+            '$podiumHits/3 names · $exactPodiumHits/3 position${podiumExact ? ' · perfect bonus' : ''}',
       ),
       _BreakdownData(
-        label: 'Takım: ${teamName(prediction.topTeamId)}',
+        label: 'Team: ${teamName(prediction.topTeamId)}',
         points: prediction.topTeamId == result['top_team_id'] ? 10 : 0,
         status: prediction.topTeamId == result['top_team_id']
             ? 'correct'
             : 'wrong',
         note: prediction.topTeamId == result['top_team_id']
             ? null
-            : '(Doğru: ${teamName(result['top_team_id'] as String?)})',
+            : '(Correct: ${teamName(result['top_team_id'] as String?)})',
       ),
       _BreakdownData(
         label: 'Pole: ${code(prediction.poleDriverId)}',
@@ -655,17 +665,17 @@ class _ScoreBreakdown extends StatelessWidget {
         status: prediction.poleDriverId == result['pole'] ? 'correct' : 'wrong',
         note: prediction.poleDriverId == result['pole']
             ? null
-            : '(Doğru: ${code(result['pole'] as String?)})',
+            : '(Correct: ${code(result['pole'] as String?)})',
       ),
       _BreakdownData(
         label: 'DNF: ${prediction.dnfCount ?? '-'}',
         points: dnfDiff == 0 ? 6 : (dnfDiff == 1 ? 3 : 0),
         status: dnfDiff == 0 ? 'correct' : (dnfDiff == 1 ? 'partial' : 'wrong'),
-        note: actualDnf == null ? null : '(Gerçek: $actualDnf)',
+        note: actualDnf == null ? null : '(Actual: $actualDnf)',
       ),
       _BreakdownData(
         label:
-            'Güvenlik aracı: ${prediction.safetyCar == null ? '-' : (prediction.safetyCar! ? 'Evet' : 'Hayır')}',
+            'Safety car: ${prediction.safetyCar == null ? '-' : (prediction.safetyCar! ? 'Yes' : 'No')}',
         points:
             prediction.safetyCar != null &&
                 actualSafetyCar != null &&
@@ -677,10 +687,10 @@ class _ScoreBreakdown extends StatelessWidget {
             : (prediction.safetyCar == actualSafetyCar ? 'correct' : 'wrong'),
         note: actualSafetyCar == null
             ? null
-            : '(Gerçek: ${actualSafetyCar ? 'Evet' : 'Hayır'})',
+            : '(Actual: ${actualSafetyCar ? 'Yes' : 'No'})',
       ),
       _BreakdownData(
-        label: 'Joker: ${prediction.jokerOption ?? '-'}',
+        label: l.jokerResult(prediction.jokerOption ?? '-'),
         points:
             prediction.jokerOption != null &&
                 prediction.jokerOption == result['joker_correct']
@@ -693,7 +703,7 @@ class _ScoreBreakdown extends StatelessWidget {
                   : 'wrong'),
         note: result['joker_correct'] == null
             ? null
-            : '(Doğru: ${result['joker_correct']})',
+            : '(Correct: ${result['joker_correct']})',
       ),
     ];
   }
@@ -809,6 +819,7 @@ class _ActualResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final p1 = byId(result['p1'] as String?);
     final p2 = byId(result['p2'] as String?);
     final p3 = byId(result['p3'] as String?);
@@ -824,7 +835,7 @@ class _ActualResults extends StatelessWidget {
       child: Column(
         children: [
           _ResultRow(
-            label: sprintMode ? 'Sprint kazanan:' : 'Kazanan:',
+            label: sprintMode ? l.sprintWinnerResultLabel : l.winnerResultLabel,
             value: p1?.code ?? '—',
           ),
           const Padding(
@@ -834,7 +845,7 @@ class _ActualResults extends StatelessWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              sprintMode ? 'Sprint podyum:' : 'Podyum:',
+              sprintMode ? l.sprintPodiumResultLabel : l.podiumResultLabel,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.white.withValues(alpha: 0.6),
@@ -860,21 +871,21 @@ class _ActualResults extends StatelessWidget {
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Divider(color: Color(0xFF15151E), height: 1),
           ),
-          _ResultRow(label: 'En çok puan alan takım:', value: topTeamName),
+          _ResultRow(label: 'Top scoring team:', value: topTeamName),
           const SizedBox(height: 6),
           _ResultRow(
-            label: sprintMode ? 'Sprint pole:' : 'Pole:',
+            label: sprintMode ? l.sprintPoleResultLabel : l.poleResultLabel,
             value: byId(result['pole'] as String?)?.code ?? '—',
           ),
           const SizedBox(height: 6),
           _ResultRow(
-            label: 'DNF sayısı:',
+            label: 'DNF count:',
             value: '${result['dnf_count'] ?? '—'}',
           ),
           const SizedBox(height: 6),
           _ResultRow(
-            label: 'Güvenlik aracı:',
-            value: safetyCar == null ? '—' : (safetyCar ? 'Evet' : 'Hayır'),
+            label: 'Safety car:',
+            value: safetyCar == null ? '—' : (safetyCar ? 'Yes' : 'No'),
           ),
         ],
       ),
@@ -994,7 +1005,7 @@ class _CancelledBanner extends StatelessWidget {
               const Icon(Icons.block, color: Color(0xFFE10600)),
               const SizedBox(width: 8),
               const Text(
-                'YARIŞ İPTAL EDİLDİ',
+                'RACE CANCELED',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w900,
@@ -1008,7 +1019,7 @@ class _CancelledBanner extends StatelessWidget {
           Text(
             note?.isNotEmpty == true
                 ? note!
-                : 'Bu yarış iptal edildi. Tahminler puanlanmayacak.',
+                : 'This race was canceled. Predictions will not be scored.',
             style: TextStyle(
               fontSize: 14,
               height: 1.4,
@@ -1050,8 +1061,8 @@ class _FullClassification extends StatelessWidget {
         return ap.compareTo(bp);
       });
 
-    // OpenF1 bazen sınıflandırılmış sürücüye pozisyon vermez.
-    // status='finished' ama position=null olanlara grup içi sıraya göre
+    // OpenF1 bazen sınıflandırılmış sürücmembers pozisyon vermez.
+    // status='finished' ama position=null olanlara grup içi positionya göre
     // ardışık numara veriyoruz (mevcut maksimum + 1, ...).
     final maxFinishedPos = sorted
         .where((r) => r.status == 'finished' && r.position != null)
@@ -1196,10 +1207,13 @@ class _NoResultYet extends StatelessWidget {
         children: [
           Icon(Icons.hourglass_top, size: 32, color: Color(0x8AFFFFFF)),
           SizedBox(height: 8),
-          Text('Resmi sonuç henüz gelmedi', textAlign: TextAlign.center),
+          Text(
+            'Official result has not arrived yet',
+            textAlign: TextAlign.center,
+          ),
           SizedBox(height: 4),
           Text(
-            'Yarış bitince OpenF1\'den otomatik çekilecek.',
+            'It will be pulled automatically from OpenF1 when the race ends.',
             style: TextStyle(color: Color(0x99FFFFFF), fontSize: 12),
             textAlign: TextAlign.center,
           ),

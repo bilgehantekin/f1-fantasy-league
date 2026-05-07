@@ -7,6 +7,7 @@ import '../../core/legal_links.dart';
 import '../../core/navigation.dart';
 import '../../core/supabase.dart';
 import '../../core/theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets/app_state.dart';
 import '../league/league_controller.dart';
@@ -21,6 +22,7 @@ class ProfileScreen extends ConsumerWidget {
     final statsAsync = ref.watch(profileStatsProvider);
     final myBadgesAsync = ref.watch(myBadgesProvider);
     final allBadgesAsync = ref.watch(allBadgesProvider);
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.carbon,
@@ -30,11 +32,11 @@ class ProfileScreen extends ConsumerWidget {
         toolbarHeight: 56,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 20),
-          tooltip: 'Geri',
+          tooltip: l.back,
           onPressed: () => safeBack(context),
         ),
-        title: const Text(
-          'PROFİL',
+        title: Text(
+          l.profile,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w900,
@@ -44,7 +46,7 @@ class ProfileScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.settings, size: 20),
-            tooltip: 'Bildirim ayarları',
+            tooltip: 'Notification settings',
             onPressed: () => context.push('/settings/notifications'),
           ),
         ],
@@ -54,7 +56,7 @@ class ProfileScreen extends ConsumerWidget {
         ),
       ),
       body: profileAsync.when(
-        loading: () => const AppLoadingState(label: 'Profil yükleniyor'),
+        loading: () => const AppLoadingState(label: 'Profile loading'),
         error: (e, _) => AppErrorState(
           message: friendlyError(e),
           onRetry: () {
@@ -67,8 +69,8 @@ class ProfileScreen extends ConsumerWidget {
           if (p == null) {
             return const AppEmptyState(
               icon: Icons.login_outlined,
-              title: 'Giriş gerekli',
-              message: 'Profilini görmek için hesabına giriş yapmalısın.',
+              title: 'Sign-in required',
+              message: 'You need to sign in to view your profile.',
             );
           }
           return ListView(
@@ -90,8 +92,7 @@ class ProfileScreen extends ConsumerWidget {
                     _HeroProfile(profile: p),
                     statsAsync.when(
                       loading: () => const SizedBox.shrink(),
-                      error: (e, _) =>
-                          Text('İstatistik hatası: ${friendlyError(e)}'),
+                      error: (e, _) => Text('Stats error: ${friendlyError(e)}'),
                       data: (s) {
                         final leaguesAsync = ref.watch(myLeaguesProvider);
                         final bestRank = leaguesAsync.maybeWhen(
@@ -124,14 +125,14 @@ class ProfileScreen extends ConsumerWidget {
                 },
               ),
               const SizedBox(height: 24),
-              _SectionTitle(label: 'SEZON İSTATİSTİKLERİ'),
+              _SectionTitle(label: 'SEASON STATS'),
               statsAsync.when(
                 loading: () => const _Loading(),
                 error: (e, _) => _Error(e),
                 data: (s) => _SeasonStats(stats: s),
               ),
               const SizedBox(height: 24),
-              _SectionTitle(label: 'LİGLER'),
+              _SectionTitle(label: 'LEAGUES'),
               const _LeaguesList(),
               const SizedBox(height: 24),
               _SectionTitle(label: 'HESAP VE YASAL'),
@@ -141,7 +142,7 @@ class ProfileScreen extends ConsumerWidget {
                 child: TextButton(
                   onPressed: () => supabase.auth.signOut(),
                   child: const Text(
-                    'Çıkış Yap',
+                    'Sign Out',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -174,25 +175,25 @@ class _AccountLifecyclePanel extends StatelessWidget {
         children: [
           _AccountRow(
             icon: Icons.info_outline,
-            title: 'Hakkında',
+            title: 'About',
             onTap: () => _showAboutDialog(context),
           ),
           const Divider(height: 1, color: Color(0xFF1F1F2E)),
           _AccountRow(
             icon: Icons.privacy_tip_outlined,
-            title: 'Gizlilik Politikası',
+            title: 'Privacy Policy',
             onTap: () => _openLegal(context, LegalLinks.privacy),
           ),
           const Divider(height: 1, color: Color(0xFF1F1F2E)),
           _AccountRow(
             icon: Icons.description_outlined,
-            title: 'Kullanım Şartları',
+            title: 'Terms of Use',
             onTap: () => _openLegal(context, LegalLinks.terms),
           ),
           const Divider(height: 1, color: Color(0xFF1F1F2E)),
           _AccountRow(
             icon: Icons.delete_outline,
-            title: 'Hesabı silme talebi oluştur',
+            title: 'Request account deletion',
             destructive: true,
             onTap: () => _confirmDeletionRequest(context),
           ),
@@ -242,25 +243,17 @@ Future<void> _showAboutDialog(BuildContext context) async {
     context: context,
     builder: (dialogContext) => AlertDialog(
       backgroundColor: const Color(0xFF1A1A26),
-      title: const Text('GridCall hakkında'),
-      content: const SingleChildScrollView(
+      title: Text(AppLocalizations.of(context).aboutGridCall),
+      content: SingleChildScrollView(
         child: Text(
-          'GridCall, Formula 1\'i takip eden hayranlar için bağımsız bir tahmin '
-          'uygulamasıdır.\n\n'
-          'GridCall; Formula 1, FIA, Formula One Management, takımlar, sürücüler '
-          'veya sponsorlarla bağlantılı, onlar tarafından desteklenen ya da onaylanan '
-          'bir uygulama değildir. F1 ile ilgili tüm marka, logo ve isimler ilgili '
-          'sahiplerinin tescilli markalarıdır ve burada yalnızca bilgilendirme '
-          'amacıyla kullanılır.\n\n'
-          'Yarış zamanlama ve sonuç verileri, kamuya açık üçüncü taraf bir kaynak '
-          'olan OpenF1 üzerinden alınır. OpenF1 da resmi bir kaynak değildir.',
-          style: TextStyle(fontSize: 13, height: 1.45),
+          AppLocalizations.of(context).aboutGridCallBody,
+          style: const TextStyle(fontSize: 13, height: 1.45),
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(dialogContext),
-          child: const Text('Tamam'),
+          child: Text(AppLocalizations.of(context).ok),
         ),
       ],
     ),
@@ -283,18 +276,14 @@ Future<void> _confirmDeletionRequest(BuildContext context) async {
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: const Text('Hesabını sil'),
+      title: const Text('Delete your account'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Talep oluşturduğun andan itibaren 30 gün içinde hesabın ve sana ait '
-            'tüm tahminler, lig üyelikleri, rozetler ve profil bilgileri kalıcı '
-            'olarak silinecek. Bu süre içinde fikrini değiştirirsen '
-            'bilgehan.2002@gmail.com adresine yazarak iptal talep edebilirsin.\n\n'
-            'Talep oluşturulduktan sonra oturumun kapatılır ve hesabın diğer '
-            'kullanıcılara görünmez olur.',
+            'Your account and all of your predictions, league memberships, badges, and profile information will be permanently deleted within 30 days after you create this request. If you change your mind during this period, you can request cancellation by emailing bilgehan.2002@gmail.com.\n\n'
+            'After the request is created, you will be signed out and your account will no longer be visible to other users.',
             style: TextStyle(height: 1.4),
           ),
           const SizedBox(height: 12),
@@ -312,14 +301,14 @@ Future<void> _confirmDeletionRequest(BuildContext context) async {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(dialogContext, false),
-          child: const Text('Vazgeç'),
+          child: const Text('Cancel'),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(dialogContext, true),
           style: FilledButton.styleFrom(
             backgroundColor: const Color(0xFFFF2D55),
           ),
-          child: const Text('Talep Oluştur'),
+          child: const Text('Create Request'),
         ),
       ],
     ),
@@ -335,11 +324,11 @@ Future<void> _confirmDeletionRequest(BuildContext context) async {
     reasonCtrl.dispose();
     if (!context.mounted) return;
     final scheduledMessage = result.scheduledFor != null
-        ? 'Hesabın ${_formatDate(result.scheduledFor!)} tarihinde silinecek.'
-        : 'Hesap silme talebin alındı.';
+        ? 'Your account will be deleted on ${_formatDate(result.scheduledFor!)}.'
+        : 'Your account deletion request has been received.';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$scheduledMessage Çıkış yapılıyor…'),
+        content: Text('$scheduledMessage Signing out...'),
         backgroundColor: AppColors.lockGreen,
         duration: const Duration(seconds: 3),
       ),
@@ -352,7 +341,7 @@ Future<void> _confirmDeletionRequest(BuildContext context) async {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Talep oluşturulamadı: ${friendlyError(e)}'),
+        content: Text('Request could not be created: ${friendlyError(e)}'),
         backgroundColor: AppColors.liveRed,
       ),
     );
@@ -438,14 +427,14 @@ class _StatsCards extends StatelessWidget {
         children: [
           Expanded(
             child: _StatCard(
-              label: 'Toplam Puan',
+              label: 'Total Points',
               value: '${stats.totalScore}',
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: _StatCard(
-              label: 'En İyi Sıra',
+              label: 'Best Rank',
               value: bestRank == null ? '-' : '#${bestRank!.rank}',
               subtitle: bestRank?.leagueName,
             ),
@@ -453,7 +442,7 @@ class _StatsCards extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: _StatCard(
-              label: 'Haftalık Rekor',
+              label: 'Weekly Record',
               value: '${stats.bestScore}',
             ),
           ),
@@ -581,9 +570,9 @@ class _BadgesCarouselState extends State<_BadgesCarousel> {
     if (badges.isEmpty) {
       return const AppEmptyState(
         icon: Icons.emoji_events_outlined,
-        title: 'Henüz rozet yok',
+        title: 'No badges yet',
         message:
-            'Yarış sonuçları geldikçe başarılarına göre rozet kazanacaksın.',
+            'You will earn badges based on your achievements as race results arrive.',
       );
     }
 
@@ -734,12 +723,12 @@ class _BadgeDisplay {
 
   factory _BadgeDisplay.fromBadge(AppBadge badge) {
     const namesByBaseCode = {
-      'bullseye_podium': 'Podyum Tam İsabet',
-      'pole_caller': 'Pole Avcısı',
+      'bullseye_podium': 'Perfect Podium',
+      'pole_caller': 'Pole Hunter',
       'dnf_oracle': 'DNF Kahini',
-      'weekly_winner': 'Hafta Şampiyonu',
-      'perfect_week': 'Mükemmel Hafta',
-      'three_in_row': 'Üçlü Seri',
+      'weekly_winner': 'Weekly Champion',
+      'perfect_week': 'Perfect Week',
+      'three_in_row': 'Three in a Row',
     };
 
     final isSprint = badge.code.startsWith('sprint_');
@@ -752,7 +741,7 @@ class _BadgeDisplay {
 
     return _BadgeDisplay(
       name: sharedName,
-      category: isSprint ? 'Sprint' : 'Ana Yarış',
+      category: isSprint ? 'Sprint' : 'Main Race',
     );
   }
 }
@@ -769,22 +758,34 @@ class _SeasonStats extends StatelessWidget {
         ? '${stats.bestEventName} — Sprint'
         : stats.bestEventName!;
     final rows = [
-      ('Ana yarış ortalama puanı', stats.mainAverageScore.toStringAsFixed(1)),
       (
-        'Sprint yarışı ortalama puanı',
+        AppLocalizations.of(context).mainRaceAverageScore,
+        stats.mainAverageScore.toStringAsFixed(1),
+      ),
+      (
+        AppLocalizations.of(context).sprintRaceAverageScore,
         stats.sprintAverageScore.toStringAsFixed(1),
       ),
-      ('Ortalama hafta puanı', stats.weeklyAverageScore.toStringAsFixed(1)),
-      ('Katıldığı hafta', '${stats.weeksParticipated}'),
-      ('En iyi GP', bestEvent),
-      ('Aktif seri', '${stats.activeStreak} hafta'),
       (
-        'En iyi lig',
+        AppLocalizations.of(context).averageWeeklyScore,
+        stats.weeklyAverageScore.toStringAsFixed(1),
+      ),
+      (
+        AppLocalizations.of(context).weeksParticipated,
+        '${stats.weeksParticipated}',
+      ),
+      (AppLocalizations.of(context).bestGp, bestEvent),
+      (
+        AppLocalizations.of(context).activeStreak,
+        AppLocalizations.of(context).weeksCount(stats.activeStreak),
+      ),
+      (
+        AppLocalizations.of(context).bestLeague,
         stats.bestLeagueName == null
             ? '-'
             : '${stats.bestLeagueName} (${stats.bestLeagueScore})',
       ),
-      ('Rozet', '${stats.badgeCount}'),
+      (AppLocalizations.of(context).badge, '${stats.badgeCount}'),
     ];
 
     return Container(
@@ -797,7 +798,7 @@ class _SeasonStats extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Sezon boyunca yaptığın tahminlerin ortalama performansı, katılım düzenin, en iyi yarış haftan ve liglerdeki durumun burada özetlenir.',
+            'Your average prediction performance, participation rhythm, best race week, and league status are summarized here for the season.',
             style: TextStyle(
               fontSize: 12,
               color: Colors.white.withValues(alpha: 0.55),
@@ -844,7 +845,7 @@ class _SeasonStats extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'LİG BAZLI PERFORMANS',
+                'LEAGUE PERFORMANCE',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
@@ -900,7 +901,7 @@ class _LeaguePerformanceRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Yarış ${league.mainScore} · Sprint ${league.sprintScore}',
+                  'Race ${league.mainScore} · Sprint ${league.sprintScore}',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.55),
@@ -939,7 +940,7 @@ class _LeaguesList extends StatelessWidget {
               return const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  'Henüz bir lige katılmadın.',
+                  'You have not joined a league yet.',
                   style: TextStyle(color: Color(0x99FFFFFF)),
                 ),
               );
@@ -973,7 +974,7 @@ class _LeaguesList extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    'Davet kodu: ${league.inviteCode}',
+                                    'Invite code: ${league.inviteCode}',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.white.withValues(
@@ -983,7 +984,7 @@ class _LeaguesList extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${league.memberCount ?? 0} üye',
+                                    '${league.memberCount ?? 0} members',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.white.withValues(
@@ -1006,7 +1007,7 @@ class _LeaguesList extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  'SIRALAMA',
+                                  AppLocalizations.of(context).standing,
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
@@ -1034,7 +1035,7 @@ class _Loading extends StatelessWidget {
   const _Loading();
   @override
   Widget build(BuildContext context) =>
-      const AppLoadingState(label: 'Bölüm yükleniyor');
+      const AppLoadingState(label: 'Section loading');
 }
 
 class _Error extends StatelessWidget {

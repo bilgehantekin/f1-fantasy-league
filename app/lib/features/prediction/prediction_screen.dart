@@ -8,6 +8,7 @@ import '../../core/error_messages.dart';
 import '../../core/navigation.dart';
 import '../../core/notifications.dart';
 import '../../core/theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../shared/country_flags.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets/app_state.dart';
@@ -114,14 +115,15 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
         );
       }
       if (!mounted) return;
+      final l = AppLocalizations.of(context);
       _showSaveSuccess(
         _mode == _PredictionMode.main
-            ? 'Ana yarış tahminin kaydedildi'
-            : 'Sprint tahminin kaydedildi',
+            ? l.predictionSaved
+            : l.sprintPredictionSaved,
       );
     } catch (e) {
       if (!mounted) return;
-      _showSaveError('Hata: ${friendlyError(e)}');
+      _showSaveError('Error: ${friendlyError(e)}');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -192,22 +194,20 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(
-          isSprint ? 'Sprint tahminini temizle?' : 'Tahminini temizle?',
-        ),
-        content: Text(
           isSprint
-              ? 'Bu sprint için yaptığın tüm tahminler silinecek. Bu işlem geri alınamaz.'
-              : 'Bu yarış için yaptığın tüm tahminler silinecek. Bu işlem geri alınamaz.',
+              ? AppLocalizations.of(context).clearSprintPredictionQuestion
+              : AppLocalizations.of(context).clearPredictionQuestion,
         ),
+        content: Text(AppLocalizations.of(context).clearPredictionBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('İptal'),
+            child: Text(AppLocalizations.of(context).cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.liveRed),
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Temizle'),
+            child: Text(AppLocalizations.of(context).clear),
           ),
         ],
       ),
@@ -244,11 +244,13 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
       ref.invalidate(leaguePredictionStatusProvider(leagueId));
       if (!mounted) return;
       _showInfo(
-        isSprint ? 'Sprint tahminin temizlendi' : 'Yarış tahminin temizlendi',
+        isSprint
+            ? AppLocalizations.of(context).sprintPredictionCleared
+            : AppLocalizations.of(context).predictionCleared,
       );
     } catch (e) {
       if (!mounted) return;
-      _showSaveError('Hata: ${friendlyError(e)}');
+      _showSaveError('Error: ${friendlyError(e)}');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -263,7 +265,9 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
     if (targets.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kopyalanacak başka ligin yok.')),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).noOtherLeagueToCopy),
+        ),
       );
       return;
     }
@@ -274,7 +278,7 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Diğer liglere kopyala'),
+          title: Text(AppLocalizations.of(context).copyToOtherLeagues),
           content: SizedBox(
             width: 420,
             child: Column(
@@ -301,13 +305,13 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('İptal'),
+              child: Text(AppLocalizations.of(context).cancel),
             ),
             FilledButton(
               onPressed: selected.isEmpty
                   ? null
                   : () => Navigator.pop(dialogContext, true),
-              child: const Text('Kopyala'),
+              child: Text(AppLocalizations.of(context).copy),
             ),
           ],
         ),
@@ -329,10 +333,10 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
         ref.invalidate(leaguePredictionStatusProvider(leagueId));
       }
       if (!mounted) return;
-      _showSaveSuccess('Tahmin seçtiğin liglere kopyalandı');
+      _showSaveSuccess('Prediction copied to selected leagues');
     } catch (e) {
       if (!mounted) return;
-      _showSaveError('Kopyalama hatası: ${friendlyError(e)}');
+      _showSaveError('Copy error: ${friendlyError(e)}');
     } finally {
       if (mounted) setState(() => _copying = false);
     }
@@ -358,13 +362,13 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
     return Scaffold(
       backgroundColor: AppColors.carbon,
       body: raceAsync.when(
-        loading: () => const AppLoadingState(label: 'Yarış yükleniyor'),
+        loading: () => const AppLoadingState(label: 'Race loading'),
         error: (e, _) => AppErrorState(
           message: friendlyError(e),
           onRetry: () => ref.invalidate(raceProvider(widget.raceId)),
         ),
         data: (race) => driversAsync.when(
-          loading: () => const AppLoadingState(label: 'Sürücüler yükleniyor'),
+          loading: () => const AppLoadingState(label: 'Drivers loading'),
           error: (e, _) => AppErrorState(
             message: friendlyError(e),
             onRetry: () => ref.invalidate(driversProvider),
@@ -375,7 +379,7 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
             }
             return predictionAsync.when(
               loading: () =>
-                  const AppLoadingState(label: 'Tahminin yükleniyor'),
+                  const AppLoadingState(label: 'Your prediction is loading'),
               error: (e, _) => AppErrorState(
                 message: friendlyError(e),
                 onRetry: () =>
@@ -491,7 +495,7 @@ class _PredictionBody extends StatelessWidget {
       byId[id] = _TeamChoice(
         id: id,
         code: d.teamCode ?? d.teamName ?? 'TEAM',
-        name: d.teamName ?? d.teamCode ?? 'Takım',
+        name: d.teamName ?? d.teamCode ?? 'Team',
         color: d.teamColor,
       );
     }
@@ -533,16 +537,16 @@ class _PredictionBody extends StatelessWidget {
   List<Widget> _mainSections(BuildContext context) => [
     _Section(
       badge: '01',
-      label: 'KAZANAN',
+      label: AppLocalizations.of(context).winner,
       points: '+10',
       child: DriverChipSlot(
         driver: _byId(draft.winnerDriverId),
-        hint: 'Yarışı kim kazanır?',
+        hint: AppLocalizations.of(context).winnerHint,
         enabled: !locked,
         onTap: () async {
           final d = await _pick(
             context,
-            'Kazanan',
+            AppLocalizations.of(context).winner,
             _byId(draft.winnerDriverId),
           );
           if (d != null) onChanged(draft.copyWith(winnerDriverId: d.id));
@@ -551,8 +555,8 @@ class _PredictionBody extends StatelessWidget {
     ),
     _Section(
       badge: '02',
-      label: 'PODYUM',
-      points: 'isim +5 / sıra +2 / tam +3',
+      label: AppLocalizations.of(context).podium,
+      points: 'names +5 / position +2 / perfect +3',
       child: _PodiumPicker(
         drivers: drivers,
         draft: draft,
@@ -562,11 +566,11 @@ class _PredictionBody extends StatelessWidget {
     ),
     _Section(
       badge: '03',
-      label: 'EN ÇOK PUAN ALAN TAKIM',
+      label: AppLocalizations.of(context).topScoringTeam,
       points: '+10',
       child: _TeamChipSlot(
         team: _teamById(draft.topTeamId),
-        hint: 'En çok puanı hangi takım toplar?',
+        hint: AppLocalizations.of(context).topScoringTeamHint,
         enabled: !locked,
         onTap: () async {
           final team = await _pickTeam(context);
@@ -576,16 +580,16 @@ class _PredictionBody extends StatelessWidget {
     ),
     _Section(
       badge: '04',
-      label: 'POLE POZİSYONU',
+      label: AppLocalizations.of(context).polePosition,
       points: '+8',
       child: DriverChipSlot(
         driver: _byId(draft.poleDriverId),
-        hint: 'Pole pozisyonunu kim alır?',
+        hint: AppLocalizations.of(context).polePositionHint,
         enabled: !locked,
         onTap: () async {
           final d = await _pick(
             context,
-            'Pole pozisyon',
+            AppLocalizations.of(context).polePosition,
             _byId(draft.poleDriverId),
           );
           if (d != null) onChanged(draft.copyWith(poleDriverId: d.id));
@@ -594,13 +598,13 @@ class _PredictionBody extends StatelessWidget {
     ),
     _Section(
       badge: '05',
-      label: 'DNF SAYISI',
-      points: 'tam +6 / ±1 +3',
+      label: AppLocalizations.of(context).dnfCount,
+      points: 'exact +6 / +/-1 +3',
       child: _DnfSlider(draft: draft, locked: locked, onChanged: onChanged),
     ),
     _Section(
       badge: '06',
-      label: 'GÜVENLİK ARACI ÇIKAR MI?',
+      label: AppLocalizations.of(context).safetyCarQuestion,
       points: '+3',
       child: _SafetyCarPicker(
         value: draft.safetyCar,
@@ -627,16 +631,16 @@ class _PredictionBody extends StatelessWidget {
     return [
       _Section(
         badge: '01',
-        label: 'SPRINT KAZANANI',
+        label: AppLocalizations.of(context).sprintWinner,
         points: '+8',
         child: DriverChipSlot(
           driver: _byId(s.winnerDriverId),
-          hint: 'Sprintı kim kazanır?',
+          hint: AppLocalizations.of(context).sprintWinnerHint,
           enabled: !locked,
           onTap: () async {
             final d = await _pick(
               context,
-              'Sprint kazanan',
+              AppLocalizations.of(context).sprintWinner,
               _byId(s.winnerDriverId),
             );
             if (d != null) onSprintChanged(s.copyWith(winnerDriverId: d.id));
@@ -645,8 +649,8 @@ class _PredictionBody extends StatelessWidget {
       ),
       _Section(
         badge: '02',
-        label: 'SPRINT PODYUM',
-        points: 'isim +4 / sıra +1 / tam +2',
+        label: AppLocalizations.of(context).sprintPodium,
+        points: 'names +4 / position +1 / perfect +2',
         child: _SprintPodiumPicker(
           drivers: drivers,
           draft: s,
@@ -656,11 +660,11 @@ class _PredictionBody extends StatelessWidget {
       ),
       _Section(
         badge: '03',
-        label: 'EN ÇOK PUAN ALAN TAKIM',
+        label: AppLocalizations.of(context).topScoringTeam,
         points: '+8',
         child: _TeamChipSlot(
           team: _teamById(s.topTeamId),
-          hint: 'Sprintte en çok puanı hangi takım toplar?',
+          hint: AppLocalizations.of(context).sprintTopScoringTeamHint,
           enabled: !locked,
           onTap: () async {
             final team = await _pickTeam(context);
@@ -670,11 +674,11 @@ class _PredictionBody extends StatelessWidget {
       ),
       _Section(
         badge: '04',
-        label: 'SPRINT POLE',
+        label: AppLocalizations.of(context).sprintPole,
         points: '+6',
         child: DriverChipSlot(
           driver: _byId(s.poleDriverId),
-          hint: 'Sprint pole kimde?',
+          hint: AppLocalizations.of(context).sprintPoleHint,
           enabled: !locked,
           onTap: () async {
             final d = await _pick(
@@ -688,8 +692,8 @@ class _PredictionBody extends StatelessWidget {
       ),
       _Section(
         badge: '05',
-        label: 'SPRINT DNF SAYISI',
-        points: 'tam +4 / ±1 +2',
+        label: AppLocalizations.of(context).sprintDnfCount,
+        points: 'exact +4 / +/-1 +2',
         child: _SprintDnfSlider(
           draft: s,
           locked: locked,
@@ -698,7 +702,7 @@ class _PredictionBody extends StatelessWidget {
       ),
       _Section(
         badge: '06',
-        label: 'GÜVENLİK ARACI ÇIKAR MI?',
+        label: AppLocalizations.of(context).safetyCarQuestion,
         points: '+2',
         child: _SafetyCarPicker(
           value: s.safetyCar,
@@ -786,7 +790,7 @@ class _PredictionBody extends StatelessWidget {
                 children: [
                   if (onClear != null) ...[
                     IconButton(
-                      tooltip: 'Tahmini temizle',
+                      tooltip: 'Clear prediction',
                       onPressed: locked || saving ? null : onClear,
                       style: IconButton.styleFrom(
                         backgroundColor: const Color(0xFF1F1F2E),
@@ -803,7 +807,7 @@ class _PredictionBody extends StatelessWidget {
                   ],
                   if (onCopyToOtherLeagues != null) ...[
                     IconButton(
-                      tooltip: 'Diğer liglere kopyala',
+                      tooltip: 'Copy to other leagues',
                       onPressed: copying ? null : onCopyToOtherLeagues,
                       style: IconButton.styleFrom(
                         backgroundColor: const Color(0xFF1F1F2E),
@@ -915,7 +919,7 @@ class _Header extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Tahminlerin kapanmasına kalan süre',
+            'Time left until predictions close',
             style: TextStyle(
               color: Color(0xB3FFFFFF),
               fontSize: 12,
@@ -935,7 +939,7 @@ class _SaveFeedbackBanner extends StatelessWidget {
   const _SaveFeedbackBanner({required this.message});
 
   bool get _isError =>
-      message.startsWith('Hata') || message.startsWith('Kopyalama hatası');
+      message.startsWith('Error') || message.startsWith('Copy error');
 
   @override
   Widget build(BuildContext context) {
@@ -1000,7 +1004,7 @@ class _SaveButtonContent extends StatelessWidget {
           ),
           SizedBox(width: 10),
           Text(
-            'KAYDEDİLİYOR...',
+            'SAVING...',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w800,
@@ -1019,9 +1023,7 @@ class _SaveButtonContent extends StatelessWidget {
           const SizedBox(width: 8),
         ],
         Text(
-          locked
-              ? 'KİLİTLENDİ'
-              : (recentlySaved ? 'KAYDEDİLDİ' : 'TAHMİNİMİ KAYDET'),
+          locked ? 'LOCKED' : (recentlySaved ? 'SAVED' : 'SAVE MY PREDICTION'),
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -1060,15 +1062,15 @@ class _ModeToggle extends StatelessWidget {
         child: Row(
           children: [
             _ToggleSegment(
-              label: 'ANA YARIŞ',
-              sub: mainLocked ? 'KİLİTLENDİ' : 'TAHMİN AÇIK',
+              label: 'ANA RACE',
+              sub: mainLocked ? 'LOCKED' : 'PICKS OPEN',
               selected: mode == _PredictionMode.main,
               locked: mainLocked,
               onTap: () => onChanged(_PredictionMode.main),
             ),
             _ToggleSegment(
               label: 'SPRINT',
-              sub: sprintLocked ? 'KİLİTLENDİ' : 'TAHMİN AÇIK',
+              sub: sprintLocked ? 'LOCKED' : 'PICKS OPEN',
               selected: mode == _PredictionMode.sprint,
               locked: sprintLocked,
               onTap: () => onChanged(_PredictionMode.sprint),
@@ -1251,7 +1253,7 @@ class _PodiumPicker extends StatelessWidget {
         context,
         drivers: drivers,
         title:
-            'P$slot — ${slot == 1 ? "Birinci" : (slot == 2 ? "İkinci" : "Üçüncü")}',
+            'P$slot — ${slot == 1 ? "First" : (slot == 2 ? "Second" : "Third")}',
         selected: current,
         excludeIds: excludeIds,
       );
@@ -1264,9 +1266,15 @@ class _PodiumPicker extends StatelessWidget {
     }
 
     final positions = [
-      ('P1', const Color(0xFFFFD700), p1, 'Birinci için sürücü seç', 1),
-      ('P2', const Color(0xFFC0C0C0), p2, 'İkinci için sürücü seç', 2),
-      ('P3', const Color(0xFFCD7F32), p3, 'Üçüncü için sürücü seç', 3),
+      ('P1', const Color(0xFFFFD700), p1, 'Select a driver for first place', 1),
+      (
+        'P2',
+        const Color(0xFFC0C0C0),
+        p2,
+        'Select a driver for second place',
+        2,
+      ),
+      ('P3', const Color(0xFFCD7F32), p3, 'Select a driver for third place', 3),
     ];
 
     return Column(
@@ -1567,7 +1575,7 @@ Future<_TeamChoice?> _showTeamPicker(
                   children: [
                     Expanded(
                       child: Text(
-                        'Takım seç',
+                        'Select team',
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                     ),
@@ -1621,7 +1629,7 @@ class _SafetyCarPicker extends StatelessWidget {
       children: [
         Expanded(
           child: _BooleanOption(
-            label: 'Evet',
+            label: 'Yes',
             selected: value == true,
             enabled: !locked,
             onTap: () => onChanged(true),
@@ -1630,7 +1638,7 @@ class _SafetyCarPicker extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(
           child: _BooleanOption(
-            label: 'Hayır',
+            label: 'No',
             selected: value == false,
             enabled: !locked,
             onTap: () => onChanged(false),
@@ -1826,11 +1834,11 @@ class _JokerInfoBanner extends StatelessWidget {
   const _JokerInfoBanner({required this.opensIn, required this.hasQuestion});
 
   String _formatRemaining(Duration d) {
-    if (d.isNegative || d == Duration.zero) return 'çok yakında';
+    if (d.isNegative || d == Duration.zero) return 'very soon';
     if (d.inDays >= 1) {
       final days = d.inDays;
       final hours = d.inHours - days * 24;
-      if (hours == 0) return '$days gün';
+      if (hours == 0) return '$days days';
       return '$days g $hours s';
     }
     if (d.inHours >= 1) {
@@ -1888,8 +1896,8 @@ class _JokerInfoBanner extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     hasQuestion
-                        ? 'Joker sorusu, tahmin kilitlenmeden 1 gün önce açılır.'
-                        : 'Bu yarış için joker sorusu, tahmin kilitlenmeden 1 gün önce açılır.',
+                        ? 'The joker question opens 1 day before predictions lock.'
+                        : 'The joker question for this race opens 1 day before predictions lock.',
                     style: const TextStyle(
                       fontSize: 13,
                       color: Color(0xCCFFFFFF),
@@ -1899,7 +1907,7 @@ class _JokerInfoBanner extends StatelessWidget {
                   if (showCountdown) ...[
                     const SizedBox(height: 6),
                     Text(
-                      'Açılmasına: ${_formatRemaining(opensIn)}',
+                      'Opens in: ${_formatRemaining(opensIn)}',
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -1953,7 +1961,7 @@ class _SprintPodiumPicker extends StatelessWidget {
         context,
         drivers: drivers,
         title:
-            'Sprint P$slot — ${slot == 1 ? "Birinci" : (slot == 2 ? "İkinci" : "Üçüncü")}',
+            'Sprint P$slot — ${slot == 1 ? "First" : (slot == 2 ? "Second" : "Third")}',
         selected: current,
         excludeIds: excludeIds,
       );
@@ -1966,9 +1974,15 @@ class _SprintPodiumPicker extends StatelessWidget {
     }
 
     final positions = [
-      ('P1', const Color(0xFFFFD700), p1, 'Birinci için sürücü seç', 1),
-      ('P2', const Color(0xFFC0C0C0), p2, 'İkinci için sürücü seç', 2),
-      ('P3', const Color(0xFFCD7F32), p3, 'Üçüncü için sürücü seç', 3),
+      ('P1', const Color(0xFFFFD700), p1, 'Select a driver for first place', 1),
+      (
+        'P2',
+        const Color(0xFFC0C0C0),
+        p2,
+        'Select a driver for second place',
+        2,
+      ),
+      ('P3', const Color(0xFFCD7F32), p3, 'Select a driver for third place', 3),
     ];
 
     return Column(
@@ -2178,7 +2192,7 @@ class _RacePreviewBody extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 const Text(
-                  'TAKIMLAR & SÜRÜCÜLER',
+                  'TEAMS & DRIVERS',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w900,
@@ -2315,7 +2329,7 @@ class _PreviewBanner extends StatelessWidget {
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Tahmin yapmak için bir lige katılmalısın.',
+              'You need to join a league to make predictions.',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -2338,7 +2352,7 @@ List<_TeamChoice> _teamsFromDrivers(List<Driver> drivers) {
     byId[id] = _TeamChoice(
       id: id,
       code: d.teamCode ?? d.teamName ?? 'TEAM',
-      name: d.teamName ?? d.teamCode ?? 'Takım',
+      name: d.teamName ?? d.teamCode ?? 'Team',
       color: d.teamColor,
     );
   }
@@ -2362,30 +2376,32 @@ _TeamChoice? _teamById(List<_TeamChoice> teams, String? id) {
 }
 
 /// Tahmin ekranındaki ana yarış bölümlerini salt-okunur (kilitli) modda
-/// üreten yardımcı. Canlı ekranda kayıtlı tahminin tahmin formuyla aynı
+/// üreten yardımcı. Live ekranda kayıtlı predictionn predictions formuyla aynı
 /// görünmesi için kullanılır.
 List<Widget> buildReadOnlyMainPredictionSections({
+  required BuildContext context,
   required Prediction prediction,
   required List<Driver> drivers,
   required Race race,
   JokerQuestion? joker,
 }) {
+  final l = AppLocalizations.of(context);
   final teams = _teamsFromDrivers(drivers);
   return [
     _Section(
       badge: '01',
-      label: 'KAZANAN',
+      label: l.winner,
       points: '+10',
       child: DriverChipSlot(
         driver: _driverById(drivers, prediction.winnerDriverId),
-        hint: 'Yarışı kim kazanır?',
+        hint: l.winnerHint,
         enabled: false,
       ),
     ),
     _Section(
       badge: '02',
-      label: 'PODYUM',
-      points: 'isim +5 / sıra +2 / tam +3',
+      label: l.podium,
+      points: 'names +5 / position +2 / perfect +3',
       child: _PodiumPicker(
         drivers: drivers,
         draft: prediction,
@@ -2395,33 +2411,33 @@ List<Widget> buildReadOnlyMainPredictionSections({
     ),
     _Section(
       badge: '03',
-      label: 'EN ÇOK PUAN ALAN TAKIM',
+      label: l.topScoringTeam,
       points: '+10',
       child: _TeamChipSlot(
         team: _teamById(teams, prediction.topTeamId),
-        hint: 'En çok puanı hangi takım toplar?',
+        hint: l.topScoringTeamHint,
         enabled: false,
       ),
     ),
     _Section(
       badge: '04',
-      label: 'POLE POZİSYONU',
+      label: l.polePosition,
       points: '+8',
       child: DriverChipSlot(
         driver: _driverById(drivers, prediction.poleDriverId),
-        hint: 'Pole pozisyonunu kim alır?',
+        hint: l.polePositionHint,
         enabled: false,
       ),
     ),
     _Section(
       badge: '05',
-      label: 'DNF SAYISI',
-      points: 'tam +6 / ±1 +3',
+      label: l.dnfCount,
+      points: 'exact +6 / +/-1 +3',
       child: _DnfSlider(draft: prediction, locked: true, onChanged: (_) {}),
     ),
     _Section(
       badge: '06',
-      label: 'GÜVENLİK ARACI ÇIKAR MI?',
+      label: l.safetyCarQuestion,
       points: '+3',
       child: _SafetyCarPicker(
         value: prediction.safetyCar,
@@ -2441,25 +2457,27 @@ List<Widget> buildReadOnlyMainPredictionSections({
 
 /// Tahmin ekranındaki sprint bölümlerini salt-okunur modda üreten yardımcı.
 List<Widget> buildReadOnlySprintPredictionSections({
+  required BuildContext context,
   required SprintPrediction prediction,
   required List<Driver> drivers,
 }) {
+  final l = AppLocalizations.of(context);
   final teams = _teamsFromDrivers(drivers);
   return [
     _Section(
       badge: '01',
-      label: 'SPRINT KAZANANI',
+      label: l.sprintWinner,
       points: '+8',
       child: DriverChipSlot(
         driver: _driverById(drivers, prediction.winnerDriverId),
-        hint: 'Sprintı kim kazanır?',
+        hint: l.sprintWinnerHint,
         enabled: false,
       ),
     ),
     _Section(
       badge: '02',
-      label: 'SPRINT PODYUM',
-      points: 'isim +4 / sıra +1 / tam +2',
+      label: l.sprintPodium,
+      points: 'names +4 / position +1 / perfect +2',
       child: _SprintPodiumPicker(
         drivers: drivers,
         draft: prediction,
@@ -2469,28 +2487,28 @@ List<Widget> buildReadOnlySprintPredictionSections({
     ),
     _Section(
       badge: '03',
-      label: 'EN ÇOK PUAN ALAN TAKIM',
+      label: l.topScoringTeam,
       points: '+8',
       child: _TeamChipSlot(
         team: _teamById(teams, prediction.topTeamId),
-        hint: 'Sprintte en çok puanı hangi takım toplar?',
+        hint: l.sprintTopScoringTeamHint,
         enabled: false,
       ),
     ),
     _Section(
       badge: '04',
-      label: 'SPRINT POLE',
+      label: l.sprintPole,
       points: '+6',
       child: DriverChipSlot(
         driver: _driverById(drivers, prediction.poleDriverId),
-        hint: 'Sprint pole kimde?',
+        hint: l.sprintPoleHint,
         enabled: false,
       ),
     ),
     _Section(
       badge: '05',
-      label: 'SPRINT DNF SAYISI',
-      points: 'tam +4 / ±1 +2',
+      label: l.sprintDnfCount,
+      points: 'exact +4 / +/-1 +2',
       child: _SprintDnfSlider(
         draft: prediction,
         locked: true,
@@ -2499,7 +2517,7 @@ List<Widget> buildReadOnlySprintPredictionSections({
     ),
     _Section(
       badge: '06',
-      label: 'GÜVENLİK ARACI ÇIKAR MI?',
+      label: l.safetyCarQuestion,
       points: '+2',
       child: _SafetyCarPicker(
         value: prediction.safetyCar,

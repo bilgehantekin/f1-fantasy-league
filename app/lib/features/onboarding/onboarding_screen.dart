@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../../core/error_messages.dart';
 import '../../core/notifications.dart';
 import '../../core/theme.dart';
@@ -59,9 +60,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           await reminderPrefs.copyWith(enabled: false).save();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
+              SnackBar(
                 content: Text(
-                  'Bildirim izni verilmedi. Hatırlatmaları daha sonra ayarlardan açabilirsin.',
+                  AppLocalizations.of(context).notificationDeniedLater,
                 ),
               ),
             );
@@ -89,9 +90,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   String? _validateUsername(String username) {
-    if (username.isEmpty) return 'Kullanıcı adı gerekli.';
-    if (username.length < 3) return 'En az 3 karakter gir.';
-    if (username.length > 16) return 'En fazla 16 karakter gir.';
+    final l = AppLocalizations.of(context);
+    if (username.isEmpty) return l.usernameRequired;
+    if (username.length < 3) return l.min3;
+    if (username.length > 16) return l.max16;
     return null;
   }
 
@@ -104,6 +106,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       _seededUsername = true;
       _username.text = profile!.username;
     }
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.carbon,
@@ -112,7 +115,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           padding: const EdgeInsets.all(24),
           children: [
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'GRIDCALL',
               style: TextStyle(
                 fontSize: 42,
@@ -121,19 +124,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'Arkadaşlarınla özel lig kur, yarıştan önce tahminini yap, sonuçlar açıklanınca puanını karşılaştır.',
-              style: TextStyle(fontSize: 15, color: Color(0xB3FFFFFF)),
+            Text(
+              l.onboardingTagline,
+              style: const TextStyle(fontSize: 15, color: Color(0xB3FFFFFF)),
             ),
             const SizedBox(height: 28),
             _Panel(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _StepTitle(number: '01', label: 'NASIL OYNANIR?'),
+                  _StepTitle(number: '01', label: l.howToPlay),
                   const SizedBox(height: 12),
                   Text(
-                    'Her yarış haftası basit: ligine katıl, tahminini süre bitmeden kaydet, sonuçlar açıklanınca sıralamadaki yerini gör.',
+                    l.howToPlayBody,
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.white.withValues(alpha: 0.68),
@@ -141,28 +144,25 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const _HowItWorksCard(
+                  _HowItWorksCard(
                     number: '1',
                     icon: Icons.groups_outlined,
-                    title: 'Lig kur veya davet koduyla katıl',
-                    text:
-                        'Arkadaşlarınla aynı ligde yarış. Kendi ligini oluştur ya da gelen kodla hemen katıl.',
+                    title: l.createLeagueTitle,
+                    text: l.createLeagueBody,
                   ),
                   const SizedBox(height: 12),
-                  const _HowItWorksCard(
+                  _HowItWorksCard(
                     number: '2',
                     icon: Icons.edit_road_outlined,
-                    title: 'Süre bitmeden tahminini yap',
-                    text:
-                        'Podyum, pole, DNF ve güvenlik aracı gibi tahminlerini seç.',
+                    title: l.makePredictionTitle,
+                    text: l.makePredictionBody,
                   ),
                   const SizedBox(height: 12),
-                  const _HowItWorksCard(
+                  _HowItWorksCard(
                     number: '3',
                     icon: Icons.leaderboard_outlined,
-                    title: 'Sonuçlar gelince puanını gör',
-                    text:
-                        'Skorların hesaplanır, lig sıralaması güncellenir ve haftalık paylaşım kartın hazır olur.',
+                    title: l.seeScoreTitle,
+                    text: l.seeScoreBody,
                   ),
                 ],
               ),
@@ -172,7 +172,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _StepTitle(number: '02', label: 'PROFİL'),
+                  _StepTitle(number: '02', label: l.profile),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _username,
@@ -181,9 +181,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         setState(() => _usernameError = null);
                       }
                     },
-                    decoration: const InputDecoration(
-                      labelText: 'Kullanıcı adı',
-                      helperText: 'Bu ad liglerde arkadaşlarına görünür.',
+                    decoration: InputDecoration(
+                      labelText: l.username,
+                      helperText: l.usernameHelper,
                     ).copyWith(errorText: _usernameError),
                     maxLength: 16,
                     buildCounter:
@@ -202,10 +202,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _StepTitle(number: '03', label: 'HATIRLATICILAR'),
+                  _StepTitle(number: '03', label: l.reminders),
                   const SizedBox(height: 8),
                   Text(
-                    'Tahmin yapmayı unutmaman için yarış tahminleri kapanmadan önce bildirim gönderebiliriz.',
+                    l.remindersBody,
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.white.withValues(alpha: 0.68),
@@ -216,13 +216,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   SwitchListTile(
                     value: _remindersEnabled,
                     onChanged: (v) => setState(() => _remindersEnabled = v),
-                    title: const Text('Tahmin hatırlatmaları'),
+                    title: Text(l.predictionReminders),
                     contentPadding: EdgeInsets.zero,
                   ),
                   if (_remindersEnabled) ...[
                     const SizedBox(height: 4),
                     Text(
-                      'HATIRLATMA ZAMANI',
+                      l.reminderTime,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w900,
@@ -232,9 +232,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                     const SizedBox(height: 8),
                     SegmentedButton<int>(
-                      segments: const [
-                        ButtonSegment(value: 1, label: Text('1 saat')),
-                        ButtonSegment(value: 6, label: Text('6 saat')),
+                      segments: [
+                        ButtonSegment(value: 1, label: Text(l.oneHour)),
+                        ButtonSegment(value: 6, label: Text(l.sixHours)),
                       ],
                       selected: {_hoursBeforeLock},
                       onSelectionChanged: (v) =>
@@ -244,13 +244,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       value: _onlyMissing,
                       onChanged: (v) =>
                           setState(() => _onlyMissing = v ?? true),
-                      title: const Text('Sadece tahmin yapmadıysam'),
+                      title: Text(l.onlyMissing),
                       contentPadding: EdgeInsets.zero,
                       controlAffinity: ListTileControlAffinity.leading,
                     ),
                   ],
                   Text(
-                    'Bu tercihi daha sonra bildirim ayarlarından değiştirebilirsin.',
+                    l.preferenceLater,
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.white.withValues(alpha: 0.55),
@@ -271,12 +271,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             const SizedBox(height: 24),
             FilledButton(
               onPressed: _busy ? null : _finish,
-              child: Text(_busy ? 'HAZIRLANIYOR...' : 'BAŞLA'),
+              child: Text(_busy ? l.settingUp : l.start),
             ),
             const SizedBox(height: 20),
             Text(
-              'GridCall, Formula 1, FIA, takım veya sürücülerle bağlantısı olmayan, '
-              'bağımsız bir hayran uygulamasıdır. Tüm marka ve logolar ilgili sahiplerine aittir.',
+              l.disclaimer,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 11,

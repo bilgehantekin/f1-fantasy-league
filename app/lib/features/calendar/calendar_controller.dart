@@ -38,7 +38,7 @@ final driverStandingsProvider = FutureProvider<List<DriverStanding>>((
     byDriver[driver.id] = _DriverStandingAccumulator(
       code: driver.code,
       name: driver.fullName,
-      teamName: driver.teamName ?? 'Takımsız',
+      teamName: driver.teamName ?? 'No team',
       teamColor: driver.teamColor ?? '#FFFFFF',
     );
   }
@@ -242,9 +242,9 @@ Future<List<_StandingRaceRow>> _classificationRows({
     return _StandingRaceRow(
       driverId: row['driver_id'] as String,
       driverCode: (driver['code'] as String?) ?? '-',
-      driverName: (driver['full_name'] as String?) ?? 'Bilinmeyen Sürücü',
+      driverName: (driver['full_name'] as String?) ?? 'Unknown Driver',
       teamId: team['id'] as String?,
-      teamName: (team['name'] as String?) ?? 'Takımsız',
+      teamName: (team['name'] as String?) ?? 'No team',
       teamColor: (team['color'] as String?) ?? '#FFFFFF',
       points: points,
     );

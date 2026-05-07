@@ -76,11 +76,9 @@ Future<void> deletePrediction({
 }) async {
   final user = supabase.auth.currentUser;
   if (user == null) throw 'Auth required';
-  await PredictionRepository(supabase).deletePrediction(
-    userId: user.id,
-    raceId: raceId,
-    leagueId: leagueId,
-  );
+  await PredictionRepository(
+    supabase,
+  ).deletePrediction(userId: user.id, raceId: raceId, leagueId: leagueId);
 }
 
 Future<void> deleteSprintPrediction({
@@ -89,11 +87,9 @@ Future<void> deleteSprintPrediction({
 }) async {
   final user = supabase.auth.currentUser;
   if (user == null) throw 'Auth required';
-  await PredictionRepository(supabase).deleteSprintPrediction(
-    userId: user.id,
-    raceId: raceId,
-    leagueId: leagueId,
-  );
+  await PredictionRepository(
+    supabase,
+  ).deleteSprintPrediction(userId: user.id, raceId: raceId, leagueId: leagueId);
 }
 
 Future<void> copyPredictionToLeagues({

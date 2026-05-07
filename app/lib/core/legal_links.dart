@@ -10,6 +10,6 @@ class LegalLinks {
 Future<void> openExternalLink(Uri uri) async {
   final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
   if (!opened) {
-    throw 'Bağlantı açılamadı: $uri';
+    throw 'Could not open link: $uri';
   }
 }

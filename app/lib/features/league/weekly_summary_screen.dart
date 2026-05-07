@@ -53,17 +53,17 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
     return Scaffold(
       backgroundColor: AppColors.carbon,
       appBar: AppBar(
-        title: const Text('HAFTALIK ÖZET'),
+        title: const Text('WEEKLY SUMMARY'),
         actions: [
           IconButton(
-            tooltip: 'Paylaşım önizlemesi',
+            tooltip: 'Share preview',
             icon: const Icon(Icons.visibility_outlined, size: 21),
             onPressed: (league == null || race == null || summary == null)
                 ? null
                 : () => _openSharePreview(league, race, summary),
           ),
           IconButton(
-            tooltip: 'Paylaş',
+            tooltip: 'Share',
             icon: _sharing
                 ? const SizedBox(
                     width: 18,
@@ -81,14 +81,15 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
         children: [
           leagueAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
+            error: (e, _) => Center(child: Text('Error: ${friendlyError(e)}')),
             data: (league) => raceAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Hata: ${friendlyError(e)}')),
+              error: (e, _) =>
+                  Center(child: Text('Error: ${friendlyError(e)}')),
               data: (race) => summaryAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) =>
-                    Center(child: Text('Hata: ${friendlyError(e)}')),
+                    Center(child: Text('Error: ${friendlyError(e)}')),
                 data: (summary) => _Body(
                   league: league,
                   race: race,
@@ -151,13 +152,13 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
           _shareCardKey.currentContext?.findRenderObject()
               as RenderRepaintBoundary?;
       if (boundary == null) {
-        throw StateError('Paylaşım kartı hazırlanamadı');
+        throw StateError('Share card could not be prepared');
       }
       final image = await boundary.toImage(pixelRatio: 1);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       final bytes = byteData?.buffer.asUint8List();
       if (bytes == null) {
-        throw StateError('Paylaşım görseli oluşturulamadı');
+        throw StateError('Share image could not be created');
       }
 
       final fileName =
@@ -171,7 +172,7 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
       final box = context.findRenderObject() as RenderBox?;
       await Share.shareXFiles(
         [XFile(file.path, mimeType: 'image/png', name: fileName)],
-        subject: '${league.name} · ${race.name} özeti',
+        subject: '${league.name} · ${race.name} summary',
         text: _shareText(league.name, race.name, summary),
         sharePositionOrigin: box == null
             ? null
@@ -180,7 +181,7 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Paylaşım hatası: ${friendlyError(e)}')),
+        SnackBar(content: Text('Share error: ${friendlyError(e)}')),
       );
     } finally {
       if (mounted) setState(() => _sharing = false);
@@ -193,7 +194,7 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
     LeagueWeeklySummary summary,
   ) {
     final winner = summary.bestPrediction == null
-        ? 'Henüz skor yok'
+        ? 'No score yet'
         : '${summary.bestPrediction!.username} (${summary.bestPrediction!.score} puan)';
     return '$leagueName · $raceName\nKazanan: $winner\nGridCall';
   }
@@ -221,10 +222,10 @@ class _SharePreviewPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.carbon,
       appBar: AppBar(
-        title: const Text('PAYLAŞIM ÖNİZLEME'),
+        title: const Text('SHARE PREVIEW'),
         actions: [
           IconButton(
-            tooltip: 'Paylaş',
+            tooltip: 'Share',
             icon: sharing
                 ? const SizedBox(
                     width: 18,
@@ -320,36 +321,36 @@ class _Body extends StatelessWidget {
           children: [
             Expanded(
               child: _MetricCard(
-                label: 'HAFTANIN KAZANANI',
+                label: 'HAFTANIN WINNERI',
                 value: summary.bestPrediction?.username ?? '-',
                 subvalue: summary.bestPrediction == null
-                    ? 'Henüz skor yok'
+                    ? 'No score yet'
                     : '${summary.bestPrediction!.score} puan',
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _MetricCard(
-                label: sprintMode ? 'TAHMİN SAYISI' : 'JOKER BİLENLER',
+                label: sprintMode ? 'PREDICTIONS' : 'JOKER CORRECT',
                 value: sprintMode
                     ? '${summary.predictionCount}'
                     : '${summary.jokerHitCount}',
-                subvalue: sprintMode ? 'tahmin' : 'kişi',
+                subvalue: sprintMode ? 'predictions' : 'people',
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
         _MetricCard(
-          label: 'EN ÇOK PUAN KAZANDIRAN SÜRÜCÜ',
+          label: 'TOP SCORING DRIVER',
           value: summary.mostPickedDriver?.code ?? '-',
           subvalue: summary.mostPickedDriver == null
-              ? 'Tahmin yok'
+              ? 'No prediction'
               : '${summary.mostPickedDriver!.fullName} · ${summary.mostPickedDriver!.points} puan',
           accentColor: summary.mostPickedDriver?.color,
         ),
         const SizedBox(height: 24),
-        const _SectionTitle(label: 'İLK 5'),
+        const _SectionTitle(label: 'TOP 5'),
         const SizedBox(height: 12),
         if (summary.topStandings.isEmpty)
           const _EmptyState()
@@ -367,7 +368,7 @@ class _Body extends StatelessWidget {
             '${sprintMode ? '?mode=sprint' : ''}',
           ),
           icon: const Icon(Icons.fact_check_outlined),
-          label: const Text('DETAYLI SONUÇLARI GÖR'),
+          label: const Text('VIEW DETAILED RESULTS'),
         ),
       ],
     );
@@ -475,7 +476,7 @@ class _SummaryStandingRow extends StatelessWidget {
             ),
           ),
           Text(
-            '$score PUAN',
+            '$score PTS',
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
           ),
         ],
@@ -523,7 +524,7 @@ class _EmptyState extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
     ),
     child: const Text(
-      'Bu yarış için ligde skorlanmış tahmin bulunamadı.',
+      'No scored predictions were found in this league for this race.',
       textAlign: TextAlign.center,
       style: TextStyle(color: Color(0x99FFFFFF)),
     ),

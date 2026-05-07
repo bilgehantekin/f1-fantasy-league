@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../../core/theme.dart';
 
 class AppLoadingState extends StatelessWidget {
@@ -10,7 +11,7 @@ class AppLoadingState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: label ?? 'Yükleniyor',
+      label: label ?? AppLocalizations.of(context).appLoading,
       liveRegion: true,
       child: Center(
         child: Padding(
@@ -104,7 +105,7 @@ class AppErrorState extends StatelessWidget {
     return Semantics(
       container: true,
       liveRegion: true,
-      label: 'Hata. $message',
+      label: 'Error. $message',
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -117,10 +118,13 @@ class AppErrorState extends StatelessWidget {
                 color: AppColors.liveRed,
               ),
               const SizedBox(height: 12),
-              const Text(
-                'Bir şey ters gitti',
+              Text(
+                AppLocalizations.of(context).appErrorTitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
@@ -133,7 +137,7 @@ class AppErrorState extends StatelessWidget {
                 FilledButton.icon(
                   onPressed: onRetry,
                   icon: const Icon(Icons.refresh, size: 18),
-                  label: const Text('Tekrar dene'),
+                  label: Text(AppLocalizations.of(context).retry),
                 ),
               ],
             ],

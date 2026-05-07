@@ -116,19 +116,19 @@ List<LiveComparison> buildComparisons({
   if (prediction == null) {
     return [
       LiveComparison(
-        label: 'P1 ŞU AN',
+        label: 'P1 NOW',
         predicted: null,
         actual: byPosition[1],
         matches: null,
       ),
       LiveComparison(
-        label: 'P2 ŞU AN',
+        label: 'P2 NOW',
         predicted: null,
         actual: byPosition[2],
         matches: null,
       ),
       LiveComparison(
-        label: 'P3 ŞU AN',
+        label: 'P3 NOW',
         predicted: null,
         actual: byPosition[3],
         matches: null,
@@ -137,7 +137,7 @@ List<LiveComparison> buildComparisons({
   }
 
   return [
-    _cmp('KAZANAN', predictedDriver(prediction.winnerDriverId), byPosition[1]),
+    _cmp('WINNER', predictedDriver(prediction.winnerDriverId), byPosition[1]),
     _cmp('P1', predictedDriver(prediction.p1Id), byPosition[1]),
     _cmp('P2', predictedDriver(prediction.p2Id), byPosition[2]),
     _cmp('P3', predictedDriver(prediction.p3Id), byPosition[3]),

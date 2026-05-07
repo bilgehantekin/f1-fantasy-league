@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/error_messages.dart';
 import '../../core/notifications.dart';
 import '../../core/theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../shared/widgets/app_state.dart';
 import '../calendar/calendar_controller.dart';
 
@@ -27,11 +28,12 @@ class _NotificationSettingsScreenState
   @override
   Widget build(BuildContext context) {
     final prefsAsync = ref.watch(reminderPreferencesProvider);
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.carbon,
-      appBar: AppBar(title: const Text('BİLDİRİMLER')),
+      appBar: AppBar(title: Text(l.notificationsTitle)),
       body: prefsAsync.when(
-        loading: () => const AppLoadingState(label: 'Ayarlar yükleniyor'),
+        loading: () => AppLoadingState(label: l.settingsLoading),
         error: (e, _) => AppErrorState(
           message: friendlyError(e),
           onRetry: () => ref.invalidate(reminderPreferencesProvider),
@@ -44,6 +46,7 @@ class _NotificationSettingsScreenState
   Widget _buildSettings(ReminderPreferences prefs) {
     _draft ??= prefs;
     final draft = _draft!;
+    final l = AppLocalizations.of(context);
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -56,13 +59,13 @@ class _NotificationSettingsScreenState
                 value: draft.enabled,
                 onChanged: (value) =>
                     _updateDraft(draft.copyWith(enabled: value)),
-                title: const Text('Tahmin hatırlatmaları'),
-                subtitle: const Text('Yarış tahminleri kilitlenmeden önce'),
+                title: Text(l.predictionReminders),
+                subtitle: Text(l.beforeRacePredictionsLock),
                 contentPadding: EdgeInsets.zero,
               ),
               const Divider(),
-              const Text(
-                'HATIRLATMA ZAMANI',
+              Text(
+                l.reminderTime,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
@@ -72,9 +75,9 @@ class _NotificationSettingsScreenState
               ),
               const SizedBox(height: 8),
               SegmentedButton<int>(
-                segments: const [
-                  ButtonSegment(value: 1, label: Text('1 saat')),
-                  ButtonSegment(value: 6, label: Text('6 saat')),
+                segments: [
+                  ButtonSegment(value: 1, label: Text(l.oneHour)),
+                  ButtonSegment(value: 6, label: Text(l.sixHours)),
                 ],
                 selected: {draft.hoursBeforeLock},
                 onSelectionChanged: draft.enabled
@@ -91,7 +94,7 @@ class _NotificationSettingsScreenState
                         draft.copyWith(onlyMissingPrediction: value ?? true),
                       )
                     : null,
-                title: const Text('Sadece tahmin yapmadıysam'),
+                title: Text(l.onlyMissing),
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
               ),
@@ -100,7 +103,9 @@ class _NotificationSettingsScreenState
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: _saving ? null : _saveDraft,
-                  child: Text(_saving ? 'KAYDEDİLİYOR...' : 'KAYDET'),
+                  child: Text(
+                    _saving ? l.saving.toUpperCase() : l.save.toUpperCase(),
+                  ),
                 ),
               ),
             ],
@@ -125,9 +130,9 @@ class _NotificationSettingsScreenState
         if (!granted) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text(
-                'Bildirim izni verilmedi. Hatırlatmaları açmak için sistem ayarlarından izin verebilirsin.',
+                AppLocalizations.of(context).notificationPermissionRequired,
               ),
             ),
           );
@@ -143,7 +148,11 @@ class _NotificationSettingsScreenState
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bildirim ayarları güncellendi.')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).notificationSettingsUpdated,
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _saving = false);

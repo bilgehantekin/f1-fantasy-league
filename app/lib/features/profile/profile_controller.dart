@@ -306,7 +306,7 @@ final profileStatsProvider = FutureProvider<ProfileStats>((ref) async {
           leagueId,
           () => _LeaguePerformanceAccumulator(
             leagueId: leagueId,
-            leagueName: (league?['name'] as String?) ?? 'Lig',
+            leagueName: (league?['name'] as String?) ?? 'League',
           ),
         );
         if (mode == 'main') {
@@ -365,12 +365,13 @@ final profileStatsProvider = FutureProvider<ProfileStats>((ref) async {
     ...sprintBestByEvent.keys.map((k) => k.split(':').last),
   };
   final weeksParticipated = raceIdsParticipated.length;
-  final roundsParticipated = raceIdsParticipated
-      .map((id) => raceRoundById[id])
-      .whereType<int>()
-      .toSet()
-      .toList()
-    ..sort();
+  final roundsParticipated =
+      raceIdsParticipated
+          .map((id) => raceRoundById[id])
+          .whereType<int>()
+          .toSet()
+          .toList()
+        ..sort();
   int activeStreak = 0;
   if (roundsParticipated.isNotEmpty) {
     activeStreak = 1;
@@ -420,9 +421,7 @@ final profileStatsProvider = FutureProvider<ProfileStats>((ref) async {
     sprintAverageScore: sprintBestByEvent.isEmpty
         ? 0
         : sprintScore / sprintBestByEvent.length,
-    weeklyAverageScore: weeksParticipated == 0
-        ? 0
-        : total / weeksParticipated,
+    weeklyAverageScore: weeksParticipated == 0 ? 0 : total / weeksParticipated,
     weeksParticipated: weeksParticipated,
     activeStreak: activeStreak,
   );

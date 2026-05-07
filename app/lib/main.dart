@@ -10,12 +10,17 @@ import 'core/notifications.dart';
 import 'core/router.dart';
 import 'core/supabase.dart';
 import 'core/theme.dart';
+import 'l10n/generated/app_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Env.validate();
   await initializeDateFormatting('tr_TR', null);
-  Intl.defaultLocale = 'tr_TR';
+  await initializeDateFormatting('en_US', null);
+  final platformLanguage = Env.appLocale.isNotEmpty
+      ? Env.appLocale
+      : WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+  Intl.defaultLocale = platformLanguage == 'tr' ? 'tr_TR' : 'en_US';
   await initSupabase();
   await NotificationService.instance.init();
 
@@ -39,9 +44,26 @@ class GridCallApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'GridCall',
       theme: buildTheme(),
-      locale: const Locale('tr', 'TR'),
-      supportedLocales: const [Locale('tr', 'TR')],
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      locale: switch (Env.appLocale) {
+        'en' => const Locale('en'),
+        'tr' => const Locale('tr'),
+        _ => null,
+      },
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      localeResolutionCallback: (locale, supportedLocales) {
+        final resolved = supportedLocales.firstWhere(
+          (supported) => supported.languageCode == locale?.languageCode,
+          orElse: () => supportedLocales.first,
+        );
+        Intl.defaultLocale = resolved.languageCode == 'tr' ? 'tr_TR' : 'en_US';
+        return resolved;
+      },
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );

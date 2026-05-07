@@ -26,7 +26,7 @@ class CountdownTiles extends StatelessWidget {
             const Icon(Icons.lock, color: Color(0xFFFF9F1C), size: 18),
             const SizedBox(width: 8),
             Text(
-              'KİLİTLENDİ',
+              'LOCKED',
               style: tt.labelLarge?.copyWith(color: const Color(0xFFFF9F1C)),
             ),
           ],
@@ -47,14 +47,14 @@ class CountdownTiles extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (days > 0) ...[
-          _Tile(value: days, label: 'GÜN', color: color),
+          _Tile(value: days, label: 'DAYS', color: color),
           const SizedBox(width: 6),
         ],
-        _Tile(value: hours, label: 'SAAT', color: color, twoDigit: true),
+        _Tile(value: hours, label: 'HRS', color: color, twoDigit: true),
         const SizedBox(width: 6),
-        _Tile(value: mins, label: 'DK', color: color, twoDigit: true),
+        _Tile(value: mins, label: 'MIN', color: color, twoDigit: true),
         const SizedBox(width: 6),
-        _Tile(value: secs, label: 'SN', color: color, twoDigit: true),
+        _Tile(value: secs, label: 'SEC', color: color, twoDigit: true),
       ],
     );
   }

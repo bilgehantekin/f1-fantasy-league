@@ -1,5 +1,9 @@
 class Env {
   static const appEnv = String.fromEnvironment('APP_ENV', defaultValue: 'dev');
+  static const appLocale = String.fromEnvironment(
+    'APP_LOCALE',
+    defaultValue: '',
+  );
   static const appBaseUrl = String.fromEnvironment(
     'APP_BASE_URL',
     defaultValue: 'https://gridcall.app',

@@ -5,13 +5,14 @@ import 'package:intl/intl.dart';
 import '../../core/error_messages.dart';
 import '../../core/navigation.dart';
 import '../../core/theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../shared/country_flags.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets/app_state.dart';
 import '../prediction/prediction_controller.dart';
 
-/// Yaklaşan yarışlarda calendar'dan tıklayınca açılan ekran.
-/// Tahmin ekranı DEĞİL — sadece o yarışta yarışacak sürücüleri takıma göre listeler.
+/// Screen opened from the calendar for upcoming races.
+/// Not the prediction screen; it only lists drivers by team for that race.
 class RaceLineupScreen extends ConsumerWidget {
   final String raceId;
   final bool sprintMode;
@@ -33,7 +34,7 @@ class RaceLineupScreen extends ConsumerWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 20),
-          tooltip: 'Geri',
+          tooltip: AppLocalizations.of(context).back,
           onPressed: () => safeBack(context),
         ),
         title: raceAsync.maybeWhen(
@@ -49,7 +50,9 @@ class RaceLineupScreen extends ConsumerWidget {
             ),
           ),
           orElse: () => Text(
-            sprintMode ? 'SPRINT KADROSU' : 'YARIŞ KADROSU',
+            sprintMode
+                ? AppLocalizations.of(context).sprintLineup
+                : AppLocalizations.of(context).lineup,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
           ),
         ),
@@ -59,13 +62,13 @@ class RaceLineupScreen extends ConsumerWidget {
         ),
       ),
       body: raceAsync.when(
-        loading: () => const AppLoadingState(label: 'Kadro yükleniyor'),
+        loading: () => const AppLoadingState(label: 'Lineup loading'),
         error: (e, _) => AppErrorState(
           message: friendlyError(e),
           onRetry: () => ref.invalidate(raceProvider(raceId)),
         ),
         data: (race) => driversAsync.when(
-          loading: () => const AppLoadingState(label: 'Sürücüler yükleniyor'),
+          loading: () => const AppLoadingState(label: 'Drivers loading'),
           error: (e, _) => AppErrorState(
             message: friendlyError(e),
             onRetry: () => ref.invalidate(driversProvider),
@@ -79,7 +82,7 @@ class RaceLineupScreen extends ConsumerWidget {
                 child: _LeagueRequiredBanner(),
               ),
               const SizedBox(height: 16),
-              const _SectionTitle(label: 'PİSTE ÇIKACAK SÜRÜCÜLER'),
+              _SectionTitle(label: AppLocalizations.of(context).driversOnTrack),
               _DriversByTeam(drivers: drivers),
               const SizedBox(height: 24),
             ],
@@ -153,12 +156,14 @@ class _RaceInfoHeader extends StatelessWidget {
           Row(
             children: [
               _MetaPill(
-                label: sprintMode ? 'SPRINT SIRALAMA' : 'SIRALAMA',
+                label: sprintMode
+                    ? AppLocalizations.of(context).sprintLineup
+                    : AppLocalizations.of(context).standings,
                 value: qDate,
               ),
               const SizedBox(width: 8),
               _MetaPill(
-                label: sprintMode ? 'SPRINT YARIŞ' : 'YARIŞ',
+                label: sprintMode ? 'SPRINT RACE' : 'RACE',
                 value: rDate,
               ),
             ],
@@ -190,7 +195,7 @@ class _LeagueRequiredBanner extends StatelessWidget {
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Tahmin yapmak için bir lige katılmalısın.',
+              'You need to join a league to make predictions.',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -282,7 +287,7 @@ class _DriversByTeam extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Takıma göre grupla
+    // Group by team.
     final byTeam = <String, List<Driver>>{};
     final teamOrder = <String>[];
     final teamColors = <String, String?>{};

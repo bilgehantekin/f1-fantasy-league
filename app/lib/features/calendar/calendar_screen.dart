@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/error_messages.dart';
 import '../../core/notifications.dart';
 import '../../core/theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets/app_state.dart';
 import '../../shared/widgets/race_card_new.dart';
@@ -31,10 +32,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     if (!granted) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Bildirim izni verilmedi. Hatırlatmaları ayarlardan açabilirsin.',
-          ),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).notificationDeniedLater),
         ),
       );
       return;
@@ -49,6 +48,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final constructors = ref.watch(constructorStandingsProvider);
     final isAdmin = ref.watch(isAdminProvider).asData?.value ?? false;
     final profile = ref.watch(profileProvider);
+    final l = AppLocalizations.of(context);
 
     races.whenData(_onRacesLoaded);
     profile.whenData((p) {
@@ -83,12 +83,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           if (isAdmin)
             IconButton(
               icon: const Icon(Icons.admin_panel_settings_outlined, size: 20),
-              tooltip: 'Admin - Joker',
+              tooltip: l.adminJokerTooltip,
               onPressed: () => context.push('/admin/jokers'),
             ),
           IconButton(
             icon: const Icon(Icons.person_outline, size: 20),
-            tooltip: 'Profil',
+            tooltip: l.profileTooltip,
             onPressed: () => context.push('/profile'),
           ),
         ],
@@ -129,9 +129,9 @@ class _LeagueActionsPanel extends ConsumerWidget {
           children: [
             Expanded(
               child: _PrimaryLeagueActionCard(
-                title: 'YENİ LİG',
-                subtitle: 'Kendi ligini oluştur',
-                buttonLabel: 'OLUŞTUR',
+                title: 'NEW LEAGUE',
+                subtitle: 'Create your own league',
+                buttonLabel: 'CREATE',
                 accentColor: const Color(0xFF00D26A),
                 colors: const [Color(0xFF00D26A), Color(0xFF00A855)],
                 onTap: () => showCreateLeagueDialog(context, ref),
@@ -140,9 +140,9 @@ class _LeagueActionsPanel extends ConsumerWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _PrimaryLeagueActionCard(
-                title: 'KATIL',
-                subtitle: 'Davet koduyla katıl',
-                buttonLabel: 'KOD GİR',
+                title: 'JOIN',
+                subtitle: 'Join with invite code',
+                buttonLabel: 'ENTER CODE',
                 accentColor: const Color(0xFFE10600),
                 colors: const [Color(0xFFE10600), Color(0xFFA00500)],
                 onTap: () => showJoinLeagueDialog(context, ref),
@@ -181,7 +181,7 @@ class _LeagueActionsPanel extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Liglerim',
+                        'My leagues',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -189,7 +189,7 @@ class _LeagueActionsPanel extends ConsumerWidget {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'Katıldığın ligleri gör',
+                        'View your leagues',
                         style: TextStyle(
                           fontSize: 12,
                           color: Color(0x99FFFFFF),
@@ -306,11 +306,12 @@ class _DriverStandingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return _StandingsSection(
-      title: 'SÜRÜCÜ SIRALAMASI',
+      title: l.calendarDriverStandings,
       onViewAll: () => _showFullStandingsSheet(
         context,
-        title: 'SÜRÜCÜ SIRALAMASI',
+        title: l.calendarDriverStandings,
         child: Consumer(
           builder: (context, ref, _) {
             final allDrivers = ref.watch(driverStandingsProvider);
@@ -327,7 +328,7 @@ class _DriverStandingsSection extends StatelessWidget {
         error: (e, _) => _SectionError(error: e),
         data: (list) {
           if (list.isEmpty) {
-            return const _EmptySection(text: 'Henüz sıralama yok.');
+            return const _EmptySection(text: 'No standings yet.');
           }
           return Column(
             children: [
@@ -351,11 +352,12 @@ class _ConstructorStandingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return _StandingsSection(
-      title: 'TAKIM SIRALAMASI',
+      title: l.calendarConstructorStandings,
       onViewAll: () => _showFullStandingsSheet(
         context,
-        title: 'TAKIM SIRALAMASI',
+        title: l.calendarConstructorStandings,
         child: Consumer(
           builder: (context, ref, _) {
             final allConstructors = ref.watch(constructorStandingsProvider);
@@ -372,7 +374,7 @@ class _ConstructorStandingsSection extends StatelessWidget {
         error: (e, _) => _SectionError(error: e),
         data: (list) {
           if (list.isEmpty) {
-            return const _EmptySection(text: 'Henüz sıralama yok.');
+            return const _EmptySection(text: 'No standings yet.');
           }
           return Column(
             children: [
@@ -420,7 +422,7 @@ class _StandingsSection extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Tümü',
+                    'All',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w900,
@@ -451,7 +453,7 @@ class _RacesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionHeader(title: 'YARIŞLAR'),
+        _SectionHeader(title: AppLocalizations.of(context).races),
         const SizedBox(height: 12),
         races.when(
           loading: () => const _SectionLoading(),
@@ -459,7 +461,7 @@ class _RacesSection extends StatelessWidget {
           data: (list) {
             if (list.isEmpty) {
               return const _EmptySection(
-                text: 'Bu sezon için yarış bulunamadı.',
+                text: 'No races found for this season.',
               );
             }
             final visibleRaces = buildPreviousAndNextRaces(list);
@@ -468,8 +470,8 @@ class _RacesSection extends StatelessWidget {
                 for (var i = 0; i < visibleRaces.length; i++) ...[
                   _RaceScopeLabel(
                     label: i == 0 && countsAsPreviousRace(visibleRaces[i])
-                        ? 'Önceki yarış'
-                        : 'Sonraki yarış',
+                        ? 'Previous race'
+                        : 'Next race',
                   ),
                   const SizedBox(height: 8),
                   RaceCardNew(
@@ -485,7 +487,7 @@ class _RacesSection extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () => _showAllRacesSheet(context, list),
                     icon: const Icon(Icons.calendar_month_outlined, size: 18),
-                    label: const Text('Tüm yarışlar'),
+                    label: const Text('All races'),
                   ),
                 ),
               ],
@@ -506,7 +508,7 @@ class _RacesSection extends StatelessWidget {
     final kind = await showRaceKindPicker(
       sourceContext,
       race: race,
-      title: 'Yarış seç',
+      title: 'Select race',
     );
     if (kind == null) return;
     if (closePickerContextBeforeNavigate && sourceContext.mounted) {
@@ -560,9 +562,7 @@ class _RacesSection extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(16, 18, 8, 12),
                   child: Row(
                     children: [
-                      const Expanded(
-                        child: _SectionHeader(title: 'TÜM YARIŞLAR'),
-                      ),
+                      const Expanded(child: _SectionHeader(title: 'ALL RACES')),
                       IconButton(
                         icon: const Icon(Icons.close, size: 20),
                         onPressed: () => Navigator.of(sheetContext).pop(),
@@ -687,7 +687,7 @@ class _FullDriverStandings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (drivers.isEmpty) {
-      return const _EmptySection(text: 'Henüz sıralama yok.');
+      return const _EmptySection(text: 'No standings yet.');
     }
     return Column(
       children: [
@@ -709,7 +709,7 @@ class _FullConstructorStandings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (constructors.isEmpty) {
-      return const _EmptySection(text: 'Henüz sıralama yok.');
+      return const _EmptySection(text: 'No standings yet.');
     }
     return Column(
       children: [
@@ -958,7 +958,7 @@ class _SectionLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const AppLoadingState(label: 'Veriler yükleniyor');
+    return const AppLoadingState(label: 'Data loading');
   }
 }
 
@@ -982,7 +982,7 @@ class _EmptySection extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppEmptyState(
       icon: Icons.sports_score_outlined,
-      title: 'Henüz veri yok',
+      title: 'No data yet',
       message: text,
     );
   }

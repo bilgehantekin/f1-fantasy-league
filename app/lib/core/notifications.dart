@@ -166,9 +166,9 @@ class NotificationService {
               final id = _idFor(race.id, leagueId, 'main');
               final scheduled = await _scheduleAt(
                 id: id,
-                title: '${race.name} yarış tahmini yaklaşıyor',
+                title: '${race.name} race prediction is coming up',
                 body:
-                    'Ana yarış tahminlerin kilitlenmek üzere. Aç ve seçimlerini yap.',
+                    'Main race predictions are about to lock. Open the app and make your picks.',
                 when: lockReminder,
               );
               if (scheduled) scheduledIds.add(id);
@@ -193,9 +193,9 @@ class NotificationService {
               final id = _idFor(race.id, leagueId, 'sprint');
               final scheduled = await _scheduleAt(
                 id: id,
-                title: '${race.name} sprint tahmini yaklaşıyor',
+                title: '${race.name} sprint prediction is coming up',
                 body:
-                    'Sprint tahminlerin kilitlenmek üzere. Aç ve seçimlerini yap.',
+                    'Sprint predictions are about to lock. Open the app and make your picks.',
                 when: sprintReminder,
               );
               if (scheduled) scheduledIds.add(id);
@@ -231,7 +231,7 @@ class NotificationService {
     await _plugin.show(
       999999,
       'GridCall test',
-      'Bildirimler çalışıyor 🏎️',
+      'Notifications are working 🏎️',
       const NotificationDetails(
         iOS: DarwinNotificationDetails(
           presentAlert: true,
@@ -242,7 +242,7 @@ class NotificationService {
         ),
         android: AndroidNotificationDetails(
           'gridcall_general',
-          'Genel',
+          'General',
           importance: Importance.high,
           priority: Priority.high,
         ),
@@ -271,8 +271,8 @@ class NotificationService {
           ),
           android: AndroidNotificationDetails(
             'gridcall_reminders',
-            'Hatırlatmalar',
-            channelDescription: 'Yarış öncesi tahmin hatırlatmaları',
+            'Reminders',
+            channelDescription: 'Pre-race prediction reminders',
             importance: Importance.high,
             priority: Priority.high,
           ),

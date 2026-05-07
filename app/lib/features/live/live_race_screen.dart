@@ -5,6 +5,7 @@ import '../../core/env.dart';
 import '../../core/error_messages.dart';
 import '../../core/navigation.dart';
 import '../../core/theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets/app_state.dart';
 import '../../shared/widgets/live_pulse_dot.dart';
@@ -33,6 +34,7 @@ class LiveRaceScreen extends ConsumerWidget {
       sprintPredictionProvider(predictionKey),
     );
     final positionsAsync = ref.watch(livePositionsProvider(raceId));
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.carbon,
@@ -42,7 +44,7 @@ class LiveRaceScreen extends ConsumerWidget {
         toolbarHeight: 56,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 20),
-          tooltip: 'Geri',
+          tooltip: l.back,
           onPressed: () => safeBack(context),
         ),
         title: Row(
@@ -53,8 +55,8 @@ class LiveRaceScreen extends ConsumerWidget {
             Flexible(
               child: Text(
                 raceAsync.maybeWhen(
-                  data: (r) => 'CANLI · ${r.name.toUpperCase()}',
-                  orElse: () => 'CANLI',
+                  data: (r) => '${l.liveUpper} · ${r.name.toUpperCase()}',
+                  orElse: () => l.liveUpper,
                 ),
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -72,20 +74,19 @@ class LiveRaceScreen extends ConsumerWidget {
         ),
       ),
       body: raceAsync.when(
-        loading: () => const AppLoadingState(label: 'Canlı ekran yükleniyor'),
+        loading: () => AppLoadingState(label: l.liveScreenLoading),
         error: (e, _) => AppErrorState(
           message: friendlyError(e),
           onRetry: () => ref.invalidate(raceProvider(raceId)),
         ),
         data: (race) => driversAsync.when(
-          loading: () => const AppLoadingState(label: 'Sürücüler yükleniyor'),
+          loading: () => AppLoadingState(label: l.driversLoading),
           error: (e, _) => AppErrorState(
             message: friendlyError(e),
             onRetry: () => ref.invalidate(driversProvider),
           ),
           data: (drivers) => positionsAsync.when(
-            loading: () =>
-                const AppLoadingState(label: 'Canlı veri yükleniyor'),
+            loading: () => AppLoadingState(label: l.liveDataLoading),
             error: (e, _) => AppErrorState(
               message: friendlyError(e),
               onRetry: () => ref.invalidate(livePositionsProvider(raceId)),
@@ -97,11 +98,13 @@ class LiveRaceScreen extends ConsumerWidget {
               final useSprintPrediction = sprintMode && race.hasSprint;
               final predictionSections = useSprintPrediction
                   ? buildReadOnlySprintPredictionSections(
+                      context: context,
                       prediction:
                           sprintPrediction ?? SprintPrediction(raceId: raceId),
                       drivers: drivers,
                     )
                   : buildReadOnlyMainPredictionSections(
+                      context: context,
                       prediction: mainPrediction ?? Prediction(raceId: raceId),
                       drivers: drivers,
                       race: race,
@@ -112,14 +115,14 @@ class LiveRaceScreen extends ConsumerWidget {
                 children: [
                   _LiveHeader(race: race),
                   const SizedBox(height: 24),
-                  _SectionTitle(label: 'ÖN SIRALAMA'),
+                  _SectionTitle(label: l.liveOrder),
                   if (positions.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(20),
+                    Padding(
+                      padding: const EdgeInsets.all(20),
                       child: Center(
                         child: Text(
-                          'Henüz canlı veri yok',
-                          style: TextStyle(color: Color(0x99FFFFFF)),
+                          l.noLiveDataYet,
+                          style: const TextStyle(color: Color(0x99FFFFFF)),
                         ),
                       ),
                     )
@@ -127,18 +130,18 @@ class LiveRaceScreen extends ConsumerWidget {
                     _TopPositions(positions: positions, drivers: drivers),
                   const SizedBox(height: 24),
                   if (Env.enableDemoContent) ...[
-                    _SectionTitle(label: 'EN HIZLI TUR'),
+                    _SectionTitle(label: l.fastestLap),
                     const _FastestLap(),
                     const SizedBox(height: 24),
                   ],
                   if (showPredictionSections) ...[
-                    _SectionTitle(label: 'SENİN TAHMİNİN'),
+                    _SectionTitle(label: l.yourPrediction),
                     const SizedBox(height: 12),
                     ...predictionSections,
                     const SizedBox(height: 24),
                   ],
                   if (Env.enableDemoContent) ...[
-                    _SectionTitle(label: 'SON OLAYLAR'),
+                    _SectionTitle(label: l.recentEvents),
                     const _LatestEvents(),
                     const SizedBox(height: 24),
                   ],
@@ -169,9 +172,9 @@ class _LiveHeader extends StatelessWidget {
             left: BorderSide(color: Color(0xFFFF2D55), width: 4),
           ),
         ),
-        child: const Text(
-          'Canlı zamanlama bilgisi yarış veri akışı gelince güncellenecek.',
-          style: TextStyle(color: Color(0xB3FFFFFF)),
+        child: Text(
+          AppLocalizations.of(context).liveTimingWaiting,
+          style: const TextStyle(color: Color(0xB3FFFFFF)),
         ),
       );
     }
@@ -462,7 +465,7 @@ class _LatestEvents extends StatelessWidget {
     _EventItem(
       lap: 65,
       code: 'NOR',
-      text: 'En Hızlı Tur',
+      text: 'Fastest Lap',
       teamColor: 0xFFFF8000,
     ),
     _EventItem(lap: 58, code: 'HAM', text: 'Pit stop', teamColor: 0xFF27F4D2),

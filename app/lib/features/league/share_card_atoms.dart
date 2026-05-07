@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../shared/models.dart';
 
 const shareGold = Color(0xFFFFD700);
@@ -257,7 +258,7 @@ class ShareStandingLine extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Text(
-              'PUAN',
+              'PTS',
               style: TextStyle(
                 fontSize: compact ? 14 : 16,
                 fontWeight: FontWeight.w800,
@@ -275,11 +276,7 @@ class ShareInviteBox extends StatelessWidget {
   final String code;
   final String label;
 
-  const ShareInviteBox({
-    super.key,
-    required this.code,
-    this.label = 'SEN DE KATIL',
-  });
+  const ShareInviteBox({super.key, required this.code, this.label = ''});
 
   @override
   Widget build(BuildContext context) {
@@ -305,7 +302,7 @@ class ShareInviteBox extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  label,
+                  label.isEmpty ? AppLocalizations.of(context).joinToo : label,
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
@@ -315,7 +312,7 @@ class ShareInviteBox extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'davet kodu',
+                  AppLocalizations.of(context).inviteCodeLower,
                   style: TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.w700,

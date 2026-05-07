@@ -6,7 +6,7 @@ import '../../shared/models.dart';
 import 'league_controller.dart';
 import 'share_card_atoms.dart';
 
-/// Hikaye/feed paylaşımına uygun 1080x1920 dikey kart.
+/// Vertical 1080x1920 card suitable for story/feed sharing.
 class WeeklySummaryShareCard extends StatelessWidget {
   final League league;
   final Race race;
@@ -61,7 +61,7 @@ class WeeklySummaryShareCard extends StatelessWidget {
           ),
           const SizedBox(height: 72),
           Text(
-            '${league.name} · $memberCount kişi',
+            '${league.name} · $memberCount people',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -82,8 +82,8 @@ class WeeklySummaryShareCard extends StatelessWidget {
           const SizedBox(height: 52),
           Text(
             totalPossible == 0
-                ? 'TAHMİNLER'
-                : 'TAHMİNLER · ${myStanding?.score ?? 0}/$totalPossible PUAN',
+                ? 'PREDICTIONS'
+                : 'PREDICTIONS · ${myStanding?.score ?? 0}/$totalPossible PTS',
             style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w900,
@@ -174,9 +174,9 @@ class _ScoreRankBlock extends StatelessWidget {
           ? Text(
               isScored
                   ? (sprintMode
-                        ? 'Bu sprint için tahmin yapmadın.'
-                        : 'Bu yarış için tahmin yapmadın.')
-                  : 'Henüz skor hesaplanmadı.',
+                        ? 'You did not make a prediction for this sprint.'
+                        : 'You did not make a prediction for this race.')
+                  : 'Score has not been calculated yet.',
               style: TextStyle(
                 fontSize: 34,
                 fontWeight: FontWeight.w800,
@@ -191,7 +191,7 @@ class _ScoreRankBlock extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'SKOR',
+                        'SCORE',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w900,
@@ -216,7 +216,7 @@ class _ScoreRankBlock extends StatelessWidget {
                           Padding(
                             padding: const EdgeInsets.only(bottom: 8),
                             child: Text(
-                              'PUAN',
+                              'PTS',
                               style: TextStyle(
                                 fontSize: 34,
                                 fontWeight: FontWeight.w900,
@@ -234,7 +234,7 @@ class _ScoreRankBlock extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      'SIRA',
+                      'RANK',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w900,
@@ -391,14 +391,14 @@ class _PredictionLight extends StatelessWidget {
 
   static String _shortLabel(String label) {
     return switch (label) {
-      'YARIŞ GALİBİ' || 'SPRINT GALİBİ' => 'KAZANAN',
-      'GÜVENLİK ARACI' => 'G. ARACI',
-      'PODYUM P1' => 'POD P1',
-      'PODYUM P2' => 'POD P2',
-      'PODYUM P3' => 'POD P3',
-      'PODYUM BONUS' => 'POD BONUS',
+      'RACE WINNER' || 'SPRINT WINNER' => 'WINNER',
+      'SAFETY CAR' => 'S. CAR',
+      'PODIUM P1' || 'PODYUM P1' => 'POD P1',
+      'PODIUM P2' || 'PODYUM P2' => 'POD P2',
+      'PODIUM P3' || 'PODYUM P3' => 'POD P3',
+      'PODIUM BONUS' || 'PODYUM BONUS' => 'POD BONUS',
       'SPRINT POLE' => 'POLE',
-      'TOP TEAM' => 'EN İYİ TAKIM',
+      'TOP TEAM' => 'BEST TEAM',
       _ => label,
     };
   }
@@ -422,7 +422,7 @@ class _TopThreeRows extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: Text(
-            'İLK 5',
+            'TOP 5',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w900,
@@ -518,11 +518,11 @@ class _EmptyPredictionBox extends StatelessWidget {
       child: Text(
         isScored
             ? (sprintMode
-                  ? 'Sprint tahmini yapmadığın için bu GP’ye ait sprint skorun ve tahmin kırılımın gösterilemiyor.'
-                  : 'Tahmin yapmadığın için bu GP’ye ait skor ve tahmin kırılımı gösterilemiyor.')
+                  ? 'Because you did not make a sprint prediction, your sprint score and prediction breakdown for this GP cannot be shown.'
+                  : 'Because you did not make a prediction, your score and prediction breakdown for this GP cannot be shown.')
             : (sprintMode
-                  ? 'Sprint sonucu skorlanınca tahmin kırılımın burada olacak.'
-                  : 'Yarış sonucu skorlanınca tahmin kırılımın burada olacak.'),
+                  ? 'Your prediction breakdown will appear here when the sprint result is scored.'
+                  : 'Your prediction breakdown will appear here when the race result is scored.'),
         style: const TextStyle(
           fontSize: 26,
           fontWeight: FontWeight.w700,

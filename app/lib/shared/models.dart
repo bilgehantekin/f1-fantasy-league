@@ -149,8 +149,8 @@ class Race {
   }
 
   // Tahmin kilidi mantığı:
-  // Sprint olan hafta: tüm tahminler Sprint Qualifying'den 1 saat önce kilitlenir.
-  // Sprint olmayan hafta: tüm tahminler Qualifying'den 1 saat önce kilitlenir.
+  // Sprint olan hafta: all predictions Sprint Qualifying'den 1 saat önce kilitlenir.
+  // Sprint olmayan hafta: all predictions Qualifying'den 1 saat önce kilitlenir.
   static const Duration predictionLockLead = Duration(hours: 1);
 
   DateTime get effectiveLockAt {
