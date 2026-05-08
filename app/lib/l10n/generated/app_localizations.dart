@@ -107,7 +107,7 @@ abstract class AppLocalizations {
   /// No description provided for @appLoading.
   ///
   /// In en, this message translates to:
-  /// **'Loading'**
+  /// **'Loading...'**
   String get appLoading;
 
   /// No description provided for @appErrorTitle.
@@ -139,6 +139,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Saving...'**
   String get saving;
+
+  /// No description provided for @saveBig.
+  ///
+  /// In en, this message translates to:
+  /// **'SAVE'**
+  String get saveBig;
+
+  /// No description provided for @savingBig.
+  ///
+  /// In en, this message translates to:
+  /// **'SAVING...'**
+  String get savingBig;
+
+  /// No description provided for @jokerUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'JOKER'**
+  String get jokerUpper;
+
+  /// No description provided for @dnfUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'DNF'**
+  String get dnfUpper;
 
   /// No description provided for @continueAction.
   ///
@@ -173,7 +197,7 @@ abstract class AppLocalizations {
   /// No description provided for @shareError.
   ///
   /// In en, this message translates to:
-  /// **'Share error: {error}'**
+  /// **'Sharing failed: {error}'**
   String shareError(String error);
 
   /// No description provided for @errorWithMessage.
@@ -185,7 +209,7 @@ abstract class AppLocalizations {
   /// No description provided for @authTagline.
   ///
   /// In en, this message translates to:
-  /// **'Your F1 prediction league, in your pocket.'**
+  /// **'Your F1 prediction league in your pocket.'**
   String get authTagline;
 
   /// No description provided for @username.
@@ -287,7 +311,7 @@ abstract class AppLocalizations {
   /// No description provided for @signUpReceived.
   ///
   /// In en, this message translates to:
-  /// **'Sign-up received. If email confirmation is enabled, confirm your account from the link in your inbox.'**
+  /// **'Account created. You can sign in now.'**
   String get signUpReceived;
 
   /// No description provided for @resetEmailRequired.
@@ -353,7 +377,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingTagline.
   ///
   /// In en, this message translates to:
-  /// **'Create private leagues with friends, make your prediction before the race, and compare scores when results arrive.'**
+  /// **'Create private leagues with friends, make your predictions before the race, and compare scores when results arrive.'**
   String get onboardingTagline;
 
   /// No description provided for @howToPlay.
@@ -365,7 +389,7 @@ abstract class AppLocalizations {
   /// No description provided for @howToPlayBody.
   ///
   /// In en, this message translates to:
-  /// **'Every race week is simple: join your league, save your prediction before the deadline, and see your place in the standings when results arrive.'**
+  /// **'Each race week is simple: join your league, save your prediction before the deadline, and see your place in the standings when results arrive.'**
   String get howToPlayBody;
 
   /// No description provided for @createLeagueTitle.
@@ -389,7 +413,7 @@ abstract class AppLocalizations {
   /// No description provided for @makePredictionBody.
   ///
   /// In en, this message translates to:
-  /// **'Pick your podium, pole, DNF count, safety car, and more.'**
+  /// **'Pick your podium, Pole, DNF count, Safety Car, and more.'**
   String get makePredictionBody;
 
   /// No description provided for @seeScoreTitle.
@@ -401,7 +425,7 @@ abstract class AppLocalizations {
   /// No description provided for @seeScoreBody.
   ///
   /// In en, this message translates to:
-  /// **'Your scores are calculated, league standings update, and your weekly share card is ready.'**
+  /// **'Your scores are calculated, league standings are updated, and your weekly share card is ready.'**
   String get seeScoreBody;
 
   /// No description provided for @profile.
@@ -455,7 +479,7 @@ abstract class AppLocalizations {
   /// No description provided for @onlyMissing.
   ///
   /// In en, this message translates to:
-  /// **'Only if I have not predicted'**
+  /// **'Only if I have not made a prediction'**
   String get onlyMissing;
 
   /// No description provided for @preferenceLater.
@@ -521,7 +545,7 @@ abstract class AppLocalizations {
   /// No description provided for @beforeRacePredictionsLock.
   ///
   /// In en, this message translates to:
-  /// **'Before race predictions lock'**
+  /// **'Before race predictions close'**
   String get beforeRacePredictionsLock;
 
   /// No description provided for @calendarDriverStandings.
@@ -533,7 +557,7 @@ abstract class AppLocalizations {
   /// No description provided for @calendarConstructorStandings.
   ///
   /// In en, this message translates to:
-  /// **'CONSTRUCTOR STANDINGS'**
+  /// **'TEAM STANDINGS'**
   String get calendarConstructorStandings;
 
   /// No description provided for @races.
@@ -587,79 +611,79 @@ abstract class AppLocalizations {
   /// No description provided for @dataLoading.
   ///
   /// In en, this message translates to:
-  /// **'Data loading'**
+  /// **'Loading data...'**
   String get dataLoading;
 
   /// No description provided for @raceLoading.
   ///
   /// In en, this message translates to:
-  /// **'Race loading'**
+  /// **'Loading race...'**
   String get raceLoading;
 
   /// No description provided for @driversLoading.
   ///
   /// In en, this message translates to:
-  /// **'Drivers loading'**
+  /// **'Loading drivers...'**
   String get driversLoading;
 
   /// No description provided for @settingsLoading.
   ///
   /// In en, this message translates to:
-  /// **'Settings loading'**
+  /// **'Loading settings...'**
   String get settingsLoading;
 
   /// No description provided for @leaguesLoading.
   ///
   /// In en, this message translates to:
-  /// **'Leagues loading'**
+  /// **'Loading leagues...'**
   String get leaguesLoading;
 
   /// No description provided for @leagueSettingsLoading.
   ///
   /// In en, this message translates to:
-  /// **'League settings loading'**
+  /// **'Loading league settings...'**
   String get leagueSettingsLoading;
 
   /// No description provided for @membersLoading.
   ///
   /// In en, this message translates to:
-  /// **'Members loading'**
+  /// **'Loading members...'**
   String get membersLoading;
 
   /// No description provided for @standingsLoading.
   ///
   /// In en, this message translates to:
-  /// **'Standings loading'**
+  /// **'Loading standings...'**
   String get standingsLoading;
 
   /// No description provided for @weeklyStandingsLoading.
   ///
   /// In en, this message translates to:
-  /// **'Weekly standings loading'**
+  /// **'Loading weekly standings...'**
   String get weeklyStandingsLoading;
 
   /// No description provided for @racesLoading.
   ///
   /// In en, this message translates to:
-  /// **'Races loading'**
+  /// **'Loading races...'**
   String get racesLoading;
 
   /// No description provided for @liveScreenLoading.
   ///
   /// In en, this message translates to:
-  /// **'Live screen loading'**
+  /// **'Loading live screen...'**
   String get liveScreenLoading;
 
   /// No description provided for @liveDataLoading.
   ///
   /// In en, this message translates to:
-  /// **'Live data loading'**
+  /// **'Loading live data...'**
   String get liveDataLoading;
 
   /// No description provided for @yourPredictionLoading.
   ///
   /// In en, this message translates to:
-  /// **'Your prediction is loading'**
+  /// **'Loading your prediction...'**
   String get yourPredictionLoading;
 
   /// No description provided for @liveOrder.
@@ -701,19 +725,19 @@ abstract class AppLocalizations {
   /// No description provided for @p1Now.
   ///
   /// In en, this message translates to:
-  /// **'P1 NOW'**
+  /// **'CURRENT P1'**
   String get p1Now;
 
   /// No description provided for @p2Now.
   ///
   /// In en, this message translates to:
-  /// **'P2 NOW'**
+  /// **'CURRENT P2'**
   String get p2Now;
 
   /// No description provided for @p3Now.
   ///
   /// In en, this message translates to:
-  /// **'P3 NOW'**
+  /// **'CURRENT P3'**
   String get p3Now;
 
   /// No description provided for @openForPredictions.
@@ -839,7 +863,7 @@ abstract class AppLocalizations {
   /// No description provided for @openSprintLiveScreen.
   ///
   /// In en, this message translates to:
-  /// **'Sprint live - open'**
+  /// **'Open Sprint live screen'**
   String get openSprintLiveScreen;
 
   /// No description provided for @lapProgress.
@@ -881,13 +905,13 @@ abstract class AppLocalizations {
   /// No description provided for @pointsBreakdownPending.
   ///
   /// In en, this message translates to:
-  /// **'Points breakdown will be shown after the official result arrives.'**
+  /// **'The points breakdown will be shown after the official result arrives.'**
   String get pointsBreakdownPending;
 
   /// No description provided for @sprintPointsBreakdownPending.
   ///
   /// In en, this message translates to:
-  /// **'Points breakdown will be shown after the official sprint result arrives.'**
+  /// **'The points breakdown will be shown after the official Sprint result arrives.'**
   String get sprintPointsBreakdownPending;
 
   /// No description provided for @winnerBreakdown.
@@ -911,7 +935,7 @@ abstract class AppLocalizations {
   /// No description provided for @predictionMade.
   ///
   /// In en, this message translates to:
-  /// **'Prediction made {saved}/{total}'**
+  /// **'Predictions made {saved}/{total}'**
   String predictionMade(int saved, int total);
 
   /// No description provided for @noPrediction.
@@ -941,7 +965,7 @@ abstract class AppLocalizations {
   /// No description provided for @noLeagueYet.
   ///
   /// In en, this message translates to:
-  /// **'You do not have a league yet'**
+  /// **'You are not in a league yet'**
   String get noLeagueYet;
 
   /// No description provided for @noLeagueYetMessage.
@@ -1097,13 +1121,13 @@ abstract class AppLocalizations {
   /// No description provided for @leagueNameHint.
   ///
   /// In en, this message translates to:
-  /// **'Ex: Friends League'**
+  /// **'E.g. Friends League'**
   String get leagueNameHint;
 
   /// No description provided for @inviteCodeAfterCreate.
   ///
   /// In en, this message translates to:
-  /// **'You will receive an invite code after the league is created'**
+  /// **'You will receive an invite code after creating the league.'**
   String get inviteCodeAfterCreate;
 
   /// No description provided for @create.
@@ -1121,7 +1145,7 @@ abstract class AppLocalizations {
   /// No description provided for @joinWithInviteCode.
   ///
   /// In en, this message translates to:
-  /// **'JOIN WITH INVITE CODE'**
+  /// **'Join with invite code'**
   String get joinWithInviteCode;
 
   /// No description provided for @enterInviteCode.
@@ -1274,6 +1298,12 @@ abstract class AppLocalizations {
   /// **'SEASON {season}'**
   String season(int season);
 
+  /// No description provided for @raceRoundAndName.
+  ///
+  /// In en, this message translates to:
+  /// **'R{round} · {name}'**
+  String raceRoundAndName(int round, String name);
+
   /// No description provided for @playersCount.
   ///
   /// In en, this message translates to:
@@ -1295,25 +1325,31 @@ abstract class AppLocalizations {
   /// No description provided for @predictionSaved.
   ///
   /// In en, this message translates to:
-  /// **'Prediction saved'**
+  /// **'Prediction saved.'**
   String get predictionSaved;
 
   /// No description provided for @sprintPredictionSaved.
   ///
   /// In en, this message translates to:
-  /// **'Sprint prediction saved'**
+  /// **'Sprint prediction saved.'**
   String get sprintPredictionSaved;
+
+  /// No description provided for @predictionSaveLeagueContextRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a league to save your prediction.'**
+  String get predictionSaveLeagueContextRequired;
 
   /// No description provided for @predictionCleared.
   ///
   /// In en, this message translates to:
-  /// **'Prediction cleared'**
+  /// **'Prediction cleared.'**
   String get predictionCleared;
 
   /// No description provided for @sprintPredictionCleared.
   ///
   /// In en, this message translates to:
-  /// **'Sprint prediction cleared'**
+  /// **'Sprint prediction cleared.'**
   String get sprintPredictionCleared;
 
   /// No description provided for @clearPredictionQuestion.
@@ -1391,13 +1427,13 @@ abstract class AppLocalizations {
   /// No description provided for @polePosition.
   ///
   /// In en, this message translates to:
-  /// **'POLE POSITION'**
+  /// **'POLE'**
   String get polePosition;
 
   /// No description provided for @polePositionHint.
   ///
   /// In en, this message translates to:
-  /// **'Who will take pole position?'**
+  /// **'Who will take Pole?'**
   String get polePositionHint;
 
   /// No description provided for @dnfCount.
@@ -1421,7 +1457,7 @@ abstract class AppLocalizations {
   /// No description provided for @sprintWinnerHint.
   ///
   /// In en, this message translates to:
-  /// **'Who will win the sprint?'**
+  /// **'Who will win the Sprint?'**
   String get sprintWinnerHint;
 
   /// No description provided for @sprintPodium.
@@ -1433,7 +1469,7 @@ abstract class AppLocalizations {
   /// No description provided for @sprintTopScoringTeamHint.
   ///
   /// In en, this message translates to:
-  /// **'Which team will score the most points in the sprint?'**
+  /// **'Which team will score the most points in the Sprint?'**
   String get sprintTopScoringTeamHint;
 
   /// No description provided for @sprintPole.
@@ -1445,7 +1481,7 @@ abstract class AppLocalizations {
   /// No description provided for @sprintPoleHint.
   ///
   /// In en, this message translates to:
-  /// **'Who will take sprint pole?'**
+  /// **'Who will take Sprint Pole?'**
   String get sprintPoleHint;
 
   /// No description provided for @sprintDnfCount.
@@ -1481,7 +1517,7 @@ abstract class AppLocalizations {
   /// No description provided for @sprintPodiumSlot.
   ///
   /// In en, this message translates to:
-  /// **'Sprint P{slot} - {place}'**
+  /// **'Sprint P{slot} · {place}'**
   String sprintPodiumSlot(int slot, String place);
 
   /// No description provided for @first.
@@ -1529,7 +1565,7 @@ abstract class AppLocalizations {
   /// No description provided for @sprintPoleResult.
   ///
   /// In en, this message translates to:
-  /// **'Sprint pole: {driver}'**
+  /// **'Sprint Pole: {driver}'**
   String sprintPoleResult(String driver);
 
   /// No description provided for @sprintDnfResult.
@@ -1577,7 +1613,7 @@ abstract class AppLocalizations {
   /// No description provided for @sprintPoleResultLabel.
   ///
   /// In en, this message translates to:
-  /// **'Sprint pole:'**
+  /// **'Sprint Pole:'**
   String get sprintPoleResultLabel;
 
   /// No description provided for @badge.
@@ -1607,19 +1643,19 @@ abstract class AppLocalizations {
   /// No description provided for @mainRaceAverageScore.
   ///
   /// In en, this message translates to:
-  /// **'Main race average score'**
+  /// **'Main race average point'**
   String get mainRaceAverageScore;
 
   /// No description provided for @sprintRaceAverageScore.
   ///
   /// In en, this message translates to:
-  /// **'Sprint race average score'**
+  /// **'Sprint average point'**
   String get sprintRaceAverageScore;
 
   /// No description provided for @averageWeeklyScore.
   ///
   /// In en, this message translates to:
-  /// **'Average weekly score'**
+  /// **'Average weekly point'**
   String get averageWeeklyScore;
 
   /// No description provided for @weeksParticipated.
@@ -1657,6 +1693,1206 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Race {raceScore} · Sprint {sprintScore}'**
   String raceSprintScores(int raceScore, int sprintScore);
+
+  /// No description provided for @authEmailNotConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Your email address has not been confirmed yet. Check your inbox.'**
+  String get authEmailNotConfirmed;
+
+  /// No description provided for @authEmailAlreadyRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'This email address is already registered.'**
+  String get authEmailAlreadyRegistered;
+
+  /// No description provided for @authTooManyAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Please wait a moment and try again.'**
+  String get authTooManyAttempts;
+
+  /// No description provided for @authPasswordMin6.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 6 characters.'**
+  String get authPasswordMin6;
+
+  /// No description provided for @authSignupDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-ups are currently disabled.'**
+  String get authSignupDisabled;
+
+  /// No description provided for @authWeakPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'This password is too weak. Choose a stronger password.'**
+  String get authWeakPassword;
+
+  /// No description provided for @errorContentNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'The content you are looking for could not be found.'**
+  String get errorContentNotFound;
+
+  /// No description provided for @errorNoPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'You do not have permission to perform this action.'**
+  String get errorNoPermission;
+
+  /// No description provided for @errorRecordExists.
+  ///
+  /// In en, this message translates to:
+  /// **'This record already exists.'**
+  String get errorRecordExists;
+
+  /// No description provided for @errorActionAlreadyCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'This action appears to have already been completed.'**
+  String get errorActionAlreadyCompleted;
+
+  /// No description provided for @errorActionRetrySoon.
+  ///
+  /// In en, this message translates to:
+  /// **'The action could not be completed. Please try again shortly.'**
+  String get errorActionRetrySoon;
+
+  /// No description provided for @errorInvalidCredentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Email or password is incorrect.'**
+  String get errorInvalidCredentials;
+
+  /// No description provided for @predictionCopiedToLeagues.
+  ///
+  /// In en, this message translates to:
+  /// **'Prediction copied to selected leagues.'**
+  String get predictionCopiedToLeagues;
+
+  /// No description provided for @copyErrorWithMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy failed: {error}'**
+  String copyErrorWithMessage(String error);
+
+  /// No description provided for @usernameLengthRange.
+  ///
+  /// In en, this message translates to:
+  /// **'3-16'**
+  String get usernameLengthRange;
+
+  /// No description provided for @noStandingsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No standings yet.'**
+  String get noStandingsYet;
+
+  /// No description provided for @all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get all;
+
+  /// No description provided for @noRacesForSeason.
+  ///
+  /// In en, this message translates to:
+  /// **'No races found for this season.'**
+  String get noRacesForSeason;
+
+  /// No description provided for @previousRace.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous race'**
+  String get previousRace;
+
+  /// No description provided for @nextRace.
+  ///
+  /// In en, this message translates to:
+  /// **'Next race'**
+  String get nextRace;
+
+  /// No description provided for @joinLeagueSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Join {leagueName}'**
+  String joinLeagueSubject(String leagueName);
+
+  /// No description provided for @joinLeagueShareText.
+  ///
+  /// In en, this message translates to:
+  /// **'Join my GridCall league: {inviteLink}\nInvite code: {inviteCode}'**
+  String joinLeagueShareText(String inviteLink, String inviteCode);
+
+  /// No description provided for @noPointsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No points yet'**
+  String get noPointsYet;
+
+  /// No description provided for @raceNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Race not found'**
+  String get raceNotFound;
+
+  /// No description provided for @noWeeklyRaceFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No race was found to show for this week.'**
+  String get noWeeklyRaceFound;
+
+  /// No description provided for @noPointsThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'No points this week'**
+  String get noPointsThisWeek;
+
+  /// No description provided for @weeklyScoresCalculated.
+  ///
+  /// In en, this message translates to:
+  /// **'This will appear when scores for {raceName} are calculated.'**
+  String weeklyScoresCalculated(String raceName);
+
+  /// No description provided for @noRaceCalendarForSeason.
+  ///
+  /// In en, this message translates to:
+  /// **'There is no race calendar to show for this season.'**
+  String get noRaceCalendarForSeason;
+
+  /// No description provided for @makePrediction.
+  ///
+  /// In en, this message translates to:
+  /// **'Make prediction'**
+  String get makePrediction;
+
+  /// No description provided for @weeklySummarySubject.
+  ///
+  /// In en, this message translates to:
+  /// **'{leagueName} · {raceName} summary'**
+  String weeklySummarySubject(String leagueName, String raceName);
+
+  /// No description provided for @weeklyWinnerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'WEEKLY WINNER'**
+  String get weeklyWinnerLabel;
+
+  /// No description provided for @noScoreYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No score yet'**
+  String get noScoreYet;
+
+  /// No description provided for @predictionsUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'PREDICTIONS'**
+  String get predictionsUpper;
+
+  /// No description provided for @jokerCorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'JOKER CORRECT'**
+  String get jokerCorrect;
+
+  /// No description provided for @predictions.
+  ///
+  /// In en, this message translates to:
+  /// **'predictions'**
+  String get predictions;
+
+  /// No description provided for @people.
+  ///
+  /// In en, this message translates to:
+  /// **'people'**
+  String get people;
+
+  /// No description provided for @topScoringDriver.
+  ///
+  /// In en, this message translates to:
+  /// **'TOP SCORING DRIVER'**
+  String get topScoringDriver;
+
+  /// No description provided for @topFive.
+  ///
+  /// In en, this message translates to:
+  /// **'TOP 5'**
+  String get topFive;
+
+  /// No description provided for @viewDetailedResults.
+  ///
+  /// In en, this message translates to:
+  /// **'VIEW DETAILED RESULTS'**
+  String get viewDetailedResults;
+
+  /// No description provided for @profileLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading profile...'**
+  String get profileLoading;
+
+  /// No description provided for @signInRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in required'**
+  String get signInRequired;
+
+  /// No description provided for @profileSignInRequiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You need to sign in to view your profile.'**
+  String get profileSignInRequiredMessage;
+
+  /// No description provided for @statsErrorWithMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Stats failed to load: {error}'**
+  String statsErrorWithMessage(String error);
+
+  /// No description provided for @badgesUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'BADGES'**
+  String get badgesUpper;
+
+  /// No description provided for @seasonStatsUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'SEASON STATS'**
+  String get seasonStatsUpper;
+
+  /// No description provided for @leaguesUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'LEAGUES'**
+  String get leaguesUpper;
+
+  /// No description provided for @accountAndLegalUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'ACCOUNT & LEGAL'**
+  String get accountAndLegalUpper;
+
+  /// No description provided for @signOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get signOut;
+
+  /// No description provided for @requestAccountDeletion.
+  ///
+  /// In en, this message translates to:
+  /// **'Request account deletion'**
+  String get requestAccountDeletion;
+
+  /// No description provided for @deleteYourAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete your account'**
+  String get deleteYourAccount;
+
+  /// No description provided for @accountDeletionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account, predictions, league memberships, badges, and profile information will be permanently deleted within 30 days after you create this request. If you change your mind during this period, you can request cancellation by emailing bilgehan.2002@gmail.com.\n\nAfter the request is created, you will be signed out and your account will no longer be visible to other users.'**
+  String get accountDeletionBody;
+
+  /// No description provided for @noteOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Note (optional)'**
+  String get noteOptional;
+
+  /// No description provided for @deletionReasonHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You can write your reason for deletion'**
+  String get deletionReasonHint;
+
+  /// No description provided for @createRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Create request'**
+  String get createRequest;
+
+  /// No description provided for @accountDeletionScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account will be deleted on {date}.'**
+  String accountDeletionScheduled(String date);
+
+  /// No description provided for @accountDeletionRequestReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account deletion request has been received.'**
+  String get accountDeletionRequestReceived;
+
+  /// No description provided for @signingOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing out...'**
+  String get signingOut;
+
+  /// No description provided for @requestCreateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Request could not be created: {error}'**
+  String requestCreateError(String error);
+
+  /// No description provided for @totalPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Total points'**
+  String get totalPoints;
+
+  /// No description provided for @bestRank.
+  ///
+  /// In en, this message translates to:
+  /// **'Best rank'**
+  String get bestRank;
+
+  /// No description provided for @weeklyRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly record'**
+  String get weeklyRecord;
+
+  /// No description provided for @noBadgesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No badges yet'**
+  String get noBadgesYet;
+
+  /// No description provided for @noBadgesYetMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You will earn badges based on your achievements as race results arrive.'**
+  String get noBadgesYetMessage;
+
+  /// No description provided for @seasonStatsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Your average prediction performance, participation streak, best race week, and league status are summarized here for this season.'**
+  String get seasonStatsSummary;
+
+  /// No description provided for @leaguePerformanceUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'LEAGUE PERFORMANCE'**
+  String get leaguePerformanceUpper;
+
+  /// No description provided for @sectionLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading section...'**
+  String get sectionLoading;
+
+  /// No description provided for @adminJokersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin · Joker Questions'**
+  String get adminJokersTitle;
+
+  /// No description provided for @adminPermissionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'You need admin permission to view this page. Set profiles.is_admin = true in Studio.'**
+  String get adminPermissionRequired;
+
+  /// No description provided for @adminJokerTab.
+  ///
+  /// In en, this message translates to:
+  /// **'JOKER'**
+  String get adminJokerTab;
+
+  /// No description provided for @adminDataTab.
+  ///
+  /// In en, this message translates to:
+  /// **'DATA'**
+  String get adminDataTab;
+
+  /// No description provided for @adminDataChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking data...'**
+  String get adminDataChecking;
+
+  /// No description provided for @adminNone.
+  ///
+  /// In en, this message translates to:
+  /// **'none'**
+  String get adminNone;
+
+  /// No description provided for @adminDnfClassification.
+  ///
+  /// In en, this message translates to:
+  /// **'DNF {dnf}, classified {rows}'**
+  String adminDnfClassification(int dnf, int rows);
+
+  /// No description provided for @adminOpenF1Ingest.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from OpenF1'**
+  String get adminOpenF1Ingest;
+
+  /// No description provided for @adminRaceDataRefreshed.
+  ///
+  /// In en, this message translates to:
+  /// **'{raceName} data refreshed.'**
+  String adminRaceDataRefreshed(String raceName);
+
+  /// No description provided for @adminIngestError.
+  ///
+  /// In en, this message translates to:
+  /// **'Import failed: {error}'**
+  String adminIngestError(String error);
+
+  /// No description provided for @adminNoJoker.
+  ///
+  /// In en, this message translates to:
+  /// **'no joker'**
+  String get adminNoJoker;
+
+  /// No description provided for @adminRaceJokerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'R{round} Joker'**
+  String adminRaceJokerTitle(int round);
+
+  /// No description provided for @adminQuestionText.
+  ///
+  /// In en, this message translates to:
+  /// **'Question text'**
+  String get adminQuestionText;
+
+  /// No description provided for @adminOptionsCommaSeparated.
+  ///
+  /// In en, this message translates to:
+  /// **'Options (comma-separated)'**
+  String get adminOptionsCommaSeparated;
+
+  /// No description provided for @adminCorrectAnswerAfterRace.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct answer (after race)'**
+  String get adminCorrectAnswerAfterRace;
+
+  /// No description provided for @badgePerfectPodium.
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect Podium'**
+  String get badgePerfectPodium;
+
+  /// No description provided for @badgePoleHunter.
+  ///
+  /// In en, this message translates to:
+  /// **'Pole Hunter'**
+  String get badgePoleHunter;
+
+  /// No description provided for @badgeDnfOracle.
+  ///
+  /// In en, this message translates to:
+  /// **'DNF Oracle'**
+  String get badgeDnfOracle;
+
+  /// No description provided for @badgeWeeklyChampion.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Champion'**
+  String get badgeWeeklyChampion;
+
+  /// No description provided for @badgePerfectWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect Week'**
+  String get badgePerfectWeek;
+
+  /// No description provided for @badgeThreeInRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Three in a Row'**
+  String get badgeThreeInRow;
+
+  /// No description provided for @newLeague.
+  ///
+  /// In en, this message translates to:
+  /// **'NEW LEAGUE'**
+  String get newLeague;
+
+  /// No description provided for @createYourOwnLeague.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your own league'**
+  String get createYourOwnLeague;
+
+  /// No description provided for @enterCode.
+  ///
+  /// In en, this message translates to:
+  /// **'ENTER CODE'**
+  String get enterCode;
+
+  /// No description provided for @viewYourLeagues.
+  ///
+  /// In en, this message translates to:
+  /// **'View your leagues'**
+  String get viewYourLeagues;
+
+  /// No description provided for @shareCardCouldNotBePrepared.
+  ///
+  /// In en, this message translates to:
+  /// **'Share card could not be prepared'**
+  String get shareCardCouldNotBePrepared;
+
+  /// No description provided for @shareImageCouldNotBeCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Share image could not be created'**
+  String get shareImageCouldNotBeCreated;
+
+  /// No description provided for @leagueRoleOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'OWNER'**
+  String get leagueRoleOwner;
+
+  /// No description provided for @leagueRoleMember.
+  ///
+  /// In en, this message translates to:
+  /// **'MEMBER'**
+  String get leagueRoleMember;
+
+  /// No description provided for @noScoredPredictionsForRace.
+  ///
+  /// In en, this message translates to:
+  /// **'No scored predictions were found in this league for this race.'**
+  String get noScoredPredictionsForRace;
+
+  /// No description provided for @lineupLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Lineup loading'**
+  String get lineupLoading;
+
+  /// No description provided for @sprint.
+  ///
+  /// In en, this message translates to:
+  /// **'Sprint'**
+  String get sprint;
+
+  /// No description provided for @roundShort.
+  ///
+  /// In en, this message translates to:
+  /// **'R'**
+  String get roundShort;
+
+  /// No description provided for @sprintRaceUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'SPRINT RACE'**
+  String get sprintRaceUpper;
+
+  /// No description provided for @raceUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'RACE'**
+  String get raceUpper;
+
+  /// No description provided for @joinLeagueToPredict.
+  ///
+  /// In en, this message translates to:
+  /// **'You need to join a league to make predictions.'**
+  String get joinLeagueToPredict;
+
+  /// No description provided for @lapShort.
+  ///
+  /// In en, this message translates to:
+  /// **'LAP'**
+  String get lapShort;
+
+  /// No description provided for @eventDnfCrash.
+  ///
+  /// In en, this message translates to:
+  /// **'DNF'**
+  String get eventDnfCrash;
+
+  /// No description provided for @eventFastestLap.
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest Lap'**
+  String get eventFastestLap;
+
+  /// No description provided for @eventPitStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Pit stop'**
+  String get eventPitStop;
+
+  /// No description provided for @saved.
+  ///
+  /// In en, this message translates to:
+  /// **'SAVED'**
+  String get saved;
+
+  /// No description provided for @saveMyPrediction.
+  ///
+  /// In en, this message translates to:
+  /// **'SAVE MY PREDICTION'**
+  String get saveMyPrediction;
+
+  /// No description provided for @lockedUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'LOCKED'**
+  String get lockedUpper;
+
+  /// No description provided for @picksOpenUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'PICKS OPEN'**
+  String get picksOpenUpper;
+
+  /// No description provided for @timeLeftUntilPredictionsClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Time left until predictions close'**
+  String get timeLeftUntilPredictionsClose;
+
+  /// No description provided for @mainPodiumPointsInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'names +5 / position +2 / perfect +3'**
+  String get mainPodiumPointsInfo;
+
+  /// No description provided for @mainDnfPointsInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'exact +6 / +/-1 +3'**
+  String get mainDnfPointsInfo;
+
+  /// No description provided for @sprintPodiumPointsInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'names +4 / position +1 / perfect +2'**
+  String get sprintPodiumPointsInfo;
+
+  /// No description provided for @sprintDnfPointsInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'exact +4 / +/-1 +2'**
+  String get sprintDnfPointsInfo;
+
+  /// No description provided for @selectTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Select team'**
+  String get selectTeam;
+
+  /// No description provided for @podiumSlot.
+  ///
+  /// In en, this message translates to:
+  /// **'P{slot} · {place}'**
+  String podiumSlot(int slot, String place);
+
+  /// No description provided for @selectDriverFirstPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a driver for first place'**
+  String get selectDriverFirstPlace;
+
+  /// No description provided for @selectDriverSecondPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a driver for second place'**
+  String get selectDriverSecondPlace;
+
+  /// No description provided for @selectDriverThirdPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a driver for third place'**
+  String get selectDriverThirdPlace;
+
+  /// No description provided for @jokerQuestionUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'JOKER QUESTION'**
+  String get jokerQuestionUpper;
+
+  /// No description provided for @jokerQuestionOpensBeforeLock.
+  ///
+  /// In en, this message translates to:
+  /// **'The joker question opens 1 day before predictions lock.'**
+  String get jokerQuestionOpensBeforeLock;
+
+  /// No description provided for @jokerQuestionForRaceOpensBeforeLock.
+  ///
+  /// In en, this message translates to:
+  /// **'The joker question for this race opens 1 day before predictions lock.'**
+  String get jokerQuestionForRaceOpensBeforeLock;
+
+  /// No description provided for @opensIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens in: {time}'**
+  String opensIn(String time);
+
+  /// No description provided for @verySoon.
+  ///
+  /// In en, this message translates to:
+  /// **'very soon'**
+  String get verySoon;
+
+  /// No description provided for @daysShort.
+  ///
+  /// In en, this message translates to:
+  /// **'d'**
+  String get daysShort;
+
+  /// No description provided for @hoursShort.
+  ///
+  /// In en, this message translates to:
+  /// **'h'**
+  String get hoursShort;
+
+  /// No description provided for @minutesShort.
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get minutesShort;
+
+  /// No description provided for @teamsAndDriversUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'TEAMS & DRIVERS'**
+  String get teamsAndDriversUpper;
+
+  /// No description provided for @teamFallbackUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'TEAM'**
+  String get teamFallbackUpper;
+
+  /// No description provided for @teamFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Team'**
+  String get teamFallback;
+
+  /// No description provided for @accountDeletionSnackbarMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{message} Signing out...'**
+  String accountDeletionSnackbarMessage(Object message);
+
+  /// No description provided for @unexpectedErrorWithMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong: {message}'**
+  String unexpectedErrorWithMessage(Object message);
+
+  /// No description provided for @resultsUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'RESULTS'**
+  String get resultsUpper;
+
+  /// No description provided for @sprintResultsUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'SPRINT RESULTS'**
+  String get sprintResultsUpper;
+
+  /// No description provided for @resultsLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading results...'**
+  String get resultsLoading;
+
+  /// No description provided for @pointsBreakdownUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'POINTS BREAKDOWN'**
+  String get pointsBreakdownUpper;
+
+  /// No description provided for @fullStandingsUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'FULL STANDINGS'**
+  String get fullStandingsUpper;
+
+  /// No description provided for @yourScoreUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR SCORE'**
+  String get yourScoreUpper;
+
+  /// No description provided for @pointsAbbreviation.
+  ///
+  /// In en, this message translates to:
+  /// **'PTS'**
+  String get pointsAbbreviation;
+
+  /// No description provided for @leagueStandingsWeeklySummaryMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'League standings are shown on the weekly summary screen.'**
+  String get leagueStandingsWeeklySummaryMessage;
+
+  /// No description provided for @noSprintPredictionMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You did not make a prediction for this sprint.'**
+  String get noSprintPredictionMessage;
+
+  /// No description provided for @noRacePredictionMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You did not make a prediction for this race.'**
+  String get noRacePredictionMessage;
+
+  /// No description provided for @correctAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'(Correct: {value})'**
+  String correctAnswer(Object value);
+
+  /// No description provided for @actualAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'(Actual: {value})'**
+  String actualAnswer(Object value);
+
+  /// No description provided for @podiumBreakdownNote.
+  ///
+  /// In en, this message translates to:
+  /// **'{namesCount}/3 names · {positionsCount}/3 positions'**
+  String podiumBreakdownNote(Object namesCount, Object positionsCount);
+
+  /// No description provided for @podiumBreakdownNoteWithBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'{namesCount}/3 names · {positionsCount}/3 positions · perfect bonus'**
+  String podiumBreakdownNoteWithBonus(Object namesCount, Object positionsCount);
+
+  /// No description provided for @teamBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Team: {team}'**
+  String teamBreakdown(Object team);
+
+  /// No description provided for @poleBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Pole: {driver}'**
+  String poleBreakdown(Object driver);
+
+  /// No description provided for @sprintPoleBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Sprint pole: {driver}'**
+  String sprintPoleBreakdown(Object driver);
+
+  /// No description provided for @dnfBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'DNF: {count}'**
+  String dnfBreakdown(Object count);
+
+  /// No description provided for @sprintDnfBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Sprint DNF: {count}'**
+  String sprintDnfBreakdown(Object count);
+
+  /// No description provided for @safetyCarBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety car: {value}'**
+  String safetyCarBreakdown(Object value);
+
+  /// No description provided for @topScoringTeamResultLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Top scoring team:'**
+  String get topScoringTeamResultLabel;
+
+  /// No description provided for @dnfCountResultLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'DNF count:'**
+  String get dnfCountResultLabel;
+
+  /// No description provided for @safetyCarResultLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety car:'**
+  String get safetyCarResultLabel;
+
+  /// No description provided for @raceCanceledUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'RACE CANCELED'**
+  String get raceCanceledUpper;
+
+  /// No description provided for @raceCanceledNoScoringMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This race was canceled. Predictions will not be scored.'**
+  String get raceCanceledNoScoringMessage;
+
+  /// No description provided for @officialResultNotArrivedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Official result has not arrived yet'**
+  String get officialResultNotArrivedYet;
+
+  /// No description provided for @officialResultPulledAutomatically.
+  ///
+  /// In en, this message translates to:
+  /// **'It will be pulled automatically from OpenF1 when the race ends.'**
+  String get officialResultPulledAutomatically;
+
+  /// No description provided for @eventDateWithStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'{date} · {status}'**
+  String eventDateWithStatus(Object date, Object status);
+
+  /// No description provided for @raceRoundShort.
+  ///
+  /// In en, this message translates to:
+  /// **'R{round}'**
+  String raceRoundShort(int round);
+
+  /// No description provided for @sprintRaceName.
+  ///
+  /// In en, this message translates to:
+  /// **'{raceName} · Sprint'**
+  String sprintRaceName(Object raceName);
+
+  /// No description provided for @qualifyingScheduleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'QUALIFYING'**
+  String get qualifyingScheduleLabel;
+
+  /// No description provided for @sprintQualifyingScheduleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SPRINT QUALIFYING'**
+  String get sprintQualifyingScheduleLabel;
+
+  /// No description provided for @raceScheduleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'RACE'**
+  String get raceScheduleLabel;
+
+  /// No description provided for @sprintRaceScheduleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SPRINT RACE'**
+  String get sprintRaceScheduleLabel;
+
+  /// No description provided for @startLightTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}: {description}'**
+  String startLightTooltip(Object label, Object description);
+
+  /// No description provided for @startLightPractice1.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice 1'**
+  String get startLightPractice1;
+
+  /// No description provided for @startLightPractice2.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice 2'**
+  String get startLightPractice2;
+
+  /// No description provided for @startLightPractice3.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice 3'**
+  String get startLightPractice3;
+
+  /// No description provided for @startLightSprintQualifying.
+  ///
+  /// In en, this message translates to:
+  /// **'Sprint Qualifying'**
+  String get startLightSprintQualifying;
+
+  /// No description provided for @startLightSprintRace.
+  ///
+  /// In en, this message translates to:
+  /// **'Sprint Race'**
+  String get startLightSprintRace;
+
+  /// No description provided for @startLightQualifying.
+  ///
+  /// In en, this message translates to:
+  /// **'Qualifying'**
+  String get startLightQualifying;
+
+  /// No description provided for @startLightRace.
+  ///
+  /// In en, this message translates to:
+  /// **'Race'**
+  String get startLightRace;
+
+  /// No description provided for @raceCardPredictionMadeCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Prediction made {saved}/{total}'**
+  String raceCardPredictionMadeCount(int saved, int total);
+
+  /// No description provided for @raceCardNoPrediction.
+  ///
+  /// In en, this message translates to:
+  /// **'No prediction'**
+  String get raceCardNoPrediction;
+
+  /// No description provided for @shareLeagueMemberCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{leagueName} · {memberCount} people'**
+  String shareLeagueMemberCount(Object leagueName, int memberCount);
+
+  /// No description provided for @sharePredictionsScore.
+  ///
+  /// In en, this message translates to:
+  /// **'PREDICTIONS · {score}/{total} {pointsLabel}'**
+  String sharePredictionsScore(int score, int total, Object pointsLabel);
+
+  /// No description provided for @shareRaceWinnerShortUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'RACE WINNER'**
+  String get shareRaceWinnerShortUpper;
+
+  /// No description provided for @shareSprintWinnerShortUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'SPRINT WINNER'**
+  String get shareSprintWinnerShortUpper;
+
+  /// No description provided for @scoreNotCalculatedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Score has not been calculated yet.'**
+  String get scoreNotCalculatedYet;
+
+  /// No description provided for @scoreUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'SCORE'**
+  String get scoreUpper;
+
+  /// No description provided for @rankUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'RANK'**
+  String get rankUpper;
+
+  /// No description provided for @winnerShortUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'WINNER'**
+  String get winnerShortUpper;
+
+  /// No description provided for @safetyCarShortUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'S. CAR'**
+  String get safetyCarShortUpper;
+
+  /// No description provided for @podiumP1ShortUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'POD P1'**
+  String get podiumP1ShortUpper;
+
+  /// No description provided for @podiumP2ShortUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'POD P2'**
+  String get podiumP2ShortUpper;
+
+  /// No description provided for @podiumP3ShortUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'POD P3'**
+  String get podiumP3ShortUpper;
+
+  /// No description provided for @podiumBonusShortUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'POD BONUS'**
+  String get podiumBonusShortUpper;
+
+  /// No description provided for @poleShortUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'POLE'**
+  String get poleShortUpper;
+
+  /// No description provided for @bestTeamShortUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'BEST TEAM'**
+  String get bestTeamShortUpper;
+
+  /// No description provided for @shareNoSprintPredictionScoredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Because you did not make a sprint prediction, your sprint score and prediction breakdown for this GP cannot be shown.'**
+  String get shareNoSprintPredictionScoredMessage;
+
+  /// No description provided for @shareNoRacePredictionScoredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Because you did not make a prediction, your score and prediction breakdown for this GP cannot be shown.'**
+  String get shareNoRacePredictionScoredMessage;
+
+  /// No description provided for @shareSprintBreakdownPendingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your prediction breakdown will appear here when the sprint result is scored.'**
+  String get shareSprintBreakdownPendingMessage;
+
+  /// No description provided for @shareRaceBreakdownPendingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your prediction breakdown will appear here when the race result is scored.'**
+  String get shareRaceBreakdownPendingMessage;
+
+  /// No description provided for @countdownDays.
+  ///
+  /// In en, this message translates to:
+  /// **'DAYS'**
+  String get countdownDays;
+
+  /// No description provided for @countdownHours.
+  ///
+  /// In en, this message translates to:
+  /// **'HRS'**
+  String get countdownHours;
+
+  /// No description provided for @countdownMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'MIN'**
+  String get countdownMinutes;
+
+  /// No description provided for @countdownSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'SEC'**
+  String get countdownSeconds;
 }
 
 class _AppLocalizationsDelegate

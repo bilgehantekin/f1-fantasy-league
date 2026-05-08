@@ -76,6 +76,21 @@ void main() {
         RaceStatus.finished,
       );
     });
+
+    test('past race is treated as finished even when raw status is stale', () {
+      final now = DateTime.utc(2026, 5, 3, 12);
+      final r = race(
+        id: 'miami',
+        lockAt: now.subtract(const Duration(days: 2)),
+        raceAt: now.subtract(const Duration(hours: 5)),
+        status: RaceStatus.upcoming,
+      );
+
+      expect(
+        effectiveRaceCardStatus((race: r, kind: RaceCardKind.main), now: now),
+        RaceStatus.finished,
+      );
+    });
   });
 
   group('previous and next race selection', () {

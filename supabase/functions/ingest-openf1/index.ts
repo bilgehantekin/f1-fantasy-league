@@ -701,8 +701,8 @@ function teamCode(name: string): string {
     "Haas F1 Team": "HAA",
     "Haas": "HAA",
     "Cadillac": "CAD",
-    "Sauber": "SAU",
-    "Kick Sauber": "SAU",
+    "Sauber": "AUD",
+    "Kick Sauber": "AUD",
     "AlphaTauri": "AT",
   };
   if (map[name]) return map[name];

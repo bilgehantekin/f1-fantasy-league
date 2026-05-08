@@ -83,6 +83,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       await supabase.auth.signInWithOAuth(
         provider,
         redirectTo: kIsWeb ? null : Env.oauthRedirectUrl,
+        authScreenLaunchMode: LaunchMode.externalApplication,
         queryParams: provider == OAuthProvider.google
             ? {'access_type': 'offline', 'prompt': 'consent'}
             : null,
@@ -200,7 +201,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       textInputAction: TextInputAction.next,
                       decoration: InputDecoration(
                         labelText: l.username,
-                        helperText: '3-16',
+                        helperText: l.usernameLengthRange,
                       ),
                       maxLength: 16,
                       buildCounter:

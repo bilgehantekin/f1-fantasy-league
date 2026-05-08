@@ -245,7 +245,7 @@ GridCall uses:
 - **Google & Apple**: Sign-in services
 - **OpenF1 API**: Race data and results from an unofficial public source
 - **Supabase**: Database and authentication infrastructure
-- **Resend**: Transactional email delivery
+- **Supabase Auth**: Account authentication and session management
 - **Sentry**: Error reporting
 
 We are not responsible for:
@@ -374,7 +374,7 @@ Notice is effective when email is sent.
 ### 16.1 Related Agreements
 
 By using GridCall, you also agree to:
-- **Privacy Policy**: https://gridcall.app/privacy
+- **Privacy Policy**: https://github.com/bilgehantekin/f1-fantasy-league/blob/main/docs/privacy-policy.md
 - **App Store Terms**: Apple App Store or Google Play Store terms
 
 ### 16.2 Accessibility

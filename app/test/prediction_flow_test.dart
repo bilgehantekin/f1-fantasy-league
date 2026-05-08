@@ -121,7 +121,7 @@ void main() {
     test('save validation requires league context', () {
       expect(
         validatePredictionSave(leagueId: null),
-        'Tahmin kaydetmek için lig bağlamı gerekli',
+        PredictionSaveError.missingLeagueContext,
       );
       expect(validatePredictionSave(leagueId: 'league-a'), isNull);
     });

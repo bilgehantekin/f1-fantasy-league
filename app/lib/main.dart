@@ -17,9 +17,7 @@ Future<void> main() async {
   Env.validate();
   await initializeDateFormatting('tr_TR', null);
   await initializeDateFormatting('en_US', null);
-  final platformLanguage = Env.appLocale.isNotEmpty
-      ? Env.appLocale
-      : WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+  final platformLanguage = Env.appLocale.isNotEmpty ? Env.appLocale : 'en';
   Intl.defaultLocale = platformLanguage == 'tr' ? 'tr_TR' : 'en_US';
   await initSupabase();
   await NotificationService.instance.init();
@@ -47,7 +45,7 @@ class GridCallApp extends ConsumerWidget {
       locale: switch (Env.appLocale) {
         'en' => const Locale('en'),
         'tr' => const Locale('tr'),
-        _ => null,
+        _ => const Locale('en'),
       },
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [

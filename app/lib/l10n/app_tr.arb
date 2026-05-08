@@ -1,20 +1,38 @@
 {
   "@@locale": "tr",
   "appTitle": "GridCall",
-  "appLoading": "Yükleniyor",
-  "appErrorTitle": "Bir şey ters gitti",
+  "appLoading": "Yükleniyor...",
+  "appErrorTitle": "Bir şeyler ters gitti",
   "retry": "Tekrar dene",
   "cancel": "İptal",
   "save": "Kaydet",
   "saving": "Kaydediliyor...",
+  "saveBig": "KAYDET",
+  "savingBig": "KAYDEDİLİYOR...",
+  "jokerUpper": "JOKER",
+  "dnfUpper": "DNF",
   "continueAction": "Devam",
   "clear": "Temizle",
   "copy": "Kopyala",
   "copied": "Kopyalandı!",
   "share": "Paylaş",
-  "shareError": "Paylaşım hatası: {error}",
+  "shareError": "Paylaşım başarısız: {error}",
+  "@shareError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "errorWithMessage": "Hata: {error}",
-  "authTagline": "F1 tahmin ligin, cebinde.",
+  "@errorWithMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "authTagline": "F1 tahmin ligin cebinde.",
   "username": "Kullanıcı adı",
   "email": "E-posta",
   "password": "Şifre",
@@ -23,33 +41,33 @@
   "signIn": "GİRİŞ YAP",
   "continueGoogle": "Google ile devam et",
   "continueApple": "Apple ile devam et",
-  "alreadyHaveAccount": "Hesabın var mı? Giriş yap",
+  "alreadyHaveAccount": "Zaten hesabın var mı? Giriş yap",
   "noAccount": "Hesabın yok mu? Kayıt ol",
-  "forgotPassword": "Şifremi unuttum",
-  "terms": "Kullanım Şartları",
+  "forgotPassword": "Şifreni mi unuttun?",
+  "terms": "Kullanım Koşulları",
   "privacy": "Gizlilik Politikası",
   "legalPrefix": "Devam ederek ",
   "legalAnd": " ve ",
-  "legalSuffix": " koşullarını kabul etmiş olursun.",
-  "signUpReceived": "Kayıt alındı. E-posta doğrulaması açıksa gelen kutundaki bağlantıyla hesabını onayla.",
-  "resetEmailRequired": "Şifre sıfırlama için e-posta adresini yaz.",
-  "validEmailRequired": "Geçerli bir e-posta adresi yaz.",
+  "legalSuffix": " kabul etmiş olursun.",
+  "signUpReceived": "Hesap oluşturuldu. Şimdi giriş yapabilirsin.",
+  "resetEmailRequired": "Şifreni sıfırlamak için e-posta adresini yaz.",
+  "validEmailRequired": "Geçerli bir e-posta adresi gir.",
   "resetLinkSent": "Şifre sıfırlama bağlantısı e-posta adresine gönderildi.",
   "passwordMin8": "Şifre en az 8 karakter olmalı.",
   "usernameLength": "Kullanıcı adı 3-16 karakter olmalı.",
-  "passwordRequired": "Şifreni yaz.",
+  "passwordRequired": "Şifreni gir.",
   "notificationDeniedLater": "Bildirim izni verilmedi. Hatırlatmaları daha sonra ayarlardan açabilirsin.",
   "usernameRequired": "Kullanıcı adı gerekli.",
   "min3": "En az 3 karakter gir.",
   "max16": "En fazla 16 karakter gir.",
-  "onboardingTagline": "Arkadaşlarınla özel lig kur, yarıştan önce tahminini yap, sonuçlar açıklanınca puanını karşılaştır.",
+  "onboardingTagline": "Arkadaşlarınla özel lig kur, yarıştan önce tahminini yap, sonuçlar açıklanınca skorunu karşılaştır.",
   "howToPlay": "NASIL OYNANIR?",
-  "howToPlayBody": "Her yarış haftası basit: ligine katıl, tahminini süre bitmeden kaydet, sonuçlar açıklanınca sıralamadaki yerini gör.",
+  "howToPlayBody": "Her yarış haftası basit: ligine katıl, tahminini süre bitmeden kaydet, sonuçlar gelince sıralamadaki yerini gör.",
   "createLeagueTitle": "Lig kur veya davet koduyla katıl",
-  "createLeagueBody": "Arkadaşlarınla aynı ligde yarış. Kendi ligini oluştur ya da gelen kodla hemen katıl.",
+  "createLeagueBody": "Arkadaşlarınla aynı ligde yarış. Kendi ligini oluştur ya da davet koduyla hemen katıl.",
   "makePredictionTitle": "Süre bitmeden tahminini yap",
-  "makePredictionBody": "Podyum, pole, DNF ve güvenlik aracı gibi tahminlerini seç.",
-  "seeScoreTitle": "Sonuçlar gelince puanını gör",
+  "makePredictionBody": "Podyum, Pole, DNF sayısı, Güvenlik aracı ve daha fazlası için tahminlerini seç.",
+  "seeScoreTitle": "Sonuçlar gelince skorunu gör",
   "seeScoreBody": "Skorların hesaplanır, lig sıralaması güncellenir ve haftalık paylaşım kartın hazır olur.",
   "profile": "PROFİL",
   "usernameHelper": "Bu ad liglerde arkadaşlarına görünür.",
@@ -63,5 +81,797 @@
   "preferenceLater": "Bu tercihi daha sonra bildirim ayarlarından değiştirebilirsin.",
   "settingUp": "HAZIRLANIYOR...",
   "start": "BAŞLA",
-  "disclaimer": "GridCall, Formula 1, FIA, takım veya sürücülerle bağlantısı olmayan, bağımsız bir hayran uygulamasıdır. Tüm marka ve logolar ilgili sahiplerine aittir."
+  "disclaimer": "GridCall; Formula 1, FIA, takımlar veya sürücülerle bağlantısı olmayan bağımsız bir fan uygulamasıdır. Tüm marka ve logolar ilgili sahiplerine aittir.",
+  "back": "Geri",
+  "profileTooltip": "Profil",
+  "adminJokerTooltip": "Admin - Joker",
+  "notificationsTitle": "BİLDİRİMLER",
+  "notificationSettingsUpdated": "Bildirim ayarları güncellendi.",
+  "notificationPermissionRequired": "Hatırlatmalar için bildirim izni gerekli. Sistem ayarlarından bildirimleri açabilirsin.",
+  "beforeRacePredictionsLock": "Yarış tahminleri kapanmadan önce",
+  "calendarDriverStandings": "SÜRÜCÜ SIRALAMASI",
+  "calendarConstructorStandings": "TAKIM SIRALAMASI",
+  "races": "YARIŞLAR",
+  "lineup": "DİZİLİŞ",
+  "sprintLineup": "SPRINT SIRALAMA",
+  "driversOnTrack": "PİSTTEKİ SÜRÜCÜLER",
+  "allRaces": "Tüm yarışlar",
+  "allRacesUpper": "TÜM YARIŞLAR",
+  "selectRace": "Yarış seç",
+  "noDataYet": "Henüz veri yok",
+  "dataLoading": "Veriler yükleniyor...",
+  "raceLoading": "Yarış yükleniyor...",
+  "driversLoading": "Sürücüler yükleniyor...",
+  "settingsLoading": "Ayarlar yükleniyor...",
+  "leaguesLoading": "Ligler yükleniyor...",
+  "leagueSettingsLoading": "Lig ayarları yükleniyor...",
+  "membersLoading": "Üyeler yükleniyor...",
+  "standingsLoading": "Sıralama yükleniyor...",
+  "weeklyStandingsLoading": "Haftalık sıralama yükleniyor...",
+  "racesLoading": "Yarışlar yükleniyor...",
+  "liveScreenLoading": "Canlı ekran yükleniyor...",
+  "liveDataLoading": "Canlı veri yükleniyor...",
+  "yourPredictionLoading": "Tahminin yükleniyor...",
+  "liveOrder": "CANLI SIRALAMA",
+  "fastestLap": "EN HIZLI TUR",
+  "yourPrediction": "SENİN TAHMİNİN",
+  "recentEvents": "SON OLAYLAR",
+  "noLiveDataYet": "Henüz canlı veri yok",
+  "liveTimingWaiting": "Yarış veri akışı geldiğinde canlı zamanlama güncellenecek.",
+  "p1Now": "GÜNCEL P1",
+  "p2Now": "GÜNCEL P2",
+  "p3Now": "GÜNCEL P3",
+  "openForPredictions": "Tahminlere açık",
+  "openForPicks": "TAHMİNLERE AÇIK",
+  "locked": "Kilitli",
+  "live": "Canlı",
+  "liveUpper": "CANLI",
+  "finished": "Tamamlandı",
+  "canceled": "İptal edildi",
+  "cancelled": "İptal edildi",
+  "sprintRace": "Sprint yarışı",
+  "mainRace": "Ana yarış",
+  "qualifying": "Sıralama",
+  "race": "Yarış",
+  "practice1": "Antrenman 1",
+  "practice2": "Antrenman 2",
+  "practice3": "Antrenman 3",
+  "sprintQualifying": "Sprint Sıralama",
+  "sprintRaceSession": "Sprint Yarışı",
+  "qualifyingLabel": "Sıralama: ",
+  "raceLabel": "Yarış: ",
+  "openLiveScreen": "Canlı ekranı aç",
+  "openSprintLiveScreen": "Sprint canlı ekranını aç",
+  "lapProgress": "TUR {current}/{total}",
+  "@lapProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "viewWeeklySummary": "Haftalık özeti gör",
+  "yourScore": "Skorun",
+  "pointsShort": "P",
+  "points": "Puan",
+  "total": "TOPLAM",
+  "pointsBreakdownPending": "Puan kırılımı resmi sonuç geldikten sonra gösterilecek.",
+  "sprintPointsBreakdownPending": "Puan kırılımı resmi Sprint sonucu geldikten sonra gösterilecek.",
+  "winnerBreakdown": "Kazanan: {driver}",
+  "@winnerBreakdown": {
+    "placeholders": {
+      "driver": {
+        "type": "String"
+      }
+    }
+  },
+  "podiumBreakdown": "Podyum: {podium}",
+  "@podiumBreakdown": {
+    "placeholders": {
+      "podium": {
+        "type": "String"
+      }
+    }
+  },
+  "yourRank": "Sıran",
+  "predictionMade": "Tahmin yapıldı {saved}/{total}",
+  "@predictionMade": {
+    "placeholders": {
+      "saved": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "noPrediction": "Tahmin yok",
+  "leagueFallback": "Lig",
+  "myLeagues": "LİGLERİM",
+  "activeLeagues": "AKTİF LİGLER",
+  "noLeagueYet": "Henüz bir ligde değilsin",
+  "noLeagueYetMessage": "Ana ekrandan lig oluşturabilir veya davet koduyla bir lige katılabilirsin.",
+  "membersCount": "{count} üye",
+  "@membersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "standing": "SIRA",
+  "standings": "SIRALAMA",
+  "overall": "Genel",
+  "thisWeek": "Bu Hafta",
+  "leagueTabRaces": "YARIŞLAR",
+  "you": "SEN",
+  "viewDetails": "Detayları gör",
+  "leagueSettings": "LİG AYARLARI",
+  "leagueSettingsTooltip": "Lig ayarları",
+  "general": "GENEL",
+  "changeLeagueName": "LİG ADINI DEĞİŞTİR",
+  "refreshInviteCode": "DAVET KODUNU YENİLE",
+  "leaveLeague": "LİGTEN AYRIL",
+  "members": "ÜYELER",
+  "leagueName": "Lig adı",
+  "newLeagueName": "Yeni lig adı",
+  "transferOwnership": "Sahipliği devret",
+  "removeMember": "Üyeyi kaldır",
+  "weeklySummary": "HAFTALIK ÖZET",
+  "sharePreview": "Paylaşım önizlemesi",
+  "createPrivateLeague": "ÖZEL LİG OLUŞTUR",
+  "createPrivateLeagueBody": "Arkadaşlarınla yarışmak için özel bir lig oluştur. Lig davet koduyla paylaşılır.",
+  "leagueNameUpper": "LİG ADI",
+  "leagueNameHint": "Örn. Arkadaşlar Ligi",
+  "inviteCodeAfterCreate": "Lig oluşturulduktan sonra davet kodu alacaksın.",
+  "create": "OLUŞTUR",
+  "creating": "OLUŞTURULUYOR...",
+  "joinWithInviteCode": "Davet koduyla katıl",
+  "enterInviteCode": "Arkadaşının verdiği davet kodunu gir.",
+  "inviteCode": "DAVET KODU",
+  "inviteCodeValue": "Davet kodu: {code}",
+  "@inviteCodeValue": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "refreshInviteCodeQuestion": "Davet kodu yenilensin mi?",
+  "refreshInviteCodeBody": "Eski davet kodu artık çalışmayacak.",
+  "leaveLeagueQuestion": "Ligden ayrılmak istiyor musun?",
+  "leaveLeagueBody": "Tekrar katılmak için yeni bir davet koduna ihtiyacın olacak.",
+  "removeMemberQuestion": "{username} kaldırılsın mı?",
+  "@removeMemberQuestion": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "removeMemberBody": "Üye ligden kaldırılacak.",
+  "transferOwnershipQuestion": "Sahiplik devredilsin mi?",
+  "transferOwnershipBody": "{username} ligin sahibi olacak.",
+  "@transferOwnershipBody": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "join": "KATIL",
+  "joining": "KATILINIYOR...",
+  "joinLeague": "LİGE KATIL",
+  "skipForNow": "Şimdilik geç",
+  "joinLeagueBody": "Bu davet koduyla özel bir lige katılacaksın.",
+  "invalidInviteCode": "Geçersiz davet kodu. Kodu kontrol edip tekrar dene.",
+  "sessionExpired": "Oturumun sona ermiş olabilir. Lütfen tekrar giriş yap.",
+  "connectionError": "Bağlantı hatası. İnternetini kontrol edip tekrar dene.",
+  "alreadyLeagueMember": "Bu ligin zaten üyesisin.",
+  "shareLeague": "LİGİ PAYLAŞ",
+  "preparing": "HAZIRLANIYOR...",
+  "inviteCodeLower": "davet kodu",
+  "joinToo": "SEN DE KATIL",
+  "season": "SEZON {season}",
+  "@season": {
+    "placeholders": {
+      "season": {
+        "type": "int"
+      }
+    }
+  },
+  "raceRoundAndName": "R{round} · {name}",
+  "@raceRoundAndName": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "playersCount": "{count} oyuncu",
+  "@playersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "standingsCount": "{count} sıralama",
+  "@standingsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "leagueShareEmpty": "İlk yarış sonucu geldikten sonra sıralama burada görünecek.",
+  "predictionSaved": "Tahmin kaydedildi.",
+  "sprintPredictionSaved": "Sprint tahmini kaydedildi.",
+  "predictionSaveLeagueContextRequired": "Tahmin kaydetmek için bir lig seçmelisin.",
+  "predictionCleared": "Tahmin temizlendi.",
+  "sprintPredictionCleared": "Sprint tahmini temizlendi.",
+  "clearPredictionQuestion": "Tahminin temizlensin mi?",
+  "clearSprintPredictionQuestion": "Sprint tahminin temizlensin mi?",
+  "clearPredictionBody": "Bu işlem, bu lig ve yarış için kayıtlı tahminlerini kaldırır.",
+  "noOtherLeagueToCopy": "Kopyalayabileceğin başka bir ligin yok.",
+  "copyToOtherLeagues": "Diğer liglere kopyala",
+  "clearPredictionTooltip": "Tahmini temizle",
+  "copyToOtherLeaguesTooltip": "Diğer liglere kopyala",
+  "winner": "KAZANAN",
+  "winnerHint": "Yarışı kim kazanır?",
+  "podium": "PODYUM",
+  "topScoringTeam": "EN ÇOK PUAN ALACAK TAKIM",
+  "topScoringTeamHint": "Hangi takım en çok puanı alır?",
+  "polePosition": "POLE",
+  "polePositionHint": "Pole pozisyonunu kim alır?",
+  "dnfCount": "DNF SAYISI",
+  "safetyCarQuestion": "GÜVENLİK ARACI OLACAK MI?",
+  "sprintWinner": "SPRINT KAZANAN",
+  "sprintWinnerHint": "Sprint kim kazanır?",
+  "sprintPodium": "SPRINT PODYUM",
+  "sprintTopScoringTeamHint": "Sprintte hangi takım en çok puanı alır?",
+  "sprintPole": "SPRINT POLE",
+  "sprintPoleHint": "Sprint Pole kim alır?",
+  "sprintDnfCount": "SPRINT DNF SAYISI",
+  "mainRaceUpper": "ANA YARIŞ",
+  "sprintUpper": "SPRINT",
+  "yes": "Evet",
+  "no": "Hayır",
+  "sprintPodiumSlot": "Sprint P{slot} · {place}",
+  "@sprintPodiumSlot": {
+    "placeholders": {
+      "slot": {
+        "type": "int"
+      },
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "first": "Birinci",
+  "second": "İkinci",
+  "third": "Üçüncü",
+  "resultsTitle": "{raceName} - Sonuçlar",
+  "@resultsTitle": {
+    "placeholders": {
+      "raceName": {
+        "type": "String"
+      }
+    }
+  },
+  "sprintResultsTitle": "{raceName} - Sprint",
+  "@sprintResultsTitle": {
+    "placeholders": {
+      "raceName": {
+        "type": "String"
+      }
+    }
+  },
+  "sprintWinnerResult": "Sprint kazananı: {driver}",
+  "@sprintWinnerResult": {
+    "placeholders": {
+      "driver": {
+        "type": "String"
+      }
+    }
+  },
+  "sprintPodiumResult": "Sprint podyumu: {podium}",
+  "@sprintPodiumResult": {
+    "placeholders": {
+      "podium": {
+        "type": "String"
+      }
+    }
+  },
+  "sprintPoleResult": "Sprint Pole: {driver}",
+  "@sprintPoleResult": {
+    "placeholders": {
+      "driver": {
+        "type": "String"
+      }
+    }
+  },
+  "sprintDnfResult": "Sprint DNF: {count}",
+  "@sprintDnfResult": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "jokerResult": "Joker: {answer}",
+  "@jokerResult": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
+  "winnerResultLabel": "Kazanan:",
+  "sprintWinnerResultLabel": "Sprint kazananı:",
+  "podiumResultLabel": "Podyum:",
+  "sprintPodiumResultLabel": "Sprint podyumu:",
+  "poleResultLabel": "Pole:",
+  "sprintPoleResultLabel": "Sprint Pole:",
+  "badge": "Rozet",
+  "ok": "Tamam",
+  "aboutGridCall": "GridCall Hakkında",
+  "aboutGridCallBody": "GridCall, Formula 1 fanları için geliştirilmiş bağımsız bir tahmin uygulamasıdır.\n\nGridCall; Formula 1, FIA, Formula One Management, takımlar, sürücüler veya sponsorlarla ilişkili değildir, onlar tarafından desteklenmez ya da onaylanmaz. F1 ile ilgili tüm marka, logo ve isimler ilgili sahiplerinin ticari markalarıdır ve yalnızca bilgilendirme amacıyla kullanılır.\n\nYarış zamanlama ve sonuç verileri, herkese açık üçüncü taraf bir kaynak olan OpenF1 üzerinden sağlanır. OpenF1 resmi bir kaynak değildir.",
+  "mainRaceAverageScore": "Ana yarış ortalama puan",
+  "sprintRaceAverageScore": "Sprint ortalama puan",
+  "averageWeeklyScore": "Haftalık ortalama puan",
+  "weeksParticipated": "Katıldığı hafta",
+  "bestGp": "En iyi GP",
+  "activeStreak": "Aktif seri",
+  "weeksCount": "{count} hafta",
+  "@weeksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bestLeague": "En iyi lig",
+  "raceSprintScores": "Yarış {raceScore} · Sprint {sprintScore}",
+  "@raceSprintScores": {
+    "placeholders": {
+      "raceScore": {
+        "type": "int"
+      },
+      "sprintScore": {
+        "type": "int"
+      }
+    }
+  },
+  "authEmailNotConfirmed": "E-posta adresin henüz doğrulanmamış. Gelen kutunu kontrol et.",
+  "authEmailAlreadyRegistered": "Bu e-posta adresi zaten kayıtlı.",
+  "authTooManyAttempts": "Çok fazla deneme yapıldı. Lütfen biraz bekleyip tekrar dene.",
+  "authPasswordMin6": "Şifre en az 6 karakter olmalı.",
+  "authSignupDisabled": "Kayıt şu an kapalı.",
+  "authWeakPassword": "Şifre çok zayıf. Daha güçlü bir şifre seç.",
+  "errorContentNotFound": "Aradığın içerik bulunamadı.",
+  "errorNoPermission": "Bu işlem için yetkin yok.",
+  "errorRecordExists": "Bu kayıt zaten mevcut.",
+  "errorActionAlreadyCompleted": "Bu işlem zaten yapılmış görünüyor.",
+  "errorActionRetrySoon": "İşlem tamamlanamadı. Lütfen biraz sonra tekrar dene.",
+  "errorInvalidCredentials": "E-posta veya şifre hatalı.",
+  "predictionCopiedToLeagues": "Tahmin seçili liglere kopyalandı.",
+  "copyErrorWithMessage": "Kopyalama başarısız: {error}",
+  "@copyErrorWithMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "usernameLengthRange": "3-16",
+  "noStandingsYet": "Henüz sıralama yok.",
+  "all": "Tümü",
+  "noRacesForSeason": "Bu sezon için yarış bulunamadı.",
+  "previousRace": "Önceki yarış",
+  "nextRace": "Sonraki yarış",
+  "joinLeagueSubject": "{leagueName} ligine katıl",
+  "@joinLeagueSubject": {
+    "placeholders": {
+      "leagueName": {
+        "type": "String"
+      }
+    }
+  },
+  "joinLeagueShareText": "GridCall ligime katıl: {inviteLink}\nDavet kodu: {inviteCode}",
+  "@joinLeagueShareText": {
+    "placeholders": {
+      "inviteLink": {
+        "type": "String"
+      },
+      "inviteCode": {
+        "type": "String"
+      }
+    }
+  },
+  "noPointsYet": "Henüz puan yok",
+  "raceNotFound": "Yarış bulunamadı",
+  "noWeeklyRaceFound": "Bu hafta gösterilecek yarış bulunamadı.",
+  "noPointsThisWeek": "Bu hafta puan yok",
+  "weeklyScoresCalculated": "{raceName} skorları hesaplanınca burada görünecek.",
+  "@weeklyScoresCalculated": {
+    "placeholders": {
+      "raceName": {
+        "type": "String"
+      }
+    }
+  },
+  "noRaceCalendarForSeason": "Bu sezon için yarış takvimi bulunmuyor.",
+  "makePrediction": "Tahmin yap",
+  "weeklySummarySubject": "{leagueName} · {raceName} özeti",
+  "@weeklySummarySubject": {
+    "placeholders": {
+      "leagueName": {
+        "type": "String"
+      },
+      "raceName": {
+        "type": "String"
+      }
+    }
+  },
+  "weeklyWinnerLabel": "HAFTANIN KAZANANI",
+  "noScoreYet": "Henüz skor yok",
+  "predictionsUpper": "TAHMİNLER",
+  "jokerCorrect": "JOKER DOĞRU",
+  "predictions": "tahmin",
+  "people": "kişi",
+  "topScoringDriver": "EN ÇOK PUAN ALAN SÜRÜCÜ",
+  "topFive": "İLK 5",
+  "viewDetailedResults": "DETAYLI SONUÇLARI GÖR",
+  "profileLoading": "Profil yükleniyor...",
+  "signInRequired": "Giriş gerekli",
+  "profileSignInRequiredMessage": "Profilini görmek için giriş yapman gerekiyor.",
+  "statsErrorWithMessage": "İstatistikler yüklenemedi: {error}",
+  "@statsErrorWithMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "badgesUpper": "ROZETLER",
+  "seasonStatsUpper": "SEZON İSTATİSTİKLERİ",
+  "leaguesUpper": "LİGLER",
+  "accountAndLegalUpper": "HESAP VE YASAL",
+  "signOut": "Çıkış yap",
+  "requestAccountDeletion": "Hesap silme talebi oluştur",
+  "deleteYourAccount": "Hesabını sil",
+  "accountDeletionBody": "Hesabın, tüm tahminlerin, lig üyeliklerin, rozetlerin ve profil bilgilerin bu talebi oluşturduktan sonra 30 gün içinde kalıcı olarak silinecek. Bu süre içinde fikrini değiştirirsen bilgehan.2002@gmail.com adresine e-posta göndererek iptal talep edebilirsin.\n\nTalep oluşturulduktan sonra oturumun kapatılacak ve hesabın diğer kullanıcılara görünmeyecek.",
+  "noteOptional": "Not (isteğe bağlı)",
+  "deletionReasonHint": "Silme sebebini yazabilirsin",
+  "createRequest": "Talep oluştur",
+  "accountDeletionScheduled": "Hesabın {date} tarihinde silinecek.",
+  "@accountDeletionScheduled": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeletionRequestReceived": "Hesap silme talebin alındı.",
+  "signingOut": "Çıkış yapılıyor...",
+  "requestCreateError": "Talep oluşturulamadı: {error}",
+  "@requestCreateError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "totalPoints": "Toplam puan",
+  "bestRank": "En iyi sıra",
+  "weeklyRecord": "Haftalık rekor",
+  "noBadgesYet": "Henüz rozet yok",
+  "noBadgesYetMessage": "Yarış sonuçları geldikçe başarılarına göre rozetler kazanacaksın.",
+  "seasonStatsSummary": "Ortalama tahmin performansın, katılım serin, en iyi yarış haftan ve lig durumun bu sezon için burada özetlenir.",
+  "leaguePerformanceUpper": "LİG PERFORMANSI",
+  "sectionLoading": "Bölüm yükleniyor...",
+  "adminJokersTitle": "Admin · Joker Soruları",
+  "adminPermissionRequired": "Bu sayfayı görmek için admin yetkisi gerekiyor. Studio’da profiles.is_admin = true olarak ayarla.",
+  "adminJokerTab": "JOKER",
+  "adminDataTab": "VERİ",
+  "adminDataChecking": "Veri kontrol ediliyor...",
+  "adminNone": "yok",
+  "adminDnfClassification": "DNF {dnf}, klasman {rows}",
+  "@adminDnfClassification": {
+    "placeholders": {
+      "dnf": {
+        "type": "int"
+      },
+      "rows": {
+        "type": "int"
+      }
+    }
+  },
+  "adminOpenF1Ingest": "OpenF1 içe aktar",
+  "adminRaceDataRefreshed": "{raceName} verisi yenilendi.",
+  "@adminRaceDataRefreshed": {
+    "placeholders": {
+      "raceName": {
+        "type": "String"
+      }
+    }
+  },
+  "adminIngestError": "İçe aktarma başarısız: {error}",
+  "@adminIngestError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "adminNoJoker": "Joker yok",
+  "adminRaceJokerTitle": "R{round} Joker",
+  "@adminRaceJokerTitle": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "adminQuestionText": "Soru metni",
+  "adminOptionsCommaSeparated": "Seçenekler (virgülle ayrılmış)",
+  "adminCorrectAnswerAfterRace": "Doğru cevap (yarış sonrası)",
+  "badgePerfectPodium": "Muhteşem Podyum",
+  "badgePoleHunter": "Pole Avcısı",
+  "badgeDnfOracle": "DNF Kahini",
+  "badgeWeeklyChampion": "Hafta Şampiyonu",
+  "badgePerfectWeek": "Muhteşem Hafta",
+  "badgeThreeInRow": "Üçü Bir Arada",
+  "newLeague": "YENİ LİG",
+  "createYourOwnLeague": "Kendi ligini oluştur",
+  "enterCode": "KOD GİR",
+  "viewYourLeagues": "Liglerini görüntüle",
+  "shareCardCouldNotBePrepared": "Paylaşım kartı hazırlanamadı",
+  "shareImageCouldNotBeCreated": "Paylaşım görseli oluşturulamadı",
+  "leagueRoleOwner": "KURUCU",
+  "leagueRoleMember": "ÜYE",
+  "noScoredPredictionsForRace": "Bu yarış için bu ligde puanlanmış tahmin bulunamadı.",
+  "lineupLoading": "Sıralama yükleniyor",
+  "sprint": "Sprint",
+  "roundShort": "R",
+  "sprintRaceUpper": "SPRINT YARIŞI",
+  "raceUpper": "YARIŞ",
+  "joinLeagueToPredict": "Tahmin yapmak için bir lige katılmalısın.",
+  "lapShort": "TUR",
+  "eventDnfCrash": "DNF",
+  "eventFastestLap": "En Hızlı Tur",
+  "eventPitStop": "Pit stop",
+  "saved": "KAYDEDİLDİ",
+  "saveMyPrediction": "TAHMİNİMİ KAYDET",
+  "lockedUpper": "KİLİTLİ",
+  "picksOpenUpper": "TAHMİNLER AÇIK",
+  "timeLeftUntilPredictionsClose": "Tahminlerin kapanmasına kalan süre",
+  "mainPodiumPointsInfo": "isim +5 / sıra +2 / tam isabet +3",
+  "mainDnfPointsInfo": "tam isabet +6 / +/-1 +3",
+  "sprintPodiumPointsInfo": "isim +4 / sıra +1 / tam isabet +2",
+  "sprintDnfPointsInfo": "tam isabet +4 / +/-1 +2",
+  "selectTeam": "Takım seç",
+  "podiumSlot": "P{slot} · {place}",
+  "@podiumSlot": {
+    "placeholders": {
+      "slot": {
+        "type": "int"
+      },
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "selectDriverFirstPlace": "Birincilik için sürücü seç",
+  "selectDriverSecondPlace": "İkincilik için sürücü seç",
+  "selectDriverThirdPlace": "Üçüncülük için sürücü seç",
+  "jokerQuestionUpper": "JOKER SORUSU",
+  "jokerQuestionOpensBeforeLock": "Joker sorusu tahminler kilitlenmeden 1 gün önce açılır.",
+  "jokerQuestionForRaceOpensBeforeLock": "Bu yarışın joker sorusu tahminler kilitlenmeden 1 gün önce açılır.",
+  "opensIn": "Açılmasına kalan süre: {time}",
+  "@opensIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "verySoon": "çok yakında",
+  "daysShort": "g",
+  "hoursShort": "s",
+  "minutesShort": "dk",
+  "teamsAndDriversUpper": "TAKIMLAR VE SÜRÜCÜLER",
+  "teamFallbackUpper": "TAKIM",
+  "teamFallback": "Takım",
+  "accountDeletionSnackbarMessage": "{message} Çıkış yapılıyor...",
+  "@accountDeletionSnackbarMessage": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "unexpectedErrorWithMessage": "Bir şeyler ters gitti: {message}",
+  "@unexpectedErrorWithMessage": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "resultsUpper": "SONUÇLAR",
+  "sprintResultsUpper": "SPRINT SONUÇLARI",
+  "resultsLoading": "Sonuçlar yükleniyor...",
+  "pointsBreakdownUpper": "PUAN DETAYI",
+  "fullStandingsUpper": "TÜM SIRALAMA",
+  "yourScoreUpper": "SKORUN",
+  "pointsAbbreviation": "PUAN",
+  "leagueStandingsWeeklySummaryMessage": "Lig sıralaması haftalık özet ekranında gösterilir.",
+  "noSprintPredictionMessage": "Bu sprint için tahmin yapmadın.",
+  "noRacePredictionMessage": "Bu yarış için tahmin yapmadın.",
+  "correctAnswer": "(Doğru: {value})",
+  "@correctAnswer": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "actualAnswer": "(Gerçek: {value})",
+  "@actualAnswer": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "podiumBreakdownNote": "{namesCount}/3 isim · {positionsCount}/3 sıra",
+  "@podiumBreakdownNote": {
+    "placeholders": {
+      "namesCount": {},
+      "positionsCount": {}
+    }
+  },
+  "podiumBreakdownNoteWithBonus": "{namesCount}/3 isim · {positionsCount}/3 sıra · kusursuz bonus",
+  "@podiumBreakdownNoteWithBonus": {
+    "placeholders": {
+      "namesCount": {},
+      "positionsCount": {}
+    }
+  },
+  "teamBreakdown": "Takım: {team}",
+  "@teamBreakdown": {
+    "placeholders": {
+      "team": {}
+    }
+  },
+  "poleBreakdown": "Pole: {driver}",
+  "@poleBreakdown": {
+    "placeholders": {
+      "driver": {}
+    }
+  },
+  "sprintPoleBreakdown": "Sprint pole: {driver}",
+  "@sprintPoleBreakdown": {
+    "placeholders": {
+      "driver": {}
+    }
+  },
+  "dnfBreakdown": "DNF: {count}",
+  "@dnfBreakdown": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "sprintDnfBreakdown": "Sprint DNF: {count}",
+  "@sprintDnfBreakdown": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "safetyCarBreakdown": "Güvenlik aracı: {value}",
+  "@safetyCarBreakdown": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "topScoringTeamResultLabel": "En çok puan alan takım:",
+  "dnfCountResultLabel": "DNF sayısı:",
+  "safetyCarResultLabel": "Güvenlik aracı:",
+  "raceCanceledUpper": "YARIŞ İPTAL EDİLDİ",
+  "raceCanceledNoScoringMessage": "Bu yarış iptal edildi. Tahminler puanlanmayacak.",
+  "officialResultNotArrivedYet": "Resmi sonuç henüz gelmedi",
+  "officialResultPulledAutomatically": "Yarış bittiğinde OpenF1 üzerinden otomatik olarak alınacak.",
+  "eventDateWithStatus": "{date} · {status}",
+  "@eventDateWithStatus": {
+    "placeholders": {
+      "date": {},
+      "status": {}
+    }
+  },
+  "raceRoundShort": "R{round}",
+  "@raceRoundShort": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "sprintRaceName": "{raceName} · Sprint",
+  "@sprintRaceName": {
+    "placeholders": {
+      "raceName": {}
+    }
+  },
+  "qualifyingScheduleLabel": "QUALIFYING",
+  "sprintQualifyingScheduleLabel": "SPRINT QUALIFYING",
+  "raceScheduleLabel": "RACE",
+  "sprintRaceScheduleLabel": "SPRINT RACE",
+  "startLightTooltip": "{label}: {description}",
+  "@startLightTooltip": {
+    "placeholders": {
+      "label": {},
+      "description": {}
+    }
+  },
+  "startLightPractice1": "Antrenman 1",
+  "startLightPractice2": "Antrenman 2",
+  "startLightPractice3": "Antrenman 3",
+  "startLightSprintQualifying": "Sprint sıralama",
+  "startLightSprintRace": "Sprint yarışı",
+  "startLightQualifying": "Sıralama",
+  "startLightRace": "Yarış",
+  "raceCardPredictionMadeCount": "Tahmin yapıldı {saved}/{total}",
+  "@raceCardPredictionMadeCount": {
+    "placeholders": {
+      "saved": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "raceCardNoPrediction": "Tahmin yok",
+  "shareLeagueMemberCount": "{leagueName} · {memberCount} kişi",
+  "@shareLeagueMemberCount": {
+    "placeholders": {
+      "leagueName": {},
+      "memberCount": {
+        "type": "int"
+      }
+    }
+  },
+  "sharePredictionsScore": "TAHMİNLER · {score}/{total} {pointsLabel}",
+  "@sharePredictionsScore": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "pointsLabel": {}
+    }
+  },
+  "shareRaceWinnerShortUpper": "YARIŞ GALİBİ",
+  "shareSprintWinnerShortUpper": "SPRINT GALİBİ",
+  "scoreNotCalculatedYet": "Skor henüz hesaplanmadı.",
+  "scoreUpper": "SKOR",
+  "rankUpper": "SIRA",
+  "winnerShortUpper": "KAZANAN",
+  "safetyCarShortUpper": "G. ARAÇ",
+  "podiumP1ShortUpper": "POD P1",
+  "podiumP2ShortUpper": "POD P2",
+  "podiumP3ShortUpper": "POD P3",
+  "podiumBonusShortUpper": "POD BONUS",
+  "poleShortUpper": "POLE",
+  "bestTeamShortUpper": "EN İYİ TAKIM",
+  "shareNoSprintPredictionScoredMessage": "Sprint tahmini yapmadığın için bu GP için sprint skorun ve tahmin detayın gösterilemiyor.",
+  "shareNoRacePredictionScoredMessage": "Tahmin yapmadığın için bu GP için skorun ve tahmin detayın gösterilemiyor.",
+  "shareSprintBreakdownPendingMessage": "Sprint sonucu puanlandığında tahmin detayın burada görünecek.",
+  "shareRaceBreakdownPendingMessage": "Yarış sonucu puanlandığında tahmin detayın burada görünecek.",
+  "countdownDays": "GÜN",
+  "countdownHours": "SAAT",
+  "countdownMinutes": "DK",
+  "countdownSeconds": "SN"
 }

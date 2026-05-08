@@ -104,7 +104,7 @@ class _NotificationSettingsScreenState
                 child: FilledButton(
                   onPressed: _saving ? null : _saveDraft,
                   child: Text(
-                    _saving ? l.saving.toUpperCase() : l.save.toUpperCase(),
+                    _saving ? l.savingBig : l.saveBig,
                   ),
                 ),
               ),

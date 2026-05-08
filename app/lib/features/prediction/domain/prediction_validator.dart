@@ -1,6 +1,8 @@
-String? validatePredictionSave({required String? leagueId}) {
+enum PredictionSaveError { missingLeagueContext }
+
+PredictionSaveError? validatePredictionSave({required String? leagueId}) {
   if (leagueId == null || leagueId.trim().isEmpty) {
-    return 'League context is required to save a prediction';
+    return PredictionSaveError.missingLeagueContext;
   }
   return null;
 }

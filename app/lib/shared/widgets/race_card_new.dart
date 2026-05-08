@@ -141,7 +141,7 @@ String _eventSubtitle(BuildContext context, DateTime? at, RaceStatus status) {
     'd MMM HH:mm',
     Intl.getCurrentLocale(),
   ).format(at.toLocal());
-  return '$date · $statusLabel';
+  return l.eventDateWithStatus(date, statusLabel);
 }
 
 class _RaceKindOption extends StatelessWidget {
@@ -297,6 +297,10 @@ RaceStatus effectiveRaceCardStatus(RaceCardEntry entry, {DateTime? now}) {
     return RaceStatus.live;
   }
 
+  if (_hasRaceEventEnded(entry, t)) {
+    return RaceStatus.finished;
+  }
+
   if (rawStatus == RaceStatus.locked) return RaceStatus.locked;
 
   final lockAt = entry.kind == RaceCardKind.sprint
@@ -381,6 +385,20 @@ bool _isRaceEventActive(RaceCardEntry entry, DateTime now) {
       : const Duration(hours: 4);
   final endsAt = sessionEndsAt ?? startsAt.add(fallbackDuration);
   return now.isBefore(endsAt);
+}
+
+bool _hasRaceEventEnded(RaceCardEntry entry, DateTime now) {
+  final startsAt = entry.kind == RaceCardKind.sprint
+      ? entry.race.sprintRaceAt
+      : entry.race.raceAt;
+  if (startsAt == null || now.isBefore(startsAt)) return false;
+
+  final sessionEndsAt = _matchingRaceSession(entry)?.endsAt;
+  final fallbackDuration = entry.kind == RaceCardKind.sprint
+      ? const Duration(hours: 2)
+      : const Duration(hours: 4);
+  final endsAt = sessionEndsAt ?? startsAt.add(fallbackDuration);
+  return !now.isBefore(endsAt);
 }
 
 RaceSession? _matchingRaceSession(RaceCardEntry entry) {
@@ -542,7 +560,7 @@ class RaceCardNew extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      'R${race.round}',
+                      l.raceRoundShort(race.round),
                       style: tt.titleMedium?.copyWith(
                         color: AppColors.f1Red,
                         fontSize: 14,
@@ -562,7 +580,7 @@ class RaceCardNew extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        _isSprint ? '${race.name} · Sprint' : race.name,
+                        _isSprint ? l.sprintRaceName(race.name) : race.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: tt.headlineMedium?.copyWith(
@@ -812,6 +830,7 @@ class RaceCardNew extends StatelessWidget {
 
   Widget _buildScheduleRow(BuildContext context) {
     final tt = Theme.of(context).textTheme;
+    final l = AppLocalizations.of(context);
     final qAt = _qualifyingAt;
     final rAt = _raceAt;
     if (qAt == null || rAt == null) {
@@ -843,13 +862,16 @@ class RaceCardNew extends StatelessWidget {
       child: Row(
         children: [
           Text(
-            'Qualifying: ',
+            _isSprint
+                ? l.sprintQualifyingScheduleLabel
+                : l.qualifyingScheduleLabel,
             style: tt.bodySmall?.copyWith(
               fontWeight: FontWeight.w700,
               color: const Color(0xB3FFFFFF),
               fontSize: 12,
             ),
           ),
+          const SizedBox(width: 4),
           Text(
             '$qDate $qTime',
             style: tt.bodySmall?.copyWith(
@@ -859,13 +881,14 @@ class RaceCardNew extends StatelessWidget {
           ),
           const SizedBox(width: 16),
           Text(
-            'Race: ',
+            _isSprint ? l.sprintRaceScheduleLabel : l.raceScheduleLabel,
             style: tt.bodySmall?.copyWith(
               fontWeight: FontWeight.w700,
               color: const Color(0xB3FFFFFF),
               fontSize: 12,
             ),
           ),
+          const SizedBox(width: 4),
           Text(
             '$rDate $rTime',
             style: tt.bodySmall?.copyWith(
@@ -880,10 +903,11 @@ class RaceCardNew extends StatelessWidget {
 
   Widget _buildLiveContent(BuildContext context) {
     final tt = Theme.of(context).textTheme;
+    final l = AppLocalizations.of(context);
 
     if (!Env.enableDemoContent) {
       return Text(
-        _isSprint ? 'Sprint live - open' : 'Open live screen',
+        _isSprint ? l.openSprintLiveScreen : l.openLiveScreen,
         style: tt.bodyMedium?.copyWith(
           color: const Color(0x99FFFFFF),
           fontSize: 14,
@@ -901,7 +925,7 @@ class RaceCardNew extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'TUR $currentLap/$totalLaps',
+              l.lapProgress(currentLap, totalLaps),
               style: tt.titleMedium?.copyWith(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
@@ -976,7 +1000,7 @@ class RaceCardNew extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'PTS',
+                  AppLocalizations.of(context).pointsAbbreviation,
                   style: tt.bodySmall?.copyWith(
                     color: const Color(0x80FFFFFF),
                     fontSize: 14,
@@ -990,7 +1014,7 @@ class RaceCardNew extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              'Your rank',
+              AppLocalizations.of(context).yourRank,
               style: tt.bodyMedium?.copyWith(
                 color: const Color(0x99FFFFFF),
                 fontSize: 14,
@@ -1084,6 +1108,7 @@ class _StartLightColumnState extends State<_StartLightColumn> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final session = widget.session;
     final active = session.state == _StartLightState.live;
     final labelColor = switch (session.state) {
@@ -1095,7 +1120,10 @@ class _StartLightColumnState extends State<_StartLightColumn> {
 
     return Tooltip(
       key: _tooltipKey,
-      message: '${session.label}: ${_startLightDescription(session.label)}',
+      message: l.startLightTooltip(
+        session.label,
+        _startLightDescription(context, session.label),
+      ),
       preferBelow: false,
       waitDuration: const Duration(milliseconds: 350),
       showDuration: const Duration(seconds: 3),
@@ -1136,15 +1164,16 @@ class _StartLightColumnState extends State<_StartLightColumn> {
   }
 }
 
-String _startLightDescription(String label) {
+String _startLightDescription(BuildContext context, String label) {
+  final l = AppLocalizations.of(context);
   return switch (label.trim().toUpperCase()) {
-    'P1' || 'FP1' || 'ANT1' => 'Practice 1',
-    'P2' || 'FP2' || 'ANT2' => 'Practice 2',
-    'P3' || 'FP3' || 'ANT3' => 'Practice 3',
-    'SQ' || 'SS' => 'Sprint Qualifying',
-    'SR' || 'S' => 'Sprint Race',
-    'Q' => 'Qualifying',
-    'R' => 'Race',
+    'P1' || 'FP1' || 'ANT1' => l.startLightPractice1,
+    'P2' || 'FP2' || 'ANT2' => l.startLightPractice2,
+    'P3' || 'FP3' || 'ANT3' => l.startLightPractice3,
+    'SQ' || 'SS' => l.startLightSprintQualifying,
+    'SR' || 'S' => l.startLightSprintRace,
+    'Q' => l.startLightQualifying,
+    'R' => l.startLightRace,
     _ => label,
   };
 }
@@ -1336,8 +1365,8 @@ class _PredictionBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     const iconColor = Color(0xB3FFFFFF);
     const textColor = Color(0xCCFFFFFF);
-    final suffix = '$saved/$total';
     final hasPrediction = saved > 0;
+    final l = AppLocalizations.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1350,7 +1379,9 @@ class _PredictionBadge extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Text(
-          hasPrediction ? 'Prediction made $suffix' : 'No prediction',
+          hasPrediction
+              ? l.raceCardPredictionMadeCount(saved, total)
+              : l.raceCardNoPrediction,
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w800,

@@ -1,22 +1,38 @@
 {
   "@@locale": "en",
   "appTitle": "GridCall",
-  "appLoading": "Loading",
+  "appLoading": "Loading...",
   "appErrorTitle": "Something went wrong",
   "retry": "Try again",
   "cancel": "Cancel",
   "save": "Save",
   "saving": "Saving...",
+  "saveBig": "SAVE",
+  "savingBig": "SAVING...",
+  "jokerUpper": "JOKER",
+  "dnfUpper": "DNF",
   "continueAction": "Continue",
   "clear": "Clear",
   "copy": "Copy",
   "copied": "Copied!",
   "share": "Share",
-  "shareError": "Share error: {error}",
-  "@shareError": {"placeholders": {"error": {"type": "String"}}},
+  "shareError": "Sharing failed: {error}",
+  "@shareError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "errorWithMessage": "Error: {error}",
-  "@errorWithMessage": {"placeholders": {"error": {"type": "String"}}},
-  "authTagline": "Your F1 prediction league, in your pocket.",
+  "@errorWithMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "authTagline": "Your F1 prediction league in your pocket.",
   "username": "Username",
   "email": "Email",
   "password": "Password",
@@ -33,7 +49,7 @@
   "legalPrefix": "By continuing, you accept the ",
   "legalAnd": " and ",
   "legalSuffix": ".",
-  "signUpReceived": "Sign-up received. If email confirmation is enabled, confirm your account from the link in your inbox.",
+  "signUpReceived": "Account created. You can sign in now.",
   "resetEmailRequired": "Enter your email address to reset your password.",
   "validEmailRequired": "Enter a valid email address.",
   "resetLinkSent": "A password reset link has been sent to your email address.",
@@ -44,15 +60,15 @@
   "usernameRequired": "Username is required.",
   "min3": "Enter at least 3 characters.",
   "max16": "Enter no more than 16 characters.",
-  "onboardingTagline": "Create private leagues with friends, make your prediction before the race, and compare scores when results arrive.",
+  "onboardingTagline": "Create private leagues with friends, make your predictions before the race, and compare scores when results arrive.",
   "howToPlay": "HOW TO PLAY",
-  "howToPlayBody": "Every race week is simple: join your league, save your prediction before the deadline, and see your place in the standings when results arrive.",
+  "howToPlayBody": "Each race week is simple: join your league, save your prediction before the deadline, and see your place in the standings when results arrive.",
   "createLeagueTitle": "Create a league or join with an invite code",
   "createLeagueBody": "Race in the same league as your friends. Create your own league or join instantly with an invite code.",
   "makePredictionTitle": "Make your prediction before the deadline",
-  "makePredictionBody": "Pick your podium, pole, DNF count, safety car, and more.",
+  "makePredictionBody": "Pick your podium, Pole, DNF count, Safety Car, and more.",
   "seeScoreTitle": "See your score when results arrive",
-  "seeScoreBody": "Your scores are calculated, league standings update, and your weekly share card is ready.",
+  "seeScoreBody": "Your scores are calculated, league standings are updated, and your weekly share card is ready.",
   "profile": "PROFILE",
   "usernameHelper": "This name is visible to friends in leagues.",
   "reminders": "REMINDERS",
@@ -61,7 +77,7 @@
   "reminderTime": "REMINDER TIME",
   "oneHour": "1 hour",
   "sixHours": "6 hours",
-  "onlyMissing": "Only if I have not predicted",
+  "onlyMissing": "Only if I have not made a prediction",
   "preferenceLater": "You can change this preference later in notification settings.",
   "settingUp": "SETTING UP...",
   "start": "START",
@@ -72,9 +88,9 @@
   "notificationsTitle": "NOTIFICATIONS",
   "notificationSettingsUpdated": "Notification settings updated.",
   "notificationPermissionRequired": "Notification permission is required for reminders. Enable notifications from system settings.",
-  "beforeRacePredictionsLock": "Before race predictions lock",
+  "beforeRacePredictionsLock": "Before race predictions close",
   "calendarDriverStandings": "DRIVER STANDINGS",
-  "calendarConstructorStandings": "CONSTRUCTOR STANDINGS",
+  "calendarConstructorStandings": "TEAM STANDINGS",
   "races": "RACES",
   "lineup": "LINEUP",
   "sprintLineup": "SPRINT LINEUP",
@@ -83,28 +99,28 @@
   "allRacesUpper": "ALL RACES",
   "selectRace": "Select race",
   "noDataYet": "No data yet",
-  "dataLoading": "Data loading",
-  "raceLoading": "Race loading",
-  "driversLoading": "Drivers loading",
-  "settingsLoading": "Settings loading",
-  "leaguesLoading": "Leagues loading",
-  "leagueSettingsLoading": "League settings loading",
-  "membersLoading": "Members loading",
-  "standingsLoading": "Standings loading",
-  "weeklyStandingsLoading": "Weekly standings loading",
-  "racesLoading": "Races loading",
-  "liveScreenLoading": "Live screen loading",
-  "liveDataLoading": "Live data loading",
-  "yourPredictionLoading": "Your prediction is loading",
+  "dataLoading": "Loading data...",
+  "raceLoading": "Loading race...",
+  "driversLoading": "Loading drivers...",
+  "settingsLoading": "Loading settings...",
+  "leaguesLoading": "Loading leagues...",
+  "leagueSettingsLoading": "Loading league settings...",
+  "membersLoading": "Loading members...",
+  "standingsLoading": "Loading standings...",
+  "weeklyStandingsLoading": "Loading weekly standings...",
+  "racesLoading": "Loading races...",
+  "liveScreenLoading": "Loading live screen...",
+  "liveDataLoading": "Loading live data...",
+  "yourPredictionLoading": "Loading your prediction...",
   "liveOrder": "LIVE ORDER",
   "fastestLap": "FASTEST LAP",
   "yourPrediction": "YOUR PREDICTION",
   "recentEvents": "RECENT EVENTS",
   "noLiveDataYet": "No live data yet",
   "liveTimingWaiting": "Live timing will update when the race data feed arrives.",
-  "p1Now": "P1 NOW",
-  "p2Now": "P2 NOW",
-  "p3Now": "P3 NOW",
+  "p1Now": "CURRENT P1",
+  "p2Now": "CURRENT P2",
+  "p3Now": "CURRENT P3",
   "openForPredictions": "Open for predictions",
   "openForPicks": "OPEN FOR PICKS",
   "locked": "Locked",
@@ -125,31 +141,67 @@
   "qualifyingLabel": "Qualifying: ",
   "raceLabel": "Race: ",
   "openLiveScreen": "Open live screen",
-  "openSprintLiveScreen": "Sprint live - open",
+  "openSprintLiveScreen": "Open Sprint live screen",
   "lapProgress": "LAP {current}/{total}",
-  "@lapProgress": {"placeholders": {"current": {"type": "int"}, "total": {"type": "int"}}},
+  "@lapProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "viewWeeklySummary": "View weekly summary",
   "yourScore": "Your score",
   "pointsShort": "PTS",
   "points": "Points",
   "total": "TOTAL",
-  "pointsBreakdownPending": "Points breakdown will be shown after the official result arrives.",
-  "sprintPointsBreakdownPending": "Points breakdown will be shown after the official sprint result arrives.",
+  "pointsBreakdownPending": "The points breakdown will be shown after the official result arrives.",
+  "sprintPointsBreakdownPending": "The points breakdown will be shown after the official Sprint result arrives.",
   "winnerBreakdown": "Winner: {driver}",
-  "@winnerBreakdown": {"placeholders": {"driver": {"type": "String"}}},
+  "@winnerBreakdown": {
+    "placeholders": {
+      "driver": {
+        "type": "String"
+      }
+    }
+  },
   "podiumBreakdown": "Podium: {podium}",
-  "@podiumBreakdown": {"placeholders": {"podium": {"type": "String"}}},
+  "@podiumBreakdown": {
+    "placeholders": {
+      "podium": {
+        "type": "String"
+      }
+    }
+  },
   "yourRank": "Your rank",
-  "predictionMade": "Prediction made {saved}/{total}",
-  "@predictionMade": {"placeholders": {"saved": {"type": "int"}, "total": {"type": "int"}}},
+  "predictionMade": "Predictions made {saved}/{total}",
+  "@predictionMade": {
+    "placeholders": {
+      "saved": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "noPrediction": "No prediction",
   "leagueFallback": "League",
   "myLeagues": "MY LEAGUES",
   "activeLeagues": "ACTIVE LEAGUES",
-  "noLeagueYet": "You do not have a league yet",
+  "noLeagueYet": "You are not in a league yet",
   "noLeagueYetMessage": "You can create a league from the home screen or join one with an invite code.",
   "membersCount": "{count} members",
-  "@membersCount": {"placeholders": {"count": {"type": "int"}}},
+  "@membersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "standing": "STANDING",
   "standings": "STANDINGS",
   "overall": "Overall",
@@ -173,25 +225,43 @@
   "createPrivateLeague": "CREATE PRIVATE LEAGUE",
   "createPrivateLeagueBody": "Create a private league to race with friends. The league is shared with an invite code.",
   "leagueNameUpper": "LEAGUE NAME",
-  "leagueNameHint": "Ex: Friends League",
-  "inviteCodeAfterCreate": "You will receive an invite code after the league is created",
+  "leagueNameHint": "E.g. Friends League",
+  "inviteCodeAfterCreate": "You will receive an invite code after creating the league.",
   "create": "CREATE",
   "creating": "CREATING...",
-  "joinWithInviteCode": "JOIN WITH INVITE CODE",
+  "joinWithInviteCode": "Join with invite code",
   "enterInviteCode": "Enter the invite code your friend gave you",
   "inviteCode": "INVITE CODE",
   "inviteCodeValue": "Invite code: {code}",
-  "@inviteCodeValue": {"placeholders": {"code": {"type": "String"}}},
+  "@inviteCodeValue": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
   "refreshInviteCodeQuestion": "Refresh invite code?",
   "refreshInviteCodeBody": "The old invite code will no longer work.",
   "leaveLeagueQuestion": "Do you want to leave the league?",
   "leaveLeagueBody": "You will need a new invite code to join again.",
   "removeMemberQuestion": "Remove {username}?",
-  "@removeMemberQuestion": {"placeholders": {"username": {"type": "String"}}},
+  "@removeMemberQuestion": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
   "removeMemberBody": "The member will be removed from the league.",
   "transferOwnershipQuestion": "Transfer ownership?",
   "transferOwnershipBody": "{username} will become the league owner.",
-  "@transferOwnershipBody": {"placeholders": {"username": {"type": "String"}}},
+  "@transferOwnershipBody": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
   "join": "JOIN",
   "joining": "JOINING...",
   "joinLeague": "JOIN LEAGUE",
@@ -206,16 +276,46 @@
   "inviteCodeLower": "invite code",
   "joinToo": "JOIN TOO",
   "season": "SEASON {season}",
-  "@season": {"placeholders": {"season": {"type": "int"}}},
+  "@season": {
+    "placeholders": {
+      "season": {
+        "type": "int"
+      }
+    }
+  },
+  "raceRoundAndName": "R{round} · {name}",
+  "@raceRoundAndName": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "playersCount": "{count} players",
-  "@playersCount": {"placeholders": {"count": {"type": "int"}}},
+  "@playersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "standingsCount": "{count} standings",
-  "@standingsCount": {"placeholders": {"count": {"type": "int"}}},
+  "@standingsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "leagueShareEmpty": "Standings will appear here after the first race result.",
-  "predictionSaved": "Prediction saved",
-  "sprintPredictionSaved": "Sprint prediction saved",
-  "predictionCleared": "Prediction cleared",
-  "sprintPredictionCleared": "Sprint prediction cleared",
+  "predictionSaved": "Prediction saved.",
+  "sprintPredictionSaved": "Sprint prediction saved.",
+  "predictionSaveLeagueContextRequired": "Select a league to save your prediction.",
+  "predictionCleared": "Prediction cleared.",
+  "sprintPredictionCleared": "Sprint prediction cleared.",
   "clearPredictionQuestion": "Clear your prediction?",
   "clearSprintPredictionQuestion": "Clear your sprint prediction?",
   "clearPredictionBody": "This will remove your saved picks for this league and race.",
@@ -228,59 +328,550 @@
   "podium": "PODIUM",
   "topScoringTeam": "TOP SCORING TEAM",
   "topScoringTeamHint": "Which team will score the most points?",
-  "polePosition": "POLE POSITION",
-  "polePositionHint": "Who will take pole position?",
+  "polePosition": "POLE",
+  "polePositionHint": "Who will take Pole?",
   "dnfCount": "DNF COUNT",
   "safetyCarQuestion": "WILL THERE BE A SAFETY CAR?",
   "sprintWinner": "SPRINT WINNER",
-  "sprintWinnerHint": "Who will win the sprint?",
+  "sprintWinnerHint": "Who will win the Sprint?",
   "sprintPodium": "SPRINT PODIUM",
-  "sprintTopScoringTeamHint": "Which team will score the most points in the sprint?",
+  "sprintTopScoringTeamHint": "Which team will score the most points in the Sprint?",
   "sprintPole": "SPRINT POLE",
-  "sprintPoleHint": "Who will take sprint pole?",
+  "sprintPoleHint": "Who will take Sprint Pole?",
   "sprintDnfCount": "SPRINT DNF COUNT",
   "mainRaceUpper": "MAIN RACE",
   "sprintUpper": "SPRINT",
   "yes": "Yes",
   "no": "No",
-  "sprintPodiumSlot": "Sprint P{slot} - {place}",
-  "@sprintPodiumSlot": {"placeholders": {"slot": {"type": "int"}, "place": {"type": "String"}}},
+  "sprintPodiumSlot": "Sprint P{slot} · {place}",
+  "@sprintPodiumSlot": {
+    "placeholders": {
+      "slot": {
+        "type": "int"
+      },
+      "place": {
+        "type": "String"
+      }
+    }
+  },
   "first": "First",
   "second": "Second",
   "third": "Third",
   "resultsTitle": "{raceName} - Results",
-  "@resultsTitle": {"placeholders": {"raceName": {"type": "String"}}},
+  "@resultsTitle": {
+    "placeholders": {
+      "raceName": {
+        "type": "String"
+      }
+    }
+  },
   "sprintResultsTitle": "{raceName} - Sprint",
-  "@sprintResultsTitle": {"placeholders": {"raceName": {"type": "String"}}},
+  "@sprintResultsTitle": {
+    "placeholders": {
+      "raceName": {
+        "type": "String"
+      }
+    }
+  },
   "sprintWinnerResult": "Sprint winner: {driver}",
-  "@sprintWinnerResult": {"placeholders": {"driver": {"type": "String"}}},
+  "@sprintWinnerResult": {
+    "placeholders": {
+      "driver": {
+        "type": "String"
+      }
+    }
+  },
   "sprintPodiumResult": "Sprint podium: {podium}",
-  "@sprintPodiumResult": {"placeholders": {"podium": {"type": "String"}}},
-  "sprintPoleResult": "Sprint pole: {driver}",
-  "@sprintPoleResult": {"placeholders": {"driver": {"type": "String"}}},
+  "@sprintPodiumResult": {
+    "placeholders": {
+      "podium": {
+        "type": "String"
+      }
+    }
+  },
+  "sprintPoleResult": "Sprint Pole: {driver}",
+  "@sprintPoleResult": {
+    "placeholders": {
+      "driver": {
+        "type": "String"
+      }
+    }
+  },
   "sprintDnfResult": "Sprint DNF: {count}",
-  "@sprintDnfResult": {"placeholders": {"count": {"type": "String"}}},
+  "@sprintDnfResult": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "jokerResult": "Joker: {answer}",
-  "@jokerResult": {"placeholders": {"answer": {"type": "String"}}},
+  "@jokerResult": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
   "winnerResultLabel": "Winner:",
   "sprintWinnerResultLabel": "Sprint winner:",
   "podiumResultLabel": "Podium:",
   "sprintPodiumResultLabel": "Sprint podium:",
   "poleResultLabel": "Pole:",
-  "sprintPoleResultLabel": "Sprint pole:",
+  "sprintPoleResultLabel": "Sprint Pole:",
   "badge": "Badge",
   "ok": "OK",
   "aboutGridCall": "About GridCall",
   "aboutGridCallBody": "GridCall is an independent prediction app for Formula 1 fans.\n\nGridCall is not affiliated with, supported by, or endorsed by Formula 1, FIA, Formula One Management, teams, drivers, or sponsors. All F1-related brands, logos, and names are trademarks of their respective owners and are used for informational purposes only.\n\nRace timing and result data is provided through OpenF1, a public third-party source. OpenF1 is not an official source.",
-  "mainRaceAverageScore": "Main race average score",
-  "sprintRaceAverageScore": "Sprint race average score",
-  "averageWeeklyScore": "Average weekly score",
+  "mainRaceAverageScore": "Main race average point",
+  "sprintRaceAverageScore": "Sprint average point",
+  "averageWeeklyScore": "Average weekly point",
   "weeksParticipated": "Weeks participated",
   "bestGp": "Best GP",
   "activeStreak": "Active streak",
   "weeksCount": "{count} weeks",
-  "@weeksCount": {"placeholders": {"count": {"type": "int"}}},
+  "@weeksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "bestLeague": "Best league",
   "raceSprintScores": "Race {raceScore} · Sprint {sprintScore}",
-  "@raceSprintScores": {"placeholders": {"raceScore": {"type": "int"}, "sprintScore": {"type": "int"}}}
+  "@raceSprintScores": {
+    "placeholders": {
+      "raceScore": {
+        "type": "int"
+      },
+      "sprintScore": {
+        "type": "int"
+      }
+    }
+  },
+  "authEmailNotConfirmed": "Your email address has not been confirmed yet. Check your inbox.",
+  "authEmailAlreadyRegistered": "This email address is already registered.",
+  "authTooManyAttempts": "Too many attempts. Please wait a moment and try again.",
+  "authPasswordMin6": "Password must be at least 6 characters.",
+  "authSignupDisabled": "Sign-ups are currently disabled.",
+  "authWeakPassword": "This password is too weak. Choose a stronger password.",
+  "errorContentNotFound": "The content you are looking for could not be found.",
+  "errorNoPermission": "You do not have permission to perform this action.",
+  "errorRecordExists": "This record already exists.",
+  "errorActionAlreadyCompleted": "This action appears to have already been completed.",
+  "errorActionRetrySoon": "The action could not be completed. Please try again shortly.",
+  "errorInvalidCredentials": "Email or password is incorrect.",
+  "predictionCopiedToLeagues": "Prediction copied to selected leagues.",
+  "copyErrorWithMessage": "Copy failed: {error}",
+  "@copyErrorWithMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "usernameLengthRange": "3-16",
+  "noStandingsYet": "No standings yet.",
+  "all": "All",
+  "noRacesForSeason": "No races found for this season.",
+  "previousRace": "Previous race",
+  "nextRace": "Next race",
+  "joinLeagueSubject": "Join {leagueName}",
+  "@joinLeagueSubject": {
+    "placeholders": {
+      "leagueName": {
+        "type": "String"
+      }
+    }
+  },
+  "joinLeagueShareText": "Join my GridCall league: {inviteLink}\nInvite code: {inviteCode}",
+  "@joinLeagueShareText": {
+    "placeholders": {
+      "inviteLink": {
+        "type": "String"
+      },
+      "inviteCode": {
+        "type": "String"
+      }
+    }
+  },
+  "noPointsYet": "No points yet",
+  "raceNotFound": "Race not found",
+  "noWeeklyRaceFound": "No race was found to show for this week.",
+  "noPointsThisWeek": "No points this week",
+  "weeklyScoresCalculated": "This will appear when scores for {raceName} are calculated.",
+  "@weeklyScoresCalculated": {
+    "placeholders": {
+      "raceName": {
+        "type": "String"
+      }
+    }
+  },
+  "noRaceCalendarForSeason": "There is no race calendar to show for this season.",
+  "makePrediction": "Make prediction",
+  "weeklySummarySubject": "{leagueName} · {raceName} summary",
+  "@weeklySummarySubject": {
+    "placeholders": {
+      "leagueName": {
+        "type": "String"
+      },
+      "raceName": {
+        "type": "String"
+      }
+    }
+  },
+  "weeklyWinnerLabel": "WEEKLY WINNER",
+  "noScoreYet": "No score yet",
+  "predictionsUpper": "PREDICTIONS",
+  "jokerCorrect": "JOKER CORRECT",
+  "predictions": "predictions",
+  "people": "people",
+  "topScoringDriver": "TOP SCORING DRIVER",
+  "topFive": "TOP 5",
+  "viewDetailedResults": "VIEW DETAILED RESULTS",
+  "profileLoading": "Loading profile...",
+  "signInRequired": "Sign-in required",
+  "profileSignInRequiredMessage": "You need to sign in to view your profile.",
+  "statsErrorWithMessage": "Stats failed to load: {error}",
+  "@statsErrorWithMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "badgesUpper": "BADGES",
+  "seasonStatsUpper": "SEASON STATS",
+  "leaguesUpper": "LEAGUES",
+  "accountAndLegalUpper": "ACCOUNT & LEGAL",
+  "signOut": "Sign out",
+  "requestAccountDeletion": "Request account deletion",
+  "deleteYourAccount": "Delete your account",
+  "accountDeletionBody": "Your account, predictions, league memberships, badges, and profile information will be permanently deleted within 30 days after you create this request. If you change your mind during this period, you can request cancellation by emailing bilgehan.2002@gmail.com.\n\nAfter the request is created, you will be signed out and your account will no longer be visible to other users.",
+  "noteOptional": "Note (optional)",
+  "deletionReasonHint": "You can write your reason for deletion",
+  "createRequest": "Create request",
+  "accountDeletionScheduled": "Your account will be deleted on {date}.",
+  "@accountDeletionScheduled": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeletionRequestReceived": "Your account deletion request has been received.",
+  "signingOut": "Signing out...",
+  "requestCreateError": "Request could not be created: {error}",
+  "@requestCreateError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "totalPoints": "Total points",
+  "bestRank": "Best rank",
+  "weeklyRecord": "Weekly record",
+  "noBadgesYet": "No badges yet",
+  "noBadgesYetMessage": "You will earn badges based on your achievements as race results arrive.",
+  "seasonStatsSummary": "Your average prediction performance, participation streak, best race week, and league status are summarized here for this season.",
+  "leaguePerformanceUpper": "LEAGUE PERFORMANCE",
+  "sectionLoading": "Loading section...",
+  "adminJokersTitle": "Admin · Joker Questions",
+  "adminPermissionRequired": "You need admin permission to view this page. Set profiles.is_admin = true in Studio.",
+  "adminJokerTab": "JOKER",
+  "adminDataTab": "DATA",
+  "adminDataChecking": "Checking data...",
+  "adminNone": "none",
+  "adminDnfClassification": "DNF {dnf}, classified {rows}",
+  "@adminDnfClassification": {
+    "placeholders": {
+      "dnf": {
+        "type": "int"
+      },
+      "rows": {
+        "type": "int"
+      }
+    }
+  },
+  "adminOpenF1Ingest": "Import from OpenF1",
+  "adminRaceDataRefreshed": "{raceName} data refreshed.",
+  "@adminRaceDataRefreshed": {
+    "placeholders": {
+      "raceName": {
+        "type": "String"
+      }
+    }
+  },
+  "adminIngestError": "Import failed: {error}",
+  "@adminIngestError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "adminNoJoker": "no joker",
+  "adminRaceJokerTitle": "R{round} Joker",
+  "@adminRaceJokerTitle": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "adminQuestionText": "Question text",
+  "adminOptionsCommaSeparated": "Options (comma-separated)",
+  "adminCorrectAnswerAfterRace": "Correct answer (after race)",
+  "badgePerfectPodium": "Perfect Podium",
+  "badgePoleHunter": "Pole Hunter",
+  "badgeDnfOracle": "DNF Oracle",
+  "badgeWeeklyChampion": "Weekly Champion",
+  "badgePerfectWeek": "Perfect Week",
+  "badgeThreeInRow": "Three in a Row",
+  "newLeague": "NEW LEAGUE",
+  "createYourOwnLeague": "Create your own league",
+  "enterCode": "ENTER CODE",
+  "viewYourLeagues": "View your leagues",
+  "shareCardCouldNotBePrepared": "Share card could not be prepared",
+  "shareImageCouldNotBeCreated": "Share image could not be created",
+  "leagueRoleOwner": "OWNER",
+  "leagueRoleMember": "MEMBER",
+  "noScoredPredictionsForRace": "No scored predictions were found in this league for this race.",
+  "lineupLoading": "Lineup loading",
+  "sprint": "Sprint",
+  "roundShort": "R",
+  "sprintRaceUpper": "SPRINT RACE",
+  "raceUpper": "RACE",
+  "joinLeagueToPredict": "You need to join a league to make predictions.",
+  "lapShort": "LAP",
+  "eventDnfCrash": "DNF",
+  "eventFastestLap": "Fastest Lap",
+  "eventPitStop": "Pit stop",
+  "saved": "SAVED",
+  "saveMyPrediction": "SAVE MY PREDICTION",
+  "lockedUpper": "LOCKED",
+  "picksOpenUpper": "PICKS OPEN",
+  "timeLeftUntilPredictionsClose": "Time left until predictions close",
+  "mainPodiumPointsInfo": "names +5 / position +2 / perfect +3",
+  "mainDnfPointsInfo": "exact +6 / +/-1 +3",
+  "sprintPodiumPointsInfo": "names +4 / position +1 / perfect +2",
+  "sprintDnfPointsInfo": "exact +4 / +/-1 +2",
+  "selectTeam": "Select team",
+  "podiumSlot": "P{slot} · {place}",
+  "@podiumSlot": {
+    "placeholders": {
+      "slot": {
+        "type": "int"
+      },
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "selectDriverFirstPlace": "Select a driver for first place",
+  "selectDriverSecondPlace": "Select a driver for second place",
+  "selectDriverThirdPlace": "Select a driver for third place",
+  "jokerQuestionUpper": "JOKER QUESTION",
+  "jokerQuestionOpensBeforeLock": "The joker question opens 1 day before predictions lock.",
+  "jokerQuestionForRaceOpensBeforeLock": "The joker question for this race opens 1 day before predictions lock.",
+  "opensIn": "Opens in: {time}",
+  "@opensIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "verySoon": "very soon",
+  "daysShort": "d",
+  "hoursShort": "h",
+  "minutesShort": "min",
+  "teamsAndDriversUpper": "TEAMS & DRIVERS",
+  "teamFallbackUpper": "TEAM",
+  "teamFallback": "Team",
+  "accountDeletionSnackbarMessage": "{message} Signing out...",
+  "@accountDeletionSnackbarMessage": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "unexpectedErrorWithMessage": "Something went wrong: {message}",
+  "@unexpectedErrorWithMessage": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "resultsUpper": "RESULTS",
+  "sprintResultsUpper": "SPRINT RESULTS",
+  "resultsLoading": "Loading results...",
+  "pointsBreakdownUpper": "POINTS BREAKDOWN",
+  "fullStandingsUpper": "FULL STANDINGS",
+  "yourScoreUpper": "YOUR SCORE",
+  "pointsAbbreviation": "PTS",
+  "leagueStandingsWeeklySummaryMessage": "League standings are shown on the weekly summary screen.",
+  "noSprintPredictionMessage": "You did not make a prediction for this sprint.",
+  "noRacePredictionMessage": "You did not make a prediction for this race.",
+  "correctAnswer": "(Correct: {value})",
+  "@correctAnswer": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "actualAnswer": "(Actual: {value})",
+  "@actualAnswer": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "podiumBreakdownNote": "{namesCount}/3 names · {positionsCount}/3 positions",
+  "@podiumBreakdownNote": {
+    "placeholders": {
+      "namesCount": {},
+      "positionsCount": {}
+    }
+  },
+  "podiumBreakdownNoteWithBonus": "{namesCount}/3 names · {positionsCount}/3 positions · perfect bonus",
+  "@podiumBreakdownNoteWithBonus": {
+    "placeholders": {
+      "namesCount": {},
+      "positionsCount": {}
+    }
+  },
+  "teamBreakdown": "Team: {team}",
+  "@teamBreakdown": {
+    "placeholders": {
+      "team": {}
+    }
+  },
+  "poleBreakdown": "Pole: {driver}",
+  "@poleBreakdown": {
+    "placeholders": {
+      "driver": {}
+    }
+  },
+  "sprintPoleBreakdown": "Sprint pole: {driver}",
+  "@sprintPoleBreakdown": {
+    "placeholders": {
+      "driver": {}
+    }
+  },
+  "dnfBreakdown": "DNF: {count}",
+  "@dnfBreakdown": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "sprintDnfBreakdown": "Sprint DNF: {count}",
+  "@sprintDnfBreakdown": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "safetyCarBreakdown": "Safety car: {value}",
+  "@safetyCarBreakdown": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "topScoringTeamResultLabel": "Top scoring team:",
+  "dnfCountResultLabel": "DNF count:",
+  "safetyCarResultLabel": "Safety car:",
+  "raceCanceledUpper": "RACE CANCELED",
+  "raceCanceledNoScoringMessage": "This race was canceled. Predictions will not be scored.",
+  "officialResultNotArrivedYet": "Official result has not arrived yet",
+  "officialResultPulledAutomatically": "It will be pulled automatically from OpenF1 when the race ends.",
+  "eventDateWithStatus": "{date} · {status}",
+  "@eventDateWithStatus": {
+    "placeholders": {
+      "date": {},
+      "status": {}
+    }
+  },
+  "raceRoundShort": "R{round}",
+  "@raceRoundShort": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "sprintRaceName": "{raceName} · Sprint",
+  "@sprintRaceName": {
+    "placeholders": {
+      "raceName": {}
+    }
+  },
+  "qualifyingScheduleLabel": "QUALIFYING",
+  "sprintQualifyingScheduleLabel": "SPRINT QUALIFYING",
+  "raceScheduleLabel": "RACE",
+  "sprintRaceScheduleLabel": "SPRINT RACE",
+  "startLightTooltip": "{label}: {description}",
+  "@startLightTooltip": {
+    "placeholders": {
+      "label": {},
+      "description": {}
+    }
+  },
+  "startLightPractice1": "Practice 1",
+  "startLightPractice2": "Practice 2",
+  "startLightPractice3": "Practice 3",
+  "startLightSprintQualifying": "Sprint Qualifying",
+  "startLightSprintRace": "Sprint Race",
+  "startLightQualifying": "Qualifying",
+  "startLightRace": "Race",
+  "raceCardPredictionMadeCount": "Prediction made {saved}/{total}",
+  "@raceCardPredictionMadeCount": {
+    "placeholders": {
+      "saved": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "raceCardNoPrediction": "No prediction",
+  "shareLeagueMemberCount": "{leagueName} · {memberCount} people",
+  "@shareLeagueMemberCount": {
+    "placeholders": {
+      "leagueName": {},
+      "memberCount": {
+        "type": "int"
+      }
+    }
+  },
+  "sharePredictionsScore": "PREDICTIONS · {score}/{total} {pointsLabel}",
+  "@sharePredictionsScore": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "pointsLabel": {}
+    }
+  },
+  "shareRaceWinnerShortUpper": "RACE WINNER",
+  "shareSprintWinnerShortUpper": "SPRINT WINNER",
+  "scoreNotCalculatedYet": "Score has not been calculated yet.",
+  "scoreUpper": "SCORE",
+  "rankUpper": "RANK",
+  "winnerShortUpper": "WINNER",
+  "safetyCarShortUpper": "S. CAR",
+  "podiumP1ShortUpper": "POD P1",
+  "podiumP2ShortUpper": "POD P2",
+  "podiumP3ShortUpper": "POD P3",
+  "podiumBonusShortUpper": "POD BONUS",
+  "poleShortUpper": "POLE",
+  "bestTeamShortUpper": "BEST TEAM",
+  "shareNoSprintPredictionScoredMessage": "Because you did not make a sprint prediction, your sprint score and prediction breakdown for this GP cannot be shown.",
+  "shareNoRacePredictionScoredMessage": "Because you did not make a prediction, your score and prediction breakdown for this GP cannot be shown.",
+  "shareSprintBreakdownPendingMessage": "Your prediction breakdown will appear here when the sprint result is scored.",
+  "shareRaceBreakdownPendingMessage": "Your prediction breakdown will appear here when the race result is scored.",
+  "countdownDays": "DAYS",
+  "countdownHours": "HRS",
+  "countdownMinutes": "MIN",
+  "countdownSeconds": "SEC"
 }

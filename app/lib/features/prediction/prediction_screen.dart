@@ -43,6 +43,7 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
   bool _copying = false;
   bool _recentlySaved = false;
   String? _saveMessage;
+  bool _saveMessageIsError = false;
   Timer? _saveFeedbackTimer;
   Timer? _ticker;
   late _PredictionMode _mode;
@@ -86,7 +87,8 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
     try {
       final validationError = validatePredictionSave(leagueId: leagueId);
       if (validationError != null) {
-        throw validationError;
+        _showSaveError(_predictionSaveErrorMessage(validationError));
+        return;
       }
       final saveLeagueId = leagueId!;
       final predictionKey = PredictionKey(
@@ -123,9 +125,17 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      _showSaveError('Error: ${friendlyError(e)}');
+      _showSaveError(AppLocalizations.of(context).errorWithMessage(friendlyError(e)));
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  String _predictionSaveErrorMessage(PredictionSaveError error) {
+    final l = AppLocalizations.of(context);
+    switch (error) {
+      case PredictionSaveError.missingLeagueContext:
+        return l.predictionSaveLeagueContextRequired;
     }
   }
 
@@ -135,6 +145,7 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
     setState(() {
       _saveMessage = message;
       _recentlySaved = true;
+      _saveMessageIsError = false;
     });
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -157,6 +168,7 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
     setState(() {
       _saveMessage = message;
       _recentlySaved = false;
+      _saveMessageIsError = false;
     });
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -174,6 +186,7 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
     setState(() {
       _saveMessage = message;
       _recentlySaved = false;
+      _saveMessageIsError = true;
     });
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -250,7 +263,7 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      _showSaveError('Error: ${friendlyError(e)}');
+      _showSaveError(AppLocalizations.of(context).errorWithMessage(friendlyError(e)));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -333,10 +346,12 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
         ref.invalidate(leaguePredictionStatusProvider(leagueId));
       }
       if (!mounted) return;
-      _showSaveSuccess('Prediction copied to selected leagues');
+      _showSaveSuccess(AppLocalizations.of(context).predictionCopiedToLeagues);
     } catch (e) {
       if (!mounted) return;
-      _showSaveError('Copy error: ${friendlyError(e)}');
+      _showSaveError(
+        AppLocalizations.of(context).copyErrorWithMessage(friendlyError(e)),
+      );
     } finally {
       if (mounted) setState(() => _copying = false);
     }
@@ -344,6 +359,7 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final predictionKey = PredictionKey(
       raceId: widget.raceId,
       leagueId: widget.leagueId,
@@ -362,13 +378,13 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
     return Scaffold(
       backgroundColor: AppColors.carbon,
       body: raceAsync.when(
-        loading: () => const AppLoadingState(label: 'Race loading'),
+        loading: () => AppLoadingState(label: l.raceLoading),
         error: (e, _) => AppErrorState(
           message: friendlyError(e),
           onRetry: () => ref.invalidate(raceProvider(widget.raceId)),
         ),
         data: (race) => driversAsync.when(
-          loading: () => const AppLoadingState(label: 'Drivers loading'),
+          loading: () => AppLoadingState(label: l.driversLoading),
           error: (e, _) => AppErrorState(
             message: friendlyError(e),
             onRetry: () => ref.invalidate(driversProvider),
@@ -378,8 +394,7 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
               return _RacePreviewBody(race: race, drivers: drivers);
             }
             return predictionAsync.when(
-              loading: () =>
-                  const AppLoadingState(label: 'Your prediction is loading'),
+              loading: () => AppLoadingState(label: l.yourPredictionLoading),
               error: (e, _) => AppErrorState(
                 message: friendlyError(e),
                 onRetry: () =>
@@ -416,6 +431,7 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
                   copying: _copying,
                   recentlySaved: _recentlySaved,
                   saveMessage: _saveMessage,
+                  saveMessageIsError: _saveMessageIsError,
                   leagueId: widget.leagueId,
                   onChanged: (p) => setState(() => _draft = p),
                   onSprintChanged: (p) => setState(() => _sprintDraft = p),
@@ -448,6 +464,7 @@ class _PredictionBody extends StatelessWidget {
   final bool copying;
   final bool recentlySaved;
   final String? saveMessage;
+  final bool saveMessageIsError;
   final String? leagueId;
   final void Function(Prediction) onChanged;
   final void Function(SprintPrediction) onSprintChanged;
@@ -471,6 +488,7 @@ class _PredictionBody extends StatelessWidget {
     required this.copying,
     required this.recentlySaved,
     required this.saveMessage,
+    required this.saveMessageIsError,
     required this.leagueId,
     required this.onChanged,
     required this.onSprintChanged,
@@ -487,25 +505,25 @@ class _PredictionBody extends StatelessWidget {
     return null;
   }
 
-  List<_TeamChoice> get _teams {
+  List<_TeamChoice> _teams(BuildContext context) {
     final byId = <String, _TeamChoice>{};
     for (final d in drivers) {
       final id = d.teamId;
       if (id == null || byId.containsKey(id)) continue;
       byId[id] = _TeamChoice(
-        id: id,
-        code: d.teamCode ?? d.teamName ?? 'TEAM',
-        name: d.teamName ?? d.teamCode ?? 'Team',
-        color: d.teamColor,
-      );
+          id: id,
+          code: d.teamCode ?? d.teamName ?? AppLocalizations.of(context).teamFallbackUpper,
+          name: d.teamName ?? d.teamCode ?? AppLocalizations.of(context).teamFallback,
+          color: d.teamColor,
+        );
     }
     final list = byId.values.toList()..sort((a, b) => a.name.compareTo(b.name));
     return list;
   }
 
-  _TeamChoice? _teamById(String? id) {
+  _TeamChoice? _teamById(BuildContext context, String? id) {
     if (id == null) return null;
-    for (final team in _teams) {
+    for (final team in _teams(context)) {
       if (team.id == id) return team;
     }
     return null;
@@ -514,8 +532,8 @@ class _PredictionBody extends StatelessWidget {
   Future<_TeamChoice?> _pickTeam(BuildContext context) {
     return _showTeamPicker(
       context,
-      teams: _teams,
-      selected: _teamById(draft.topTeamId),
+      teams: _teams(context),
+      selected: _teamById(context, draft.topTeamId),
     );
   }
 
@@ -556,7 +574,7 @@ class _PredictionBody extends StatelessWidget {
     _Section(
       badge: '02',
       label: AppLocalizations.of(context).podium,
-      points: 'names +5 / position +2 / perfect +3',
+      points: AppLocalizations.of(context).mainPodiumPointsInfo,
       child: _PodiumPicker(
         drivers: drivers,
         draft: draft,
@@ -569,7 +587,7 @@ class _PredictionBody extends StatelessWidget {
       label: AppLocalizations.of(context).topScoringTeam,
       points: '+10',
       child: _TeamChipSlot(
-        team: _teamById(draft.topTeamId),
+        team: _teamById(context, draft.topTeamId),
         hint: AppLocalizations.of(context).topScoringTeamHint,
         enabled: !locked,
         onTap: () async {
@@ -599,7 +617,7 @@ class _PredictionBody extends StatelessWidget {
     _Section(
       badge: '05',
       label: AppLocalizations.of(context).dnfCount,
-      points: 'exact +6 / +/-1 +3',
+      points: AppLocalizations.of(context).mainDnfPointsInfo,
       child: _DnfSlider(draft: draft, locked: locked, onChanged: onChanged),
     ),
     _Section(
@@ -650,7 +668,7 @@ class _PredictionBody extends StatelessWidget {
       _Section(
         badge: '02',
         label: AppLocalizations.of(context).sprintPodium,
-        points: 'names +4 / position +1 / perfect +2',
+        points: AppLocalizations.of(context).sprintPodiumPointsInfo,
         child: _SprintPodiumPicker(
           drivers: drivers,
           draft: s,
@@ -663,7 +681,7 @@ class _PredictionBody extends StatelessWidget {
         label: AppLocalizations.of(context).topScoringTeam,
         points: '+8',
         child: _TeamChipSlot(
-          team: _teamById(s.topTeamId),
+          team: _teamById(context, s.topTeamId),
           hint: AppLocalizations.of(context).sprintTopScoringTeamHint,
           enabled: !locked,
           onTap: () async {
@@ -683,7 +701,7 @@ class _PredictionBody extends StatelessWidget {
           onTap: () async {
             final d = await _pick(
               context,
-              'Sprint pole',
+              AppLocalizations.of(context).sprintPole,
               _byId(s.poleDriverId),
             );
             if (d != null) onSprintChanged(s.copyWith(poleDriverId: d.id));
@@ -693,7 +711,7 @@ class _PredictionBody extends StatelessWidget {
       _Section(
         badge: '05',
         label: AppLocalizations.of(context).sprintDnfCount,
-        points: 'exact +4 / +/-1 +2',
+        points: AppLocalizations.of(context).sprintDnfPointsInfo,
         child: _SprintDnfSlider(
           draft: s,
           locked: locked,
@@ -733,7 +751,7 @@ class _PredictionBody extends StatelessWidget {
         ),
         leadingWidth: 56,
         title: Text(
-          'R${race.round} · ${race.name}',
+          AppLocalizations.of(context).raceRoundAndName(race.round, race.name),
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w900,
@@ -769,7 +787,10 @@ class _PredictionBody extends StatelessWidget {
               if (saveMessage != null)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: _SaveFeedbackBanner(message: saveMessage!),
+                  child: _SaveFeedbackBanner(
+                    message: saveMessage!,
+                    isError: saveMessageIsError,
+                  ),
                 ),
             ],
           ),
@@ -790,7 +811,7 @@ class _PredictionBody extends StatelessWidget {
                 children: [
                   if (onClear != null) ...[
                     IconButton(
-                      tooltip: 'Clear prediction',
+                      tooltip: AppLocalizations.of(context).clearPredictionTooltip,
                       onPressed: locked || saving ? null : onClear,
                       style: IconButton.styleFrom(
                         backgroundColor: const Color(0xFF1F1F2E),
@@ -807,7 +828,8 @@ class _PredictionBody extends StatelessWidget {
                   ],
                   if (onCopyToOtherLeagues != null) ...[
                     IconButton(
-                      tooltip: 'Copy to other leagues',
+                      tooltip:
+                          AppLocalizations.of(context).copyToOtherLeaguesTooltip,
                       onPressed: copying ? null : onCopyToOtherLeagues,
                       style: IconButton.styleFrom(
                         backgroundColor: const Color(0xFF1F1F2E),
@@ -872,6 +894,7 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final isSprintMode = mode == _PredictionMode.sprint;
     final remaining = isSprintMode
         ? (race.timeUntilSprintLock ?? Duration.zero)
@@ -891,7 +914,7 @@ class _Header extends StatelessWidget {
           Row(
             children: [
               Text(
-                'R${race.round}',
+                l.raceRoundShort(race.round),
                 style: const TextStyle(
                   color: Color(0xFFE10600),
                   fontSize: 14,
@@ -905,7 +928,7 @@ class _Header extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            isSprintMode ? '${race.name} · Sprint' : race.name,
+            isSprintMode ? l.sprintRaceName(race.name) : race.name,
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w900,
@@ -918,8 +941,8 @@ class _Header extends StatelessWidget {
             style: const TextStyle(fontSize: 14, color: Color(0x99FFFFFF)),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Time left until predictions close',
+          Text(
+            l.timeLeftUntilPredictionsClose,
             style: TextStyle(
               color: Color(0xB3FFFFFF),
               fontSize: 12,
@@ -936,14 +959,12 @@ class _Header extends StatelessWidget {
 
 class _SaveFeedbackBanner extends StatelessWidget {
   final String message;
-  const _SaveFeedbackBanner({required this.message});
-
-  bool get _isError =>
-      message.startsWith('Error') || message.startsWith('Copy error');
+  final bool isError;
+  const _SaveFeedbackBanner({required this.message, required this.isError});
 
   @override
   Widget build(BuildContext context) {
-    final color = _isError ? AppColors.liveRed : AppColors.lockGreen;
+    final color = isError ? AppColors.liveRed : AppColors.lockGreen;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -955,7 +976,7 @@ class _SaveFeedbackBanner extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            _isError ? Icons.error_outline : Icons.check_circle_outline,
+            isError ? Icons.error_outline : Icons.check_circle_outline,
             color: color,
             size: 20,
           ),
@@ -990,11 +1011,12 @@ class _SaveButtonContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     if (saving) {
-      return const Row(
+      return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
+          const SizedBox(
             width: 18,
             height: 18,
             child: CircularProgressIndicator(
@@ -1002,10 +1024,10 @@ class _SaveButtonContent extends StatelessWidget {
               color: Colors.white,
             ),
           ),
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
           Text(
-            'SAVING...',
-            style: TextStyle(
+            l.savingBig,
+            style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w800,
               letterSpacing: 0,
@@ -1014,6 +1036,9 @@ class _SaveButtonContent extends StatelessWidget {
         ],
       );
     }
+    final buttonLabel = locked
+        ? l.lockedUpper
+        : (recentlySaved ? l.saved : l.saveMyPrediction);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -1023,7 +1048,7 @@ class _SaveButtonContent extends StatelessWidget {
           const SizedBox(width: 8),
         ],
         Text(
-          locked ? 'LOCKED' : (recentlySaved ? 'SAVED' : 'SAVE MY PREDICTION'),
+          buttonLabel,
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -1050,6 +1075,7 @@ class _ModeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -1062,15 +1088,15 @@ class _ModeToggle extends StatelessWidget {
         child: Row(
           children: [
             _ToggleSegment(
-              label: 'ANA RACE',
-              sub: mainLocked ? 'LOCKED' : 'PICKS OPEN',
+              label: l.mainRaceUpper,
+              sub: mainLocked ? l.lockedUpper : l.picksOpenUpper,
               selected: mode == _PredictionMode.main,
               locked: mainLocked,
               onTap: () => onChanged(_PredictionMode.main),
             ),
             _ToggleSegment(
-              label: 'SPRINT',
-              sub: sprintLocked ? 'LOCKED' : 'PICKS OPEN',
+              label: l.sprintUpper,
+              sub: sprintLocked ? l.lockedUpper : l.picksOpenUpper,
               selected: mode == _PredictionMode.sprint,
               locked: sprintLocked,
               onTap: () => onChanged(_PredictionMode.sprint),
@@ -1240,6 +1266,7 @@ class _PodiumPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final p1 = _byId(draft.p1Id);
     final p2 = _byId(draft.p2Id);
     final p3 = _byId(draft.p3Id);
@@ -1252,8 +1279,10 @@ class _PodiumPicker extends StatelessWidget {
       final d = await showDriverPicker(
         context,
         drivers: drivers,
-        title:
-            'P$slot — ${slot == 1 ? "First" : (slot == 2 ? "Second" : "Third")}',
+        title: l.podiumSlot(
+          slot,
+          slot == 1 ? l.first : (slot == 2 ? l.second : l.third),
+        ),
         selected: current,
         excludeIds: excludeIds,
       );
@@ -1266,15 +1295,15 @@ class _PodiumPicker extends StatelessWidget {
     }
 
     final positions = [
-      ('P1', const Color(0xFFFFD700), p1, 'Select a driver for first place', 1),
+      ('P1', const Color(0xFFFFD700), p1, l.selectDriverFirstPlace, 1),
       (
         'P2',
         const Color(0xFFC0C0C0),
         p2,
-        'Select a driver for second place',
+        l.selectDriverSecondPlace,
         2,
       ),
-      ('P3', const Color(0xFFCD7F32), p3, 'Select a driver for third place', 3),
+      ('P3', const Color(0xFFCD7F32), p3, l.selectDriverThirdPlace, 3),
     ];
 
     return Column(
@@ -1331,6 +1360,7 @@ class _DnfSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final value = (draft.dnfCount ?? 3).toDouble();
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1353,9 +1383,9 @@ class _DnfSlider extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'DNF',
-                style: TextStyle(
+              Text(
+                l.dnfUpper,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: Color(0x99FFFFFF), // white/60
@@ -1552,6 +1582,7 @@ Future<_TeamChoice?> _showTeamPicker(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
     builder: (context) {
+      final l = AppLocalizations.of(context);
       return DraggableScrollableSheet(
         initialChildSize: 0.75,
         minChildSize: 0.45,
@@ -1575,7 +1606,7 @@ Future<_TeamChoice?> _showTeamPicker(
                   children: [
                     Expanded(
                       child: Text(
-                        'Select team',
+                        l.selectTeam,
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                     ),
@@ -1625,11 +1656,12 @@ class _SafetyCarPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Row(
       children: [
         Expanded(
           child: _BooleanOption(
-            label: 'Yes',
+            label: l.yes,
             selected: value == true,
             enabled: !locked,
             onTap: () => onChanged(true),
@@ -1638,7 +1670,7 @@ class _SafetyCarPicker extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(
           child: _BooleanOption(
-            label: 'No',
+            label: l.no,
             selected: value == false,
             enabled: !locked,
             onTap: () => onChanged(false),
@@ -1705,6 +1737,7 @@ class _JokerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Container(
@@ -1745,9 +1778,9 @@ class _JokerCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'JOKER',
-                  style: TextStyle(
+                Text(
+                  l.jokerUpper,
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.5,
@@ -1833,25 +1866,27 @@ class _JokerInfoBanner extends StatelessWidget {
 
   const _JokerInfoBanner({required this.opensIn, required this.hasQuestion});
 
-  String _formatRemaining(Duration d) {
-    if (d.isNegative || d == Duration.zero) return 'very soon';
+  String _formatRemaining(BuildContext context, Duration d) {
+    final l = AppLocalizations.of(context);
+    if (d.isNegative || d == Duration.zero) return l.verySoon;
     if (d.inDays >= 1) {
       final days = d.inDays;
       final hours = d.inHours - days * 24;
-      if (hours == 0) return '$days days';
-      return '$days g $hours s';
+      if (hours == 0) return '$days ${l.daysShort}';
+      return '$days ${l.daysShort} $hours ${l.hoursShort}';
     }
     if (d.inHours >= 1) {
       final hours = d.inHours;
       final minutes = d.inMinutes - hours * 60;
-      if (minutes == 0) return '$hours saat';
-      return '$hours s $minutes dk';
+      if (minutes == 0) return '$hours ${l.hoursShort}';
+      return '$hours ${l.hoursShort} $minutes ${l.minutesShort}';
     }
-    return '${d.inMinutes} dk';
+    return '${d.inMinutes} ${l.minutesShort}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final showCountdown = opensIn > Duration.zero;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -1885,8 +1920,8 @@ class _JokerInfoBanner extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'JOKER SORUSU',
+                  Text(
+                    l.jokerQuestionUpper,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w900,
@@ -1896,8 +1931,8 @@ class _JokerInfoBanner extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     hasQuestion
-                        ? 'The joker question opens 1 day before predictions lock.'
-                        : 'The joker question for this race opens 1 day before predictions lock.',
+                        ? l.jokerQuestionOpensBeforeLock
+                        : l.jokerQuestionForRaceOpensBeforeLock,
                     style: const TextStyle(
                       fontSize: 13,
                       color: Color(0xCCFFFFFF),
@@ -1907,7 +1942,7 @@ class _JokerInfoBanner extends StatelessWidget {
                   if (showCountdown) ...[
                     const SizedBox(height: 6),
                     Text(
-                      'Opens in: ${_formatRemaining(opensIn)}',
+                      l.opensIn(_formatRemaining(context, opensIn)),
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -1948,6 +1983,7 @@ class _SprintPodiumPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final p1 = _byId(draft.p1Id);
     final p2 = _byId(draft.p2Id);
     final p3 = _byId(draft.p3Id);
@@ -1960,8 +1996,10 @@ class _SprintPodiumPicker extends StatelessWidget {
       final d = await showDriverPicker(
         context,
         drivers: drivers,
-        title:
-            'Sprint P$slot — ${slot == 1 ? "First" : (slot == 2 ? "Second" : "Third")}',
+        title: l.sprintPodiumSlot(
+          slot,
+          slot == 1 ? l.first : (slot == 2 ? l.second : l.third),
+        ),
         selected: current,
         excludeIds: excludeIds,
       );
@@ -1974,15 +2012,15 @@ class _SprintPodiumPicker extends StatelessWidget {
     }
 
     final positions = [
-      ('P1', const Color(0xFFFFD700), p1, 'Select a driver for first place', 1),
+      ('P1', const Color(0xFFFFD700), p1, l.selectDriverFirstPlace, 1),
       (
         'P2',
         const Color(0xFFC0C0C0),
         p2,
-        'Select a driver for second place',
+        l.selectDriverSecondPlace,
         2,
       ),
-      ('P3', const Color(0xFFCD7F32), p3, 'Select a driver for third place', 3),
+      ('P3', const Color(0xFFCD7F32), p3, l.selectDriverThirdPlace, 3),
     ];
 
     return Column(
@@ -2039,6 +2077,7 @@ class _SprintDnfSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final value = (draft.dnfCount ?? 2).toDouble();
     return Container(
       padding: const EdgeInsets.all(20),
@@ -2061,9 +2100,9 @@ class _SprintDnfSlider extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'DNF',
-                style: TextStyle(
+              Text(
+                l.dnfUpper,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: Color(0x99FFFFFF),
@@ -2124,6 +2163,7 @@ class _RacePreviewBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final byTeam = <String, List<Driver>>{};
     final teamOrder = <String>[];
     final teamColors = <String, String?>{};
@@ -2152,7 +2192,7 @@ class _RacePreviewBody extends StatelessWidget {
         ),
         leadingWidth: 56,
         title: Text(
-          'R${race.round} · ${race.name}',
+          l.raceRoundAndName(race.round, race.name),
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w900,
@@ -2191,8 +2231,8 @@ class _RacePreviewBody extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'TEAMS & DRIVERS',
+                Text(
+                  l.teamsAndDriversUpper,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w900,
@@ -2322,15 +2362,15 @@ class _PreviewBanner extends StatelessWidget {
           width: 1,
         ),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(Icons.info_outline, size: 18, color: AppColors.f1Red),
-          SizedBox(width: 10),
+          const Icon(Icons.info_outline, size: 18, color: AppColors.f1Red),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'You need to join a league to make predictions.',
-              style: TextStyle(
+              AppLocalizations.of(context).joinLeagueToPredict,
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
@@ -2344,15 +2384,15 @@ class _PreviewBanner extends StatelessWidget {
   }
 }
 
-List<_TeamChoice> _teamsFromDrivers(List<Driver> drivers) {
+List<_TeamChoice> _teamsFromDrivers(List<Driver> drivers, AppLocalizations l) {
   final byId = <String, _TeamChoice>{};
   for (final d in drivers) {
     final id = d.teamId;
     if (id == null || byId.containsKey(id)) continue;
     byId[id] = _TeamChoice(
       id: id,
-      code: d.teamCode ?? d.teamName ?? 'TEAM',
-      name: d.teamName ?? d.teamCode ?? 'Team',
+      code: d.teamCode ?? d.teamName ?? l.teamFallbackUpper,
+      name: d.teamName ?? d.teamCode ?? l.teamFallback,
       color: d.teamColor,
     );
   }
@@ -2386,7 +2426,7 @@ List<Widget> buildReadOnlyMainPredictionSections({
   JokerQuestion? joker,
 }) {
   final l = AppLocalizations.of(context);
-  final teams = _teamsFromDrivers(drivers);
+  final teams = _teamsFromDrivers(drivers, l);
   return [
     _Section(
       badge: '01',
@@ -2401,7 +2441,7 @@ List<Widget> buildReadOnlyMainPredictionSections({
     _Section(
       badge: '02',
       label: l.podium,
-      points: 'names +5 / position +2 / perfect +3',
+      points: l.mainPodiumPointsInfo,
       child: _PodiumPicker(
         drivers: drivers,
         draft: prediction,
@@ -2432,7 +2472,7 @@ List<Widget> buildReadOnlyMainPredictionSections({
     _Section(
       badge: '05',
       label: l.dnfCount,
-      points: 'exact +6 / +/-1 +3',
+      points: l.mainDnfPointsInfo,
       child: _DnfSlider(draft: prediction, locked: true, onChanged: (_) {}),
     ),
     _Section(
@@ -2462,7 +2502,7 @@ List<Widget> buildReadOnlySprintPredictionSections({
   required List<Driver> drivers,
 }) {
   final l = AppLocalizations.of(context);
-  final teams = _teamsFromDrivers(drivers);
+  final teams = _teamsFromDrivers(drivers, l);
   return [
     _Section(
       badge: '01',
@@ -2477,7 +2517,7 @@ List<Widget> buildReadOnlySprintPredictionSections({
     _Section(
       badge: '02',
       label: l.sprintPodium,
-      points: 'names +4 / position +1 / perfect +2',
+      points: l.sprintPodiumPointsInfo,
       child: _SprintPodiumPicker(
         drivers: drivers,
         draft: prediction,
@@ -2508,7 +2548,7 @@ List<Widget> buildReadOnlySprintPredictionSections({
     _Section(
       badge: '05',
       label: l.sprintDnfCount,
-      points: 'exact +4 / +/-1 +2',
+      points: l.sprintDnfPointsInfo,
       child: _SprintDnfSlider(
         draft: prediction,
         locked: true,

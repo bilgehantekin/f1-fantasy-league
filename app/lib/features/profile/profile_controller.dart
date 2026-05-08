@@ -398,13 +398,16 @@ final profileStatsProvider = FutureProvider<ProfileStats>((ref) async {
       : rankedLeaguePerformances.first;
   final badges = await supabase
       .from('user_badges')
-      .select('id')
+      .select('badge_id')
       .eq('user_id', user.id);
+  final badgeCount = {
+    for (final row in badges) row['badge_id'] as String?,
+  }.whereType<String>().length;
   return ProfileStats(
     totalScore: total,
     mainScore: mainScore,
     sprintScore: sprintScore,
-    badgeCount: badges.length,
+    badgeCount: badgeCount,
     eventsPredicted: scored,
     mainEventsPredicted: mainBestByEvent.length,
     sprintEventsPredicted: sprintBestByEvent.length,

@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/error_messages.dart';
 import '../../core/theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../shared/models.dart';
 import '../prediction/prediction_controller.dart';
 import 'league_controller.dart';
@@ -37,6 +38,7 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final leagueAsync = ref.watch(leagueProvider(widget.leagueId));
     final raceAsync = ref.watch(raceProvider(widget.raceId));
     final summaryKey = WeeklySummaryKey(
@@ -53,17 +55,17 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
     return Scaffold(
       backgroundColor: AppColors.carbon,
       appBar: AppBar(
-        title: const Text('WEEKLY SUMMARY'),
+        title: Text(l.weeklySummary),
         actions: [
           IconButton(
-            tooltip: 'Share preview',
+            tooltip: l.sharePreview,
             icon: const Icon(Icons.visibility_outlined, size: 21),
             onPressed: (league == null || race == null || summary == null)
                 ? null
                 : () => _openSharePreview(league, race, summary),
           ),
           IconButton(
-            tooltip: 'Share',
+            tooltip: l.share,
             icon: _sharing
                 ? const SizedBox(
                     width: 18,
@@ -81,15 +83,16 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
         children: [
           leagueAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: ${friendlyError(e)}')),
+            error: (e, _) =>
+                Center(child: Text(l.errorWithMessage(friendlyError(e)))),
             data: (league) => raceAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) =>
-                  Center(child: Text('Error: ${friendlyError(e)}')),
+                  Center(child: Text(l.errorWithMessage(friendlyError(e)))),
               data: (race) => summaryAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) =>
-                    Center(child: Text('Error: ${friendlyError(e)}')),
+                    Center(child: Text(l.errorWithMessage(friendlyError(e)))),
                 data: (summary) => _Body(
                   league: league,
                   race: race,
@@ -145,6 +148,7 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
   ) async {
     if (_sharing) return;
     setState(() => _sharing = true);
+    final l = AppLocalizations.of(context);
     try {
       await WidgetsBinding.instance.endOfFrame;
       await Future<void>.delayed(const Duration(milliseconds: 16));
@@ -152,13 +156,13 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
           _shareCardKey.currentContext?.findRenderObject()
               as RenderRepaintBoundary?;
       if (boundary == null) {
-        throw StateError('Share card could not be prepared');
+        throw StateError(l.shareCardCouldNotBePrepared);
       }
       final image = await boundary.toImage(pixelRatio: 1);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       final bytes = byteData?.buffer.asUint8List();
       if (bytes == null) {
-        throw StateError('Share image could not be created');
+        throw StateError(l.shareImageCouldNotBeCreated);
       }
 
       final fileName =
@@ -172,8 +176,8 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
       final box = context.findRenderObject() as RenderBox?;
       await Share.shareXFiles(
         [XFile(file.path, mimeType: 'image/png', name: fileName)],
-        subject: '${league.name} · ${race.name} summary',
-        text: _shareText(league.name, race.name, summary),
+        subject: l.weeklySummarySubject(league.name, race.name),
+        text: _shareText(AppLocalizations.of(context), league.name, race.name, summary),
         sharePositionOrigin: box == null
             ? null
             : box.localToGlobal(Offset.zero) & box.size,
@@ -181,7 +185,7 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Share error: ${friendlyError(e)}')),
+        SnackBar(content: Text(l.shareError(friendlyError(e)))),
       );
     } finally {
       if (mounted) setState(() => _sharing = false);
@@ -189,14 +193,15 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
   }
 
   static String _shareText(
+    AppLocalizations l,
     String leagueName,
     String raceName,
     LeagueWeeklySummary summary,
   ) {
     final winner = summary.bestPrediction == null
-        ? 'No score yet'
-        : '${summary.bestPrediction!.username} (${summary.bestPrediction!.score} puan)';
-    return '$leagueName · $raceName\nKazanan: $winner\nGridCall';
+        ? l.noScoreYet
+        : '${summary.bestPrediction!.username} (${summary.bestPrediction!.score} ${l.points})';
+    return '$leagueName · $raceName\n${l.winner}: $winner\nGridCall';
   }
 }
 
@@ -222,10 +227,10 @@ class _SharePreviewPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.carbon,
       appBar: AppBar(
-        title: const Text('SHARE PREVIEW'),
+        title: Text(AppLocalizations.of(context).sharePreview),
         actions: [
           IconButton(
-            tooltip: 'Share',
+            tooltip: AppLocalizations.of(context).share,
             icon: sharing
                 ? const SizedBox(
                     width: 18,
@@ -298,8 +303,8 @@ class _Body extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         Text(
-          '${league.name.toUpperCase()} · R${race.round}'
-          '${sprintMode ? ' · Sprint' : ''}',
+          '${league.name.toUpperCase()} · ${AppLocalizations.of(context).raceRoundShort(race.round)}'
+          '${sprintMode ? ' · ${AppLocalizations.of(context).sprintUpper}' : ''}',
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w800,
@@ -321,36 +326,40 @@ class _Body extends StatelessWidget {
           children: [
             Expanded(
               child: _MetricCard(
-                label: 'HAFTANIN WINNERI',
+                label: AppLocalizations.of(context).weeklyWinnerLabel,
                 value: summary.bestPrediction?.username ?? '-',
                 subvalue: summary.bestPrediction == null
-                    ? 'No score yet'
-                    : '${summary.bestPrediction!.score} puan',
+                    ? AppLocalizations.of(context).noScoreYet
+                    : '${summary.bestPrediction!.score} ${AppLocalizations.of(context).points}',
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _MetricCard(
-                label: sprintMode ? 'PREDICTIONS' : 'JOKER CORRECT',
+                label: sprintMode
+                    ? AppLocalizations.of(context).predictionsUpper
+                    : AppLocalizations.of(context).jokerCorrect,
                 value: sprintMode
                     ? '${summary.predictionCount}'
                     : '${summary.jokerHitCount}',
-                subvalue: sprintMode ? 'predictions' : 'people',
+                subvalue: sprintMode
+                    ? AppLocalizations.of(context).predictions
+                    : AppLocalizations.of(context).people,
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
         _MetricCard(
-          label: 'TOP SCORING DRIVER',
+          label: AppLocalizations.of(context).topScoringDriver,
           value: summary.mostPickedDriver?.code ?? '-',
           subvalue: summary.mostPickedDriver == null
-              ? 'No prediction'
-              : '${summary.mostPickedDriver!.fullName} · ${summary.mostPickedDriver!.points} puan',
+              ? AppLocalizations.of(context).noPrediction
+              : '${summary.mostPickedDriver!.fullName} · ${summary.mostPickedDriver!.points} ${AppLocalizations.of(context).points}',
           accentColor: summary.mostPickedDriver?.color,
         ),
         const SizedBox(height: 24),
-        const _SectionTitle(label: 'TOP 5'),
+        _SectionTitle(label: AppLocalizations.of(context).topFive),
         const SizedBox(height: 12),
         if (summary.topStandings.isEmpty)
           const _EmptyState()
@@ -368,7 +377,7 @@ class _Body extends StatelessWidget {
             '${sprintMode ? '?mode=sprint' : ''}',
           ),
           icon: const Icon(Icons.fact_check_outlined),
-          label: const Text('VIEW DETAILED RESULTS'),
+          label: Text(AppLocalizations.of(context).viewDetailedResults),
         ),
       ],
     );
@@ -449,6 +458,7 @@ class _SummaryStandingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -476,7 +486,7 @@ class _SummaryStandingRow extends StatelessWidget {
             ),
           ),
           Text(
-            '$score PTS',
+            '$score ${l.pointsShort}',
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
           ),
         ],
@@ -523,10 +533,10 @@ class _EmptyState extends StatelessWidget {
       color: AppColors.surfaceLow,
       borderRadius: BorderRadius.circular(8),
     ),
-    child: const Text(
-      'No scored predictions were found in this league for this race.',
+    child: Text(
+      AppLocalizations.of(context).noScoredPredictionsForRace,
       textAlign: TextAlign.center,
-      style: TextStyle(color: Color(0x99FFFFFF)),
+      style: const TextStyle(color: Color(0x99FFFFFF)),
     ),
   );
 }

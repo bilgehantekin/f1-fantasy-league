@@ -123,15 +123,16 @@ class _LeagueActionsPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     return Column(
       children: [
         Row(
           children: [
             Expanded(
               child: _PrimaryLeagueActionCard(
-                title: 'NEW LEAGUE',
-                subtitle: 'Create your own league',
-                buttonLabel: 'CREATE',
+                title: l.newLeague,
+                subtitle: l.createYourOwnLeague,
+                buttonLabel: l.create,
                 accentColor: const Color(0xFF00D26A),
                 colors: const [Color(0xFF00D26A), Color(0xFF00A855)],
                 onTap: () => showCreateLeagueDialog(context, ref),
@@ -140,9 +141,9 @@ class _LeagueActionsPanel extends ConsumerWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _PrimaryLeagueActionCard(
-                title: 'JOIN',
-                subtitle: 'Join with invite code',
-                buttonLabel: 'ENTER CODE',
+                title: l.join,
+                subtitle: l.joinWithInviteCode,
+                buttonLabel: l.enterCode,
                 accentColor: const Color(0xFFE10600),
                 colors: const [Color(0xFFE10600), Color(0xFFA00500)],
                 onTap: () => showJoinLeagueDialog(context, ref),
@@ -176,12 +177,12 @@ class _LeagueActionsPanel extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'My leagues',
+                        l.myLeagues,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -189,7 +190,7 @@ class _LeagueActionsPanel extends ConsumerWidget {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'View your leagues',
+                        l.viewYourLeagues,
                         style: TextStyle(
                           fontSize: 12,
                           color: Color(0x99FFFFFF),
@@ -328,7 +329,7 @@ class _DriverStandingsSection extends StatelessWidget {
         error: (e, _) => _SectionError(error: e),
         data: (list) {
           if (list.isEmpty) {
-            return const _EmptySection(text: 'No standings yet.');
+            return _EmptySection(text: l.noStandingsYet);
           }
           return Column(
             children: [
@@ -374,7 +375,7 @@ class _ConstructorStandingsSection extends StatelessWidget {
         error: (e, _) => _SectionError(error: e),
         data: (list) {
           if (list.isEmpty) {
-            return const _EmptySection(text: 'No standings yet.');
+            return _EmptySection(text: l.noStandingsYet);
           }
           return Column(
             children: [
@@ -404,6 +405,7 @@ class _StandingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -418,11 +420,11 @@ class _StandingsSection extends StatelessWidget {
                 minimumSize: const Size(0, 0),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'All',
+                    l.all,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w900,
@@ -450,6 +452,7 @@ class _RacesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -460,9 +463,7 @@ class _RacesSection extends StatelessWidget {
           error: (e, _) => _SectionError(error: e),
           data: (list) {
             if (list.isEmpty) {
-              return const _EmptySection(
-                text: 'No races found for this season.',
-              );
+               return _EmptySection(text: l.noRacesForSeason);
             }
             final visibleRaces = buildPreviousAndNextRaces(list);
             return Column(
@@ -470,8 +471,8 @@ class _RacesSection extends StatelessWidget {
                 for (var i = 0; i < visibleRaces.length; i++) ...[
                   _RaceScopeLabel(
                     label: i == 0 && countsAsPreviousRace(visibleRaces[i])
-                        ? 'Previous race'
-                        : 'Next race',
+                        ? l.previousRace
+                        : l.nextRace,
                   ),
                   const SizedBox(height: 8),
                   RaceCardNew(
@@ -487,7 +488,7 @@ class _RacesSection extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () => _showAllRacesSheet(context, list),
                     icon: const Icon(Icons.calendar_month_outlined, size: 18),
-                    label: const Text('All races'),
+                    label: Text(l.allRaces),
                   ),
                 ),
               ],
@@ -508,7 +509,7 @@ class _RacesSection extends StatelessWidget {
     final kind = await showRaceKindPicker(
       sourceContext,
       race: race,
-      title: 'Select race',
+      title: AppLocalizations.of(context).selectRace,
     );
     if (kind == null) return;
     if (closePickerContextBeforeNavigate && sourceContext.mounted) {
@@ -529,6 +530,7 @@ class _RacesSection extends StatelessWidget {
 
   void _showAllRacesSheet(BuildContext context, List<Race> races) {
     final pageContext = context;
+    final l = AppLocalizations.of(pageContext);
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -562,7 +564,7 @@ class _RacesSection extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(16, 18, 8, 12),
                   child: Row(
                     children: [
-                      const Expanded(child: _SectionHeader(title: 'ALL RACES')),
+                      Expanded(child: _SectionHeader(title: l.allRaces)),
                       IconButton(
                         icon: const Icon(Icons.close, size: 20),
                         onPressed: () => Navigator.of(sheetContext).pop(),
@@ -687,7 +689,7 @@ class _FullDriverStandings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (drivers.isEmpty) {
-      return const _EmptySection(text: 'No standings yet.');
+      return _EmptySection(text: AppLocalizations.of(context).noStandingsYet);
     }
     return Column(
       children: [
@@ -709,7 +711,7 @@ class _FullConstructorStandings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (constructors.isEmpty) {
-      return const _EmptySection(text: 'No standings yet.');
+      return _EmptySection(text: AppLocalizations.of(context).noStandingsYet);
     }
     return Column(
       children: [
@@ -958,7 +960,8 @@ class _SectionLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const AppLoadingState(label: 'Data loading');
+    final l = AppLocalizations.of(context);
+    return AppLoadingState(label: l.dataLoading);
   }
 }
 
@@ -980,9 +983,10 @@ class _EmptySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return AppEmptyState(
       icon: Icons.sports_score_outlined,
-      title: 'No data yet',
+      title: l.noDataYet,
       message: text,
     );
   }

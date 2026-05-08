@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../shared/country_flags.dart';
 import '../../shared/models.dart';
 import 'league_controller.dart';
@@ -23,6 +24,7 @@ class WeeklySummaryShareCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final myStanding = summary.myStanding;
     final items = summary.predictionItems;
     final totalPossible = items.fold<int>(
@@ -47,7 +49,7 @@ class WeeklySummaryShareCard extends StatelessWidget {
               const ShareGridCallLogo(fontSize: 42, bulbSize: 13),
               const Spacer(),
               Text(
-                'R${race.round}',
+                l.raceRoundShort(race.round),
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
@@ -61,7 +63,7 @@ class WeeklySummaryShareCard extends StatelessWidget {
           ),
           const SizedBox(height: 72),
           Text(
-            '${league.name} · $memberCount people',
+            l.shareLeagueMemberCount(league.name, memberCount),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -82,8 +84,12 @@ class WeeklySummaryShareCard extends StatelessWidget {
           const SizedBox(height: 52),
           Text(
             totalPossible == 0
-                ? 'PREDICTIONS'
-                : 'PREDICTIONS · ${myStanding?.score ?? 0}/$totalPossible PTS',
+                ? l.predictionsUpper
+                : l.sharePredictionsScore(
+                    myStanding?.score ?? 0,
+                    totalPossible,
+                    l.pointsAbbreviation,
+                  ),
             style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w900,
@@ -135,7 +141,7 @@ class _RaceTitle extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: style,
         ),
-        Text('SPRINT', style: style),
+        Text(AppLocalizations.of(context).sprintUpper, style: style),
       ],
     );
   }
@@ -154,6 +160,7 @@ class _ScoreRankBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(58, 52, 58, 48),
@@ -174,9 +181,9 @@ class _ScoreRankBlock extends StatelessWidget {
           ? Text(
               isScored
                   ? (sprintMode
-                        ? 'You did not make a prediction for this sprint.'
-                        : 'You did not make a prediction for this race.')
-                  : 'Score has not been calculated yet.',
+                        ? l.noSprintPredictionMessage
+                        : l.noRacePredictionMessage)
+                  : l.scoreNotCalculatedYet,
               style: TextStyle(
                 fontSize: 34,
                 fontWeight: FontWeight.w800,
@@ -191,7 +198,7 @@ class _ScoreRankBlock extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'SCORE',
+                        l.scoreUpper,
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w900,
@@ -216,7 +223,7 @@ class _ScoreRankBlock extends StatelessWidget {
                           Padding(
                             padding: const EdgeInsets.only(bottom: 8),
                             child: Text(
-                              'PTS',
+                              l.pointsAbbreviation,
                               style: TextStyle(
                                 fontSize: 34,
                                 fontWeight: FontWeight.w900,
@@ -234,7 +241,7 @@ class _ScoreRankBlock extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      'RANK',
+                      l.rankUpper,
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w900,
@@ -334,6 +341,7 @@ class _PredictionLight extends StatelessWidget {
       'partial' => AppColors.lockOrange,
       _ => AppColors.f1Red,
     };
+    final isWrong = item.status == 'wrong';
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -358,7 +366,7 @@ class _PredictionLight extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          _shortLabel(item.label),
+          _shortLabel(context, item.label),
           maxLines: 2,
           textAlign: TextAlign.center,
           overflow: TextOverflow.ellipsis,
@@ -372,14 +380,14 @@ class _PredictionLight extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          item.points > 0 ? '+${item.points}' : item.value,
+          isWrong ? '0' : (item.points > 0 ? '+${item.points}' : item.value),
           maxLines: 1,
           textAlign: TextAlign.center,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w900,
-            color: item.points > 0
+            color: isWrong || item.points > 0
                 ? color
                 : Colors.white.withValues(alpha: 0.28),
             height: 1,
@@ -389,16 +397,20 @@ class _PredictionLight extends StatelessWidget {
     );
   }
 
-  static String _shortLabel(String label) {
+  static String _shortLabel(BuildContext context, String label) {
+    final l = AppLocalizations.of(context);
     return switch (label) {
-      'RACE WINNER' || 'SPRINT WINNER' => 'WINNER',
-      'SAFETY CAR' => 'S. CAR',
-      'PODIUM P1' || 'PODYUM P1' => 'POD P1',
-      'PODIUM P2' || 'PODYUM P2' => 'POD P2',
-      'PODIUM P3' || 'PODYUM P3' => 'POD P3',
-      'PODIUM BONUS' || 'PODYUM BONUS' => 'POD BONUS',
-      'SPRINT POLE' => 'POLE',
-      'TOP TEAM' => 'BEST TEAM',
+      'RACE WINNER' || 'YARIŞ GALİBİ' => l.shareRaceWinnerShortUpper,
+      'SPRINT WINNER' || 'SPRINT GALİBİ' => l.shareSprintWinnerShortUpper,
+      'SAFETY CAR' || 'GÜVENLİK ARACI' => l.safetyCarShortUpper,
+      'PODIUM P1' || 'PODYUM P1' => l.podiumP1ShortUpper,
+      'PODIUM P2' || 'PODYUM P2' => l.podiumP2ShortUpper,
+      'PODIUM P3' || 'PODYUM P3' => l.podiumP3ShortUpper,
+      'PODIUM BONUS' || 'PODYUM BONUS' => l.podiumBonusShortUpper,
+      'POLE' || 'SPRINT POLE' => l.poleShortUpper,
+      'TOP TEAM' => l.bestTeamShortUpper,
+      'DNF' => l.dnfUpper,
+      'JOKER' => l.jokerUpper,
       _ => label,
     };
   }
@@ -422,7 +434,7 @@ class _TopThreeRows extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: Text(
-            'TOP 5',
+            AppLocalizations.of(context).topFive,
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w900,
@@ -518,11 +530,19 @@ class _EmptyPredictionBox extends StatelessWidget {
       child: Text(
         isScored
             ? (sprintMode
-                  ? 'Because you did not make a sprint prediction, your sprint score and prediction breakdown for this GP cannot be shown.'
-                  : 'Because you did not make a prediction, your score and prediction breakdown for this GP cannot be shown.')
+                  ? AppLocalizations.of(
+                      context,
+                    ).shareNoSprintPredictionScoredMessage
+                  : AppLocalizations.of(
+                      context,
+                    ).shareNoRacePredictionScoredMessage)
             : (sprintMode
-                  ? 'Your prediction breakdown will appear here when the sprint result is scored.'
-                  : 'Your prediction breakdown will appear here when the race result is scored.'),
+                  ? AppLocalizations.of(
+                      context,
+                    ).shareSprintBreakdownPendingMessage
+                  : AppLocalizations.of(
+                      context,
+                    ).shareRaceBreakdownPendingMessage),
         style: const TextStyle(
           fontSize: 26,
           fontWeight: FontWeight.w700,

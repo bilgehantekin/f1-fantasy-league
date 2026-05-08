@@ -1,139 +1,111 @@
+import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
+
+import '../l10n/generated/app_localizations.dart';
 
 /// Converts Supabase AuthException messages into short user-facing copy.
 String friendlyAuthError(Object e, {bool isSignIn = false}) {
-  final raw = e.toString().toLowerCase();
-  if (raw.contains('invalid login credentials') ||
-      raw.contains('invalid_credentials') ||
-      raw.contains('email or password')) {
+  final l = _l();
+  final raw = e.toString();
+  final normalized = raw.toLowerCase();
+
+  if (normalized.contains('invalid login credentials') ||
+      normalized.contains('invalid_credentials') ||
+      normalized.contains('email or password')) {
     return _invalidCredentialsMessage();
   }
-  if (raw.contains('email not confirmed') || raw.contains('not confirmed')) {
-    return _localized(
-      tr: 'E-posta adresin henüz doğrulanmamış. Gelen kutunu kontrol et.',
-      en: 'Your email address has not been confirmed yet. Check your inbox.',
-    );
+  if (normalized.contains('email not confirmed') ||
+      normalized.contains('not confirmed')) {
+    return l.authEmailNotConfirmed;
   }
-  if (raw.contains('user already registered') ||
-      raw.contains('already registered') ||
-      raw.contains('already exists')) {
-    return _localized(
-      tr: 'Bu e-posta adresi zaten kayıtlı.',
-      en: 'This email address is already registered.',
-    );
+  if (normalized.contains('user already registered') ||
+      normalized.contains('already registered') ||
+      normalized.contains('already exists')) {
+    return l.authEmailAlreadyRegistered;
   }
-  if (raw.contains('rate limit') || raw.contains('too many requests')) {
-    return _localized(
-      tr: 'Çok fazla deneme yapıldı. Lütfen biraz bekleyip tekrar dene.',
-      en: 'Too many attempts. Please wait a bit and try again.',
-    );
+  if (normalized.contains('rate limit') ||
+      normalized.contains('too many requests')) {
+    return l.authTooManyAttempts;
   }
-  if (raw.contains('password') && raw.contains('6')) {
+  if (normalized.contains('password') && normalized.contains('6')) {
     if (isSignIn) return _invalidCredentialsMessage();
-    return _localized(
-      tr: 'Şifre en az 6 karakter olmalı.',
-      en: 'Password must be at least 6 characters.',
-    );
+    return l.authPasswordMin6;
   }
-  if (raw.contains('signup_disabled') || raw.contains('signup disabled')) {
-    return _localized(
-      tr: 'Kayıt şu an kapalı.',
-      en: 'Sign-ups are currently disabled.',
-    );
+  if (normalized.contains('signup_disabled') ||
+      normalized.contains('signup disabled')) {
+    return l.authSignupDisabled;
   }
-  if (raw.contains('weak_password') || raw.contains('weak password')) {
-    return _localized(
-      tr: 'Şifre çok zayıf. Daha güçlü bir şifre seç.',
-      en: 'This password is too weak. Choose a stronger password.',
-    );
+  if (normalized.contains('weak_password') ||
+      normalized.contains('weak password')) {
+    return l.authWeakPassword;
   }
-  if (raw.contains('network') ||
-      raw.contains('socket') ||
-      raw.contains('connection')) {
-    return _localized(
-      tr: 'Bağlantı hatası. İnternetini kontrol edip tekrar dene.',
-      en: 'Connection error. Check your internet and try again.',
-    );
+  if (normalized.contains('network') ||
+      normalized.contains('socket') ||
+      normalized.contains('connection')) {
+    return l.connectionError;
   }
-  final cleaned = e.toString().replaceFirst('Exception: ', '');
-  if (cleaned.length > 140) return '${cleaned.substring(0, 140)}…';
-  return cleaned;
+
+  return l.unexpectedErrorWithMessage(_shortError(raw));
 }
 
 /// Converts provider errors and caught exceptions into short user-facing copy.
 String friendlyError(Object e) {
+  final l = _l();
   final raw = e.toString();
-  if (raw.contains('SocketException') ||
-      raw.contains('Failed host lookup') ||
-      raw.contains('Network is unreachable') ||
-      raw.contains('Connection refused') ||
-      raw.contains('Connection closed') ||
-      raw.contains('TimeoutException')) {
-    return _localized(
-      tr: 'Bağlantı hatası. İnternetini kontrol edip tekrar dene.',
-      en: 'Connection error. Check your internet and try again.',
-    );
+  final normalized = raw.toLowerCase();
+
+  if (normalized.contains('socketexception') ||
+      normalized.contains('failed host lookup') ||
+      normalized.contains('network is unreachable') ||
+      normalized.contains('connection refused') ||
+      normalized.contains('connection closed') ||
+      normalized.contains('timeoutexception')) {
+    return l.connectionError;
   }
-  if (raw.contains('JWT') ||
-      raw.contains('PGRST303') ||
-      raw.contains('not authenticated') ||
-      raw.contains('Auth required') ||
-      raw.contains('Authentication required')) {
-    return _localized(
-      tr: 'Oturumun sona ermiş olabilir. Tekrar giriş yapmayı dene.',
-      en: 'Your session may have expired. Please sign in again.',
-    );
+  if (normalized.contains('jwt') ||
+      normalized.contains('pgrst303') ||
+      normalized.contains('not authenticated') ||
+      normalized.contains('auth required') ||
+      normalized.contains('authentication required')) {
+    return l.sessionExpired;
   }
-  if (raw.contains('PGRST116') || raw.contains('multiple (or no) rows')) {
-    return _localized(
-      tr: 'Aradığın içerik bulunamadı.',
-      en: 'The content you are looking for could not be found.',
-    );
+  if (normalized.contains('pgrst116') ||
+      normalized.contains('multiple (or no) rows')) {
+    return l.errorContentNotFound;
   }
-  if (raw.contains('row-level security') ||
-      raw.contains('permission denied') ||
-      raw.contains('PGRST301')) {
-    return _localized(
-      tr: 'Bu işlem için yetkin yok.',
-      en: 'You do not have permission to perform this action.',
-    );
+  if (normalized.contains('row-level security') ||
+      normalized.contains('permission denied') ||
+      normalized.contains('pgrst301')) {
+    return l.errorNoPermission;
   }
-  if (raw.contains('duplicate key')) {
-    return _localized(
-      tr: 'Bu kayıt zaten mevcut.',
-      en: 'This record already exists.',
-    );
+  if (normalized.contains('duplicate key')) {
+    return l.errorRecordExists;
   }
-  if (raw.contains('Invalid invite code') ||
-      raw.contains('invite_code') && raw.contains('null')) {
-    return _localized(
-      tr: 'Geçersiz davet kodu. Kodu kontrol edip tekrar dene.',
-      en: 'Invalid invite code. Check the code and try again.',
-    );
+  if (normalized.contains('invalid invite code') ||
+      (normalized.contains('invite_code') && normalized.contains('null'))) {
+    return l.invalidInviteCode;
   }
-  if (raw.contains('already')) {
-    return _localized(
-      tr: 'Bu işlem zaten yapılmış görünüyor.',
-      en: 'This action appears to have already been completed.',
-    );
+  if (normalized.contains('already')) {
+    return l.errorActionAlreadyCompleted;
   }
-  if (raw.contains('PostgrestException')) {
-    return _localized(
-      tr: 'İşlem tamamlanamadı. Biraz sonra tekrar dene.',
-      en: 'The action could not be completed. Please try again shortly.',
-    );
+  if (normalized.contains('postgrestexception')) {
+    return l.errorActionRetrySoon;
   }
+
+  return l.unexpectedErrorWithMessage(_shortError(raw));
+}
+
+String _invalidCredentialsMessage() => _l().errorInvalidCredentials;
+
+String _shortError(String raw) {
   final cleaned = raw.replaceFirst('Exception: ', '');
-  if (cleaned.length > 140) {
-    return '${cleaned.substring(0, 140)}…';
-  }
+  if (cleaned.length > 140) return '${cleaned.substring(0, 140)}…';
   return cleaned;
 }
 
-String _localized({required String tr, required String en}) =>
-    Intl.getCurrentLocale().startsWith('en') ? en : tr;
-
-String _invalidCredentialsMessage() => _localized(
-  tr: 'E-posta veya şifre hatalı.',
-  en: 'Email or password is incorrect.',
-);
+AppLocalizations _l() {
+  final locale = Intl.getCurrentLocale().toLowerCase().startsWith('tr')
+      ? const Locale('tr')
+      : const Locale('en');
+  return lookupAppLocalizations(locale);
+}

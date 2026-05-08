@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/error_messages.dart';
 import '../../core/legal_links.dart';
@@ -46,7 +47,7 @@ class ProfileScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.settings, size: 20),
-            tooltip: 'Notification settings',
+            tooltip: l.notificationsTitle,
             onPressed: () => context.push('/settings/notifications'),
           ),
         ],
@@ -56,7 +57,7 @@ class ProfileScreen extends ConsumerWidget {
         ),
       ),
       body: profileAsync.when(
-        loading: () => const AppLoadingState(label: 'Profile loading'),
+        loading: () => AppLoadingState(label: l.profileLoading),
         error: (e, _) => AppErrorState(
           message: friendlyError(e),
           onRetry: () {
@@ -67,10 +68,10 @@ class ProfileScreen extends ConsumerWidget {
         ),
         data: (p) {
           if (p == null) {
-            return const AppEmptyState(
+            return AppEmptyState(
               icon: Icons.login_outlined,
-              title: 'Sign-in required',
-              message: 'You need to sign in to view your profile.',
+              title: l.signInRequired,
+              message: l.profileSignInRequiredMessage,
             );
           }
           return ListView(
@@ -92,7 +93,8 @@ class ProfileScreen extends ConsumerWidget {
                     _HeroProfile(profile: p),
                     statsAsync.when(
                       loading: () => const SizedBox.shrink(),
-                      error: (e, _) => Text('Stats error: ${friendlyError(e)}'),
+                      error: (e, _) =>
+                          Text(l.statsErrorWithMessage(friendlyError(e))),
                       data: (s) {
                         final leaguesAsync = ref.watch(myLeaguesProvider);
                         final bestRank = leaguesAsync.maybeWhen(
@@ -109,7 +111,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              _SectionTitle(label: 'ROZETLER'),
+              _SectionTitle(label: l.badgesUpper),
               myBadgesAsync.when(
                 loading: () => const _Loading(),
                 error: (e, _) => _Error(e),
@@ -125,24 +127,24 @@ class ProfileScreen extends ConsumerWidget {
                 },
               ),
               const SizedBox(height: 24),
-              _SectionTitle(label: 'SEASON STATS'),
+              _SectionTitle(label: l.seasonStatsUpper),
               statsAsync.when(
                 loading: () => const _Loading(),
                 error: (e, _) => _Error(e),
                 data: (s) => _SeasonStats(stats: s),
               ),
               const SizedBox(height: 24),
-              _SectionTitle(label: 'LEAGUES'),
+              _SectionTitle(label: l.leaguesUpper),
               const _LeaguesList(),
               const SizedBox(height: 24),
-              _SectionTitle(label: 'HESAP VE YASAL'),
+              _SectionTitle(label: l.accountAndLegalUpper),
               const _AccountLifecyclePanel(),
               const SizedBox(height: 24),
               Center(
                 child: TextButton(
                   onPressed: () => supabase.auth.signOut(),
-                  child: const Text(
-                    'Sign Out',
+                  child: Text(
+                    l.signOut,
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -165,6 +167,7 @@ class _AccountLifecyclePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -175,25 +178,25 @@ class _AccountLifecyclePanel extends StatelessWidget {
         children: [
           _AccountRow(
             icon: Icons.info_outline,
-            title: 'About',
+            title: l.aboutGridCall,
             onTap: () => _showAboutDialog(context),
           ),
           const Divider(height: 1, color: Color(0xFF1F1F2E)),
           _AccountRow(
             icon: Icons.privacy_tip_outlined,
-            title: 'Privacy Policy',
+            title: l.privacy,
             onTap: () => _openLegal(context, LegalLinks.privacy),
           ),
           const Divider(height: 1, color: Color(0xFF1F1F2E)),
           _AccountRow(
             icon: Icons.description_outlined,
-            title: 'Terms of Use',
+            title: l.terms,
             onTap: () => _openLegal(context, LegalLinks.terms),
           ),
           const Divider(height: 1, color: Color(0xFF1F1F2E)),
           _AccountRow(
             icon: Icons.delete_outline,
-            title: 'Request account deletion',
+            title: l.requestAccountDeletion,
             destructive: true,
             onTap: () => _confirmDeletionRequest(context),
           ),
@@ -276,14 +279,13 @@ Future<void> _confirmDeletionRequest(BuildContext context) async {
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: const Text('Delete your account'),
+      title: Text(AppLocalizations.of(context).deleteYourAccount),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Your account and all of your predictions, league memberships, badges, and profile information will be permanently deleted within 30 days after you create this request. If you change your mind during this period, you can request cancellation by emailing bilgehan.2002@gmail.com.\n\n'
-            'After the request is created, you will be signed out and your account will no longer be visible to other users.',
+          Text(
+            AppLocalizations.of(context).accountDeletionBody,
             style: TextStyle(height: 1.4),
           ),
           const SizedBox(height: 12),
@@ -291,9 +293,9 @@ Future<void> _confirmDeletionRequest(BuildContext context) async {
             controller: reasonCtrl,
             minLines: 2,
             maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Not (opsiyonel)',
-              hintText: 'Silme sebebini yazabilirsin',
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).noteOptional,
+              hintText: AppLocalizations.of(context).deletionReasonHint,
             ),
           ),
         ],
@@ -301,14 +303,14 @@ Future<void> _confirmDeletionRequest(BuildContext context) async {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(dialogContext, false),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).cancel),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(dialogContext, true),
           style: FilledButton.styleFrom(
             backgroundColor: const Color(0xFFFF2D55),
           ),
-          child: const Text('Create Request'),
+          child: Text(AppLocalizations.of(context).createRequest),
         ),
       ],
     ),
@@ -323,12 +325,13 @@ Future<void> _confirmDeletionRequest(BuildContext context) async {
     final result = await requestAccountDeletion(reason: reasonCtrl.text.trim());
     reasonCtrl.dispose();
     if (!context.mounted) return;
+    final l = AppLocalizations.of(context);
     final scheduledMessage = result.scheduledFor != null
-        ? 'Your account will be deleted on ${_formatDate(result.scheduledFor!)}.'
-        : 'Your account deletion request has been received.';
+        ? l.accountDeletionScheduled(_formatDate(context, result.scheduledFor!))
+        : l.accountDeletionRequestReceived;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$scheduledMessage Signing out...'),
+        content: Text(l.accountDeletionSnackbarMessage(scheduledMessage)),
         backgroundColor: AppColors.lockGreen,
         duration: const Duration(seconds: 3),
       ),
@@ -341,18 +344,18 @@ Future<void> _confirmDeletionRequest(BuildContext context) async {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Request could not be created: ${friendlyError(e)}'),
+        content: Text(
+          AppLocalizations.of(context).requestCreateError(friendlyError(e)),
+        ),
         backgroundColor: AppColors.liveRed,
       ),
     );
   }
 }
 
-String _formatDate(DateTime date) {
-  final local = date.toLocal();
-  final dd = local.day.toString().padLeft(2, '0');
-  final mm = local.month.toString().padLeft(2, '0');
-  return '$dd.$mm.${local.year}';
+String _formatDate(BuildContext context, DateTime date) {
+  final locale = Localizations.localeOf(context).toString();
+  return DateFormat.yMd(locale).format(date.toLocal());
 }
 
 class _HeroProfile extends StatelessWidget {
@@ -420,6 +423,7 @@ class _StatsCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       child: Row(
@@ -427,14 +431,14 @@ class _StatsCards extends StatelessWidget {
         children: [
           Expanded(
             child: _StatCard(
-              label: 'Total Points',
+              label: l.totalPoints,
               value: '${stats.totalScore}',
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: _StatCard(
-              label: 'Best Rank',
+              label: l.bestRank,
               value: bestRank == null ? '-' : '#${bestRank!.rank}',
               subtitle: bestRank?.leagueName,
             ),
@@ -442,7 +446,7 @@ class _StatsCards extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: _StatCard(
-              label: 'Weekly Record',
+              label: l.weeklyRecord,
               value: '${stats.bestScore}',
             ),
           ),
@@ -553,10 +557,13 @@ class _BadgesCarouselState extends State<_BadgesCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    final earnedBadges = widget.myBadges
-        .map((userBadge) => userBadge.badge)
-        .whereType<AppBadge>()
-        .toList();
+    final earnedBadgesById = <String, AppBadge>{};
+    for (final userBadge in widget.myBadges) {
+      final badge = userBadge.badge;
+      if (badge == null) continue;
+      earnedBadgesById.putIfAbsent(badge.id, () => badge);
+    }
+    final earnedBadges = earnedBadgesById.values.toList();
     final earnedBadgeIds = earnedBadges.map((badge) => badge.id).toSet();
     final badges = [
       ...earnedBadges,
@@ -568,11 +575,10 @@ class _BadgesCarouselState extends State<_BadgesCarousel> {
     ];
 
     if (badges.isEmpty) {
-      return const AppEmptyState(
+      return AppEmptyState(
         icon: Icons.emoji_events_outlined,
-        title: 'No badges yet',
-        message:
-            'You will earn badges based on your achievements as race results arrive.',
+        title: AppLocalizations.of(context).noBadgesYet,
+        message: AppLocalizations.of(context).noBadgesYetMessage,
       );
     }
 
@@ -659,7 +665,8 @@ class _BadgeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final display = _BadgeDisplay.fromBadge(badge);
+    final l = AppLocalizations.of(context);
+    final display = _BadgeDisplay.fromBadge(badge, l);
 
     return Opacity(
       opacity: isEarned ? 1 : 0.42,
@@ -721,28 +728,35 @@ class _BadgeDisplay {
 
   const _BadgeDisplay({required this.name, this.category});
 
-  factory _BadgeDisplay.fromBadge(AppBadge badge) {
-    const namesByBaseCode = {
-      'bullseye_podium': 'Perfect Podium',
-      'pole_caller': 'Pole Hunter',
-      'dnf_oracle': 'DNF Kahini',
-      'weekly_winner': 'Weekly Champion',
-      'perfect_week': 'Perfect Week',
-      'three_in_row': 'Three in a Row',
+  factory _BadgeDisplay.fromBadge(AppBadge badge, AppLocalizations l) {
+    const baseCodeKeys = {
+      'bullseye_podium': 'badgePerfectPodium',
+      'pole_caller': 'badgePoleHunter',
+      'dnf_oracle': 'badgeDnfOracle',
+      'weekly_winner': 'badgeWeeklyChampion',
+      'perfect_week': 'badgePerfectWeek',
+      'three_in_row': 'badgeThreeInRow',
     };
 
     final isSprint = badge.code.startsWith('sprint_');
     final baseCode = isSprint
         ? badge.code.substring('sprint_'.length)
         : badge.code;
-    final sharedName = namesByBaseCode[baseCode];
+    final keyName = baseCodeKeys[baseCode];
 
-    if (sharedName == null) return _BadgeDisplay(name: badge.name);
+    if (keyName == null) return _BadgeDisplay(name: badge.name);
 
-    return _BadgeDisplay(
-      name: sharedName,
-      category: isSprint ? 'Sprint' : 'Main Race',
-    );
+    final name = switch (keyName) {
+      'badgePerfectPodium' => l.badgePerfectPodium,
+      'badgePoleHunter' => l.badgePoleHunter,
+      'badgeDnfOracle' => l.badgeDnfOracle,
+      'badgeWeeklyChampion' => l.badgeWeeklyChampion,
+      'badgePerfectWeek' => l.badgePerfectWeek,
+      'badgeThreeInRow' => l.badgeThreeInRow,
+      _ => badge.name,
+    };
+
+    return _BadgeDisplay(name: name, category: isSprint ? l.sprint : l.race);
   }
 }
 
@@ -755,7 +769,7 @@ class _SeasonStats extends StatelessWidget {
     final bestEvent = stats.bestEventName == null
         ? '-'
         : stats.bestEventMode == 'sprint'
-        ? '${stats.bestEventName} — Sprint'
+        ? '${stats.bestEventName} — ${AppLocalizations.of(context).sprintUpper}'
         : stats.bestEventName!;
     final rows = [
       (
@@ -798,7 +812,7 @@ class _SeasonStats extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Your average prediction performance, participation rhythm, best race week, and league status are summarized here for the season.',
+            AppLocalizations.of(context).seasonStatsSummary,
             style: TextStyle(
               fontSize: 12,
               color: Colors.white.withValues(alpha: 0.55),
@@ -845,7 +859,7 @@ class _SeasonStats extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'LEAGUE PERFORMANCE',
+                AppLocalizations.of(context).leaguePerformanceUpper,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
@@ -901,7 +915,9 @@ class _LeaguePerformanceRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Race ${league.mainScore} · Sprint ${league.sprintScore}',
+                  AppLocalizations.of(
+                    context,
+                  ).raceSprintScores(league.mainScore, league.sprintScore),
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.55),
@@ -937,10 +953,10 @@ class _LeaguesList extends StatelessWidget {
           error: (e, _) => _Error(e),
           data: (leagues) {
             if (leagues.isEmpty) {
-              return const Padding(
+              return Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  'You have not joined a league yet.',
+                  AppLocalizations.of(context).noLeagueYet,
                   style: TextStyle(color: Color(0x99FFFFFF)),
                 ),
               );
@@ -974,7 +990,9 @@ class _LeaguesList extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    'Invite code: ${league.inviteCode}',
+                                    AppLocalizations.of(
+                                      context,
+                                    ).inviteCodeValue(league.inviteCode),
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.white.withValues(
@@ -984,7 +1002,9 @@ class _LeaguesList extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${league.memberCount ?? 0} members',
+                                    AppLocalizations.of(
+                                      context,
+                                    ).membersCount(league.memberCount ?? 0),
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.white.withValues(
@@ -1035,7 +1055,7 @@ class _Loading extends StatelessWidget {
   const _Loading();
   @override
   Widget build(BuildContext context) =>
-      const AppLoadingState(label: 'Section loading');
+      AppLoadingState(label: AppLocalizations.of(context).sectionLoading);
 }
 
 class _Error extends StatelessWidget {

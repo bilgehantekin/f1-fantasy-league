@@ -31,8 +31,8 @@ Production builds should keep this false. Mock live timing, fake live events, an
 
 ## App Store Basics
 
-- Privacy policy URL hosted at https://gridcall.app/privacy (mirror `docs/privacy-policy.md`).
-- Terms of service URL hosted at https://gridcall.app/terms (mirror `docs/terms-of-service.md`).
+- Privacy policy URL hosted at https://github.com/bilgehantekin/f1-fantasy-league/blob/main/docs/privacy-policy.md.
+- Terms of service URL hosted at https://github.com/bilgehantekin/f1-fantasy-league/blob/main/docs/terms-of-service.md.
 - Support / privacy email: bilgehan.2002@gmail.com (must work — Apple verifies it).
 - Account deletion: in-app via Profile → "Hesabı silme talebi oluştur". Backend wipe is wired through `process_account_deletion()` + `delete-accounts` edge function on a daily cron (see Account Deletion Pipeline below).
 - Demo reviewer account: create one before submission and put credentials in App Store Connect review notes.

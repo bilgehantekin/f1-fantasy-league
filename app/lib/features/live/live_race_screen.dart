@@ -161,6 +161,7 @@ class _LiveHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     if (!Env.enableDemoContent) {
       return Container(
         margin: const EdgeInsets.all(16),
@@ -200,8 +201,8 @@ class _LiveHeader extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Text(
-                    'TUR $currentLap',
+                  Text(
+                    '${l.lapShort} $currentLap',
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
                   ),
                   Text(
@@ -413,6 +414,7 @@ class _FastestLap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -431,18 +433,18 @@ class _FastestLap extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'NOR · Norris',
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
-                  '1:12.345 · TUR 45',
-                  style: TextStyle(
+                  '1:12.345 · ${l.lapShort} 45',
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFFA855F7),
@@ -461,19 +463,47 @@ class _LatestEvents extends StatelessWidget {
   const _LatestEvents();
 
   static const _events = <_EventItem>[
-    _EventItem(lap: 67, code: 'PER', text: 'DNF (Kaza)', teamColor: 0xFF3671C6),
+    _EventItem(
+      lap: 67,
+      code: 'PER',
+      type: _EventType.dnfCrash,
+      teamColor: 0xFF3671C6,
+    ),
     _EventItem(
       lap: 65,
       code: 'NOR',
-      text: 'Fastest Lap',
+      type: _EventType.fastestLap,
       teamColor: 0xFFFF8000,
     ),
-    _EventItem(lap: 58, code: 'HAM', text: 'Pit stop', teamColor: 0xFF27F4D2),
-    _EventItem(lap: 52, code: 'SAI', text: 'Pit stop', teamColor: 0xFFE8002D),
+    _EventItem(
+      lap: 58,
+      code: 'HAM',
+      type: _EventType.pitStop,
+      teamColor: 0xFF27F4D2,
+    ),
+    _EventItem(
+      lap: 52,
+      code: 'SAI',
+      type: _EventType.pitStop,
+      teamColor: 0xFFE8002D,
+    ),
   ];
+
+  String _eventText(BuildContext context, _EventType type) {
+    final l = AppLocalizations.of(context);
+    switch (type) {
+      case _EventType.dnfCrash:
+        return l.eventDnfCrash;
+      case _EventType.fastestLap:
+        return l.eventFastestLap;
+      case _EventType.pitStop:
+        return l.eventPitStop;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -497,7 +527,7 @@ class _LatestEvents extends StatelessWidget {
                   SizedBox(
                     width: 56,
                     child: Text(
-                      'TUR ${_events[i].lap}',
+                      '${l.lapShort} ${_events[i].lap}',
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -524,7 +554,7 @@ class _LatestEvents extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '· ${_events[i].text}',
+                    '· ${_eventText(context, _events[i].type)}',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -543,12 +573,14 @@ class _LatestEvents extends StatelessWidget {
 class _EventItem {
   final int lap;
   final String code;
-  final String text;
+  final _EventType type;
   final int teamColor;
   const _EventItem({
     required this.lap,
     required this.code,
-    required this.text,
+    required this.type,
     required this.teamColor,
   });
 }
+
+enum _EventType { dnfCrash, fastestLap, pitStop }

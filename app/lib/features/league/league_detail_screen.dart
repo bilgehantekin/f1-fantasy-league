@@ -80,7 +80,7 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
               letterSpacing: -0.3,
             ),
           ),
-          loading: () => const Text('...'),
+          loading: () => Text(l.appLoading),
           error: (error, stackTrace) => Text(l.leagueFallback.toUpperCase()),
         ),
         actions: [
@@ -191,18 +191,19 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
     if (_sharing) return;
     setState(() => _sharing = true);
     try {
+      final l = AppLocalizations.of(context);
       await WidgetsBinding.instance.endOfFrame;
       final boundary =
           _shareCardKey.currentContext?.findRenderObject()
               as RenderRepaintBoundary?;
       if (boundary == null) {
-        throw StateError('Share card could not be prepared');
+        throw StateError(l.shareCardCouldNotBePrepared);
       }
       final image = await boundary.toImage(pixelRatio: 1);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       final bytes = byteData?.buffer.asUint8List();
       if (bytes == null) {
-        throw StateError('Share image could not be created');
+        throw StateError(l.shareImageCouldNotBeCreated);
       }
 
       final fileName = 'gridcall_${league.inviteCode.toLowerCase()}_league.png';
@@ -211,9 +212,10 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
       final box = context.findRenderObject() as RenderBox?;
       await Share.shareXFiles(
         [XFile.fromData(bytes, mimeType: 'image/png', name: fileName)],
-        subject: 'Join ${league.name}',
-        text:
-            'Join my GridCall league: ${_inviteLinkFor(league.inviteCode)}\nInvite code: ${league.inviteCode}',
+        subject: AppLocalizations.of(context).joinLeagueSubject(league.name),
+        text: AppLocalizations.of(
+          context,
+        ).joinLeagueShareText(_inviteLinkFor(league.inviteCode), league.inviteCode),
         fileNameOverrides: [fileName],
         sharePositionOrigin: box == null
             ? null
@@ -222,7 +224,7 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Share error: ${friendlyError(e)}')),
+        SnackBar(content: Text(AppLocalizations.of(context).shareError(friendlyError(e)))),
       );
     } finally {
       if (mounted) setState(() => _sharing = false);
@@ -389,8 +391,9 @@ class _GeneralStandings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return standingsAsync.when(
-      loading: () => const AppLoadingState(label: 'Standings loading'),
+      loading: () => AppLoadingState(label: l.standingsLoading),
       error: (e, _) => AppErrorState(message: friendlyError(e)),
       data: (rows) => Consumer(
         builder: (context, ref, _) {
@@ -413,9 +416,8 @@ class _GeneralStandings extends StatelessWidget {
             rows: rows,
             myUserId: myUserId,
             rankDeltas: _rankDeltas(rows, previousRows),
-            emptyTitle: 'No points yet',
-            emptyMessage:
-                'League standings will appear here after the first race result.',
+            emptyTitle: l.noPointsYet,
+            emptyMessage: l.leagueShareEmpty,
           );
         },
       ),
@@ -436,16 +438,17 @@ class _WeeklyStandings extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     return racesAsync.when(
-      loading: () => const AppLoadingState(label: 'Weekly standings loading'),
+      loading: () => AppLoadingState(label: l.weeklyStandingsLoading),
       error: (e, _) => AppErrorState(message: friendlyError(e)),
       data: (races) {
         final weeklyRace = _weeklyRaceFor(races);
         if (weeklyRace == null) {
-          return const AppEmptyState(
+          return AppEmptyState(
             icon: Icons.event_busy_outlined,
-            title: 'Race not found',
-            message: 'No race was found to show for this week.',
+            title: l.raceNotFound,
+            message: l.noWeeklyRaceFound,
           );
         }
         final key = WeeklySummaryKey(
@@ -459,17 +462,15 @@ class _WeeklyStandings extends ConsumerWidget {
               : weeklyStandingsProvider(key),
         );
         return standingsAsync.when(
-          loading: () =>
-              const AppLoadingState(label: 'Weekly standings loading'),
-          error: (e, _) => AppErrorState(message: friendlyError(e)),
-          data: (rows) => _StandingsList(
-            rows: rows,
-            myUserId: myUserId,
-            emptyTitle: 'Bu hafta puan yok',
-            emptyMessage:
-                'This will appear when ${weeklyRace.race.name} scores are calculated.',
-          ),
-        );
+            loading: () => AppLoadingState(label: l.weeklyStandingsLoading),
+            error: (e, _) => AppErrorState(message: friendlyError(e)),
+            data: (rows) => _StandingsList(
+              rows: rows,
+              myUserId: myUserId,
+              emptyTitle: l.noPointsThisWeek,
+              emptyMessage: l.weeklyScoresCalculated(weeklyRace.race.name),
+            ),
+          );
       },
     );
   }
@@ -594,15 +595,16 @@ class _RacesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return racesAsync.when(
-      loading: () => const AppLoadingState(label: 'Races loading'),
+      loading: () => AppLoadingState(label: l.racesLoading),
       error: (e, _) => AppErrorState(message: friendlyError(e)),
       data: (races) {
         if (races.isEmpty) {
-          return const AppEmptyState(
+          return AppEmptyState(
             icon: Icons.event_busy_outlined,
-            title: 'Race not found',
-            message: 'There is no race calendar to show for this season.',
+            title: l.raceNotFound,
+            message: l.noRaceCalendarForSeason,
           );
         }
         final visibleRaces = buildPreviousAndNextRaces(races);
@@ -614,8 +616,8 @@ class _RacesTab extends StatelessWidget {
             for (var i = 0; i < visibleRaces.length; i++) ...[
               _RaceScopeLabel(
                 label: i == 0 && countsAsPreviousRace(visibleRaces[i])
-                    ? 'Previous race'
-                    : 'Next race',
+                    ? l.previousRace
+                    : l.nextRace,
               ),
               const SizedBox(height: 8),
               Builder(
@@ -643,11 +645,11 @@ class _RacesTab extends StatelessWidget {
                     savedPredictionCount: savedPredictionCount,
                     totalPredictionCount: totalPredictionCount,
                     keepStartLightsVisible: true,
-                    actionLabel:
-                        mainStatus == RaceStatus.upcoming ||
-                            mainStatus == RaceStatus.locked
-                        ? 'Make Prediction'
-                        : null,
+                     actionLabel:
+                         mainStatus == RaceStatus.upcoming ||
+                             mainStatus == RaceStatus.locked
+                         ? l.makePrediction
+                         : null,
                     actionIcon: Icons.add_circle_outline,
                     onTap: () => _openLeagueRace(
                       context,
@@ -666,7 +668,7 @@ class _RacesTab extends StatelessWidget {
                 onPressed: () =>
                     _showAllLeagueRacesSheet(context, races, predictionStatus),
                 icon: const Icon(Icons.calendar_month_outlined, size: 18),
-                label: const Text('All races'),
+                label: Text(l.allRaces),
               ),
             ),
           ],
@@ -687,7 +689,7 @@ class _RacesTab extends StatelessWidget {
     final kind = await showRaceKindPicker(
       sourceContext,
       race: race,
-      title: 'Select race',
+      title: AppLocalizations.of(context).selectRace,
       mainSaved: mainSaved,
       sprintSaved: sprintSaved,
     );
@@ -752,7 +754,11 @@ class _RacesTab extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(16, 18, 8, 12),
                   child: Row(
                     children: [
-                      const Expanded(child: _SheetHeader(title: 'ALL RACES')),
+                      Expanded(
+                        child: _SheetHeader(
+                          title: AppLocalizations.of(context).allRacesUpper,
+                        ),
+                      ),
                       IconButton(
                         icon: const Icon(Icons.close, size: 20),
                         onPressed: () => Navigator.of(sheetContext).pop(),
@@ -788,7 +794,7 @@ class _RacesTab extends StatelessWidget {
                           keepStartLightsVisible: pinnedRaceIds.contains(
                             race.id,
                           ),
-                          actionLabel: 'Make Prediction',
+                          actionLabel: AppLocalizations.of(context).makePrediction,
                           actionIcon: Icons.add_circle_outline,
                           onTap: () => _openLeagueRace(
                             pageContext,

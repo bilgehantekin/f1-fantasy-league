@@ -26,6 +26,7 @@ class RaceLineupScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final raceAsync = ref.watch(raceProvider(raceId));
     final driversAsync = ref.watch(driversProvider);
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.carbon,
@@ -34,13 +35,13 @@ class RaceLineupScreen extends ConsumerWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 20),
-          tooltip: AppLocalizations.of(context).back,
+          tooltip: l.back,
           onPressed: () => safeBack(context),
         ),
         title: raceAsync.maybeWhen(
           data: (r) => Text(
             sprintMode
-                ? '${r.name.toUpperCase()} · Sprint'
+                ? '${r.name.toUpperCase()} · ${l.sprint}'
                 : r.name.toUpperCase(),
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
@@ -50,9 +51,7 @@ class RaceLineupScreen extends ConsumerWidget {
             ),
           ),
           orElse: () => Text(
-            sprintMode
-                ? AppLocalizations.of(context).sprintLineup
-                : AppLocalizations.of(context).lineup,
+            sprintMode ? l.sprintLineup : l.lineup,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
           ),
         ),
@@ -62,13 +61,13 @@ class RaceLineupScreen extends ConsumerWidget {
         ),
       ),
       body: raceAsync.when(
-        loading: () => const AppLoadingState(label: 'Lineup loading'),
+        loading: () => AppLoadingState(label: l.lineupLoading),
         error: (e, _) => AppErrorState(
           message: friendlyError(e),
           onRetry: () => ref.invalidate(raceProvider(raceId)),
         ),
         data: (race) => driversAsync.when(
-          loading: () => const AppLoadingState(label: 'Drivers loading'),
+          loading: () => AppLoadingState(label: l.driversLoading),
           error: (e, _) => AppErrorState(
             message: friendlyError(e),
             onRetry: () => ref.invalidate(driversProvider),
@@ -100,6 +99,7 @@ class _RaceInfoHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final tt = Theme.of(context).textTheme;
     final qAt = sprintMode ? race.sprintQualifyingAt : race.qualifyingAt;
     final rAt = sprintMode ? race.sprintRaceAt : race.raceAt;
@@ -126,7 +126,7 @@ class _RaceInfoHeader extends StatelessWidget {
           Row(
             children: [
               Text(
-                'R${race.round}',
+                '${l.roundShort}${race.round}',
                 style: tt.titleMedium?.copyWith(
                   color: AppColors.f1Red,
                   fontSize: 14,
@@ -140,7 +140,7 @@ class _RaceInfoHeader extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            sprintMode ? '${race.name} · Sprint' : race.name,
+            sprintMode ? '${race.name} · ${l.sprint}' : race.name,
             style: tt.headlineMedium?.copyWith(
               fontSize: 22,
               fontWeight: FontWeight.w900,
@@ -157,13 +157,15 @@ class _RaceInfoHeader extends StatelessWidget {
             children: [
               _MetaPill(
                 label: sprintMode
-                    ? AppLocalizations.of(context).sprintLineup
-                    : AppLocalizations.of(context).standings,
+                    ? l.sprintQualifyingScheduleLabel.trim()
+                    : l.qualifyingScheduleLabel.trim(),
                 value: qDate,
               ),
               const SizedBox(width: 8),
               _MetaPill(
-                label: sprintMode ? 'SPRINT RACE' : 'RACE',
+                label: sprintMode
+                    ? l.sprintRaceScheduleLabel.trim()
+                    : l.raceScheduleLabel.trim(),
                 value: rDate,
               ),
             ],
@@ -179,6 +181,7 @@ class _LeagueRequiredBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
@@ -189,14 +192,14 @@ class _LeagueRequiredBanner extends StatelessWidget {
           width: 1,
         ),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.info_outline, size: 18, color: AppColors.f1Red),
-          SizedBox(width: 10),
+          const Icon(Icons.info_outline, size: 18, color: AppColors.f1Red),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'You need to join a league to make predictions.',
-              style: TextStyle(
+              l.joinLeagueToPredict,
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: Colors.white,

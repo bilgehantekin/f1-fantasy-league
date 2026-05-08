@@ -59,7 +59,7 @@ Please read this Privacy Policy carefully. If you do not agree with our policies
 **Notifications**:
 - All race reminders are scheduled and delivered locally on your device by the app itself; we do not send remote push notifications and do not collect any push notification tokens.
 - Your notification preferences (enabled, hours before lock, missing-only filter) are stored on your device and in your account.
-- Email reminders, if enabled for your account, are sent through Resend using your account email address.
+- Race reminders are scheduled locally on your device when enabled.
 
 ### 2.3 Information from Third-Party Services
 
@@ -68,7 +68,7 @@ Please read this Privacy Policy carefully. If you do not agree with our policies
 - **Google**: OAuth provider (only when you choose Sign in with Google)
 - **Apple**: Sign In with Apple provider (only when you choose Apple sign-in)
 - **OpenF1 API**: Public, unofficial Formula 1 race timing/results feed (no user data is sent to OpenF1; we only consume publicly available data)
-- **Resend**: Transactional email delivery for account and reminder emails
+- **Supabase Auth**: Account authentication and session management
 - **Sentry**: Error and crash reporting
 
 ---
@@ -92,7 +92,7 @@ We use the information we collect for the following purposes:
 
 ### 3.2 Specific Uses
 
-**Race Reminders**: The app can schedule local reminders on your device before prediction lock. If you opt into email reminders, we may send transactional reminder emails through Resend. You can disable reminders in app settings or device settings.
+**Race Reminders**: The app can schedule local reminders on your device before prediction lock. You can disable reminders in app settings or device settings.
 
 **Error Tracking**: Sentry receives error logs and crash reports to help us fix bugs. Sentry will NOT receive personal data like email or usernames.
 
@@ -115,7 +115,6 @@ We share your data with the following third parties to operate the Service:
 | **OpenF1 API** | F1 race data | No user data sent — read-only public feed | https://openf1.org/ |
 | **Google** | Authentication | Email + profile (only if you choose Google login) | https://policies.google.com/privacy |
 | **Apple** | Authentication | Email (only if you choose Apple login) | https://www.apple.com/privacy/ |
-| **Resend** | Transactional email | Email address and email delivery metadata | https://resend.com/legal/privacy-policy |
 
 > **Note on F1 data**: OpenF1 is an independent, unofficial API. It is not affiliated with Formula 1, the FIA, or any team. We do not redistribute proprietary timing feeds and we do not use OpenF1 data to gate paid features.
 

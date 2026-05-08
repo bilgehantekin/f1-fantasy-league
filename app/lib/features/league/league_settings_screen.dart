@@ -245,6 +245,18 @@ class _MemberTile extends StatelessWidget {
     required this.onTransfer,
   });
 
+  String _localizedRole(BuildContext context, String role) {
+    final l = AppLocalizations.of(context);
+    switch (role) {
+      case 'owner':
+        return l.leagueRoleOwner;
+      case 'member':
+        return l.leagueRoleMember;
+      default:
+        return role.toUpperCase();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -269,7 +281,7 @@ class _MemberTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  member.role.toUpperCase(),
+                  _localizedRole(context, member.role),
                   style: const TextStyle(
                     fontSize: 11,
                     color: Color(0x99FFFFFF),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/error_messages.dart';
 import '../../core/navigation.dart';
 import '../../core/supabase.dart';
@@ -113,7 +114,7 @@ class ResultsScreen extends ConsumerWidget {
             ),
           ),
           orElse: () => Text(
-            sprintMode ? 'SPRINT RESULTS' : 'RESULTS',
+            sprintMode ? l.sprintResultsUpper : l.resultsUpper,
             textAlign: TextAlign.center,
           ),
         ),
@@ -124,13 +125,13 @@ class ResultsScreen extends ConsumerWidget {
         ),
       ),
       body: raceAsync.when(
-        loading: () => const AppLoadingState(label: 'Results loading'),
+        loading: () => AppLoadingState(label: l.resultsLoading),
         error: (e, _) => AppErrorState(
           message: friendlyError(e),
           onRetry: () => ref.invalidate(raceProvider(raceId)),
         ),
         data: (race) => driversAsync.when(
-          loading: () => const AppLoadingState(label: 'Drivers loading'),
+          loading: () => AppLoadingState(label: l.driversLoading),
           error: (e, _) => AppErrorState(
             message: friendlyError(e),
             onRetry: () => ref.invalidate(driversProvider),
@@ -150,8 +151,6 @@ class ResultsScreen extends ConsumerWidget {
             final classification =
                 classificationAsync.asData?.value ?? const [];
 
-            // Cancel durumu: ana yarış için race.isCancelled, sprint için
-            // sprintStatus == cancelled.
             final isCancelled = sprintMode
                 ? race.sprintStatus == RaceStatus.cancelled
                 : race.isCancelled;
@@ -165,8 +164,6 @@ class ResultsScreen extends ConsumerWidget {
               );
             }
 
-            // Lig bağlamı dışında (ana takvimden açıldığında) sadece
-            // resmi yarış sonuçları gösterilir; peoplesel skor / kırılım gizli.
             final showPersonal = leagueId != null;
             final personalScore = sprintMode
                 ? sprintPrediction?.score
@@ -179,7 +176,7 @@ class ResultsScreen extends ConsumerWidget {
                   if (personalScore != null)
                     _HeroScore(score: personalScore, leagueId: leagueId),
                   const SizedBox(height: 24),
-                  _SectionTitle(label: 'POINTS BREAKDOWN'),
+                  _SectionTitle(label: l.pointsBreakdownUpper),
                   if (sprintMode)
                     sprintPrediction != null
                         ? _SprintScoreBreakdown(
@@ -198,7 +195,7 @@ class ResultsScreen extends ConsumerWidget {
                     const _NoPredictionMsg(sprintMode: false),
                   const SizedBox(height: 24),
                 ],
-                _SectionTitle(label: 'RESULTS'),
+                _SectionTitle(label: l.resultsUpper),
                 if (result != null)
                   _ActualResults(
                     result: result,
@@ -210,7 +207,7 @@ class ResultsScreen extends ConsumerWidget {
                   const _NoResultYet(),
                 if (classification.isNotEmpty) ...[
                   const SizedBox(height: 24),
-                  _SectionTitle(label: 'FULL STANDINGS'),
+                  _SectionTitle(label: l.fullStandingsUpper),
                   _FullClassification(rows: classification, byId: byId),
                 ],
                 const SizedBox(height: 24),
@@ -230,6 +227,7 @@ class _HeroScore extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -244,7 +242,7 @@ class _HeroScore extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'YOUR SCORE',
+            l.yourScoreUpper,
             style: TextStyle(
               fontSize: 14,
               color: Colors.white.withValues(alpha: 0.6),
@@ -262,7 +260,7 @@ class _HeroScore extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'PTS',
+            l.pointsAbbreviation,
             style: TextStyle(
               fontSize: 18,
               color: Colors.white.withValues(alpha: 0.6),
@@ -270,10 +268,10 @@ class _HeroScore extends StatelessWidget {
           ),
           if (leagueId != null) ...[
             const SizedBox(height: 16),
-            const Text(
-              'League standings are shown on the weekly summary screen.',
+            Text(
+              l.leagueStandingsWeeklySummaryMessage,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF00D26A),
@@ -291,20 +289,21 @@ class _NoPredictionMsg extends StatelessWidget {
 
   const _NoPredictionMsg({required this.sprintMode});
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: const Color(0xFF1A1A26),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Text(
-      sprintMode
-          ? 'You did not make a prediction for this sprint.'
-          : 'You did not make a prediction for this race.',
-      textAlign: TextAlign.center,
-      style: const TextStyle(color: Color(0x99FFFFFF)),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A26),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        sprintMode ? l.noSprintPredictionMessage : l.noRacePredictionMessage,
+        textAlign: TextAlign.center,
+        style: const TextStyle(color: Color(0x99FFFFFF)),
+      ),
+    );
+  }
 }
 
 class _SprintScoreBreakdown extends StatelessWidget {
@@ -364,7 +363,7 @@ class _SprintScoreBreakdown extends StatelessWidget {
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
               ),
               Text(
-                '${prediction.score ?? 0} PTS',
+                '${prediction.score ?? 0} ${l.pointsAbbreviation}',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
@@ -429,7 +428,7 @@ class _SprintScoreBreakdown extends StatelessWidget {
         status: p.winnerDriverId == r['p1'] ? 'correct' : 'wrong',
         note: p.winnerDriverId == r['p1']
             ? null
-            : '(Correct: ${code(r['p1'] as String?)})',
+            : l.correctAnswer(code(r['p1'] as String?)),
       ),
       _BreakdownData(
         label: l.sprintPodiumResult(podiumNames.map(code).join(' ')),
@@ -437,34 +436,34 @@ class _SprintScoreBreakdown extends StatelessWidget {
         status: podiumExact
             ? 'correct'
             : (podiumHits > 0 ? 'partial' : 'wrong'),
-        note:
-            '$podiumHits/3 names · $exactPodiumHits/3 position${podiumExact ? ' · perfect bonus' : ''}',
+        note: podiumExact
+            ? l.podiumBreakdownNoteWithBonus(podiumHits, exactPodiumHits)
+            : l.podiumBreakdownNote(podiumHits, exactPodiumHits),
       ),
       _BreakdownData(
-        label: 'Team: ${teamName(p.topTeamId)}',
+        label: l.teamBreakdown(teamName(p.topTeamId)),
         points: p.topTeamId == r['top_team_id'] ? 8 : 0,
         status: p.topTeamId == r['top_team_id'] ? 'correct' : 'wrong',
         note: p.topTeamId == r['top_team_id']
             ? null
-            : '(Correct: ${teamName(r['top_team_id'] as String?)})',
+            : l.correctAnswer(teamName(r['top_team_id'] as String?)),
       ),
       _BreakdownData(
-        label: 'Sprint pole: ${code(p.poleDriverId)}',
+        label: l.sprintPoleBreakdown(code(p.poleDriverId)),
         points: p.poleDriverId == r['pole'] ? 6 : 0,
         status: p.poleDriverId == r['pole'] ? 'correct' : 'wrong',
         note: p.poleDriverId == r['pole']
             ? null
-            : '(Correct: ${code(r['pole'] as String?)})',
+            : l.correctAnswer(code(r['pole'] as String?)),
       ),
       _BreakdownData(
-        label: 'Sprint DNF: ${p.dnfCount ?? '-'}',
+        label: l.sprintDnfBreakdown(p.dnfCount?.toString() ?? '-'),
         points: dnfDiff == 0 ? 4 : (dnfDiff == 1 ? 2 : 0),
         status: dnfDiff == 0 ? 'correct' : (dnfDiff == 1 ? 'partial' : 'wrong'),
-        note: actualDnf == null ? null : '(Actual: $actualDnf)',
+        note: actualDnf == null ? null : l.actualAnswer('$actualDnf'),
       ),
       _BreakdownData(
-        label:
-            'Safety car: ${p.safetyCar == null ? '-' : (p.safetyCar! ? 'Yes' : 'No')}',
+        label: l.safetyCarBreakdown(_yesNoOrDash(l, p.safetyCar)),
         points:
             p.safetyCar != null &&
                 actualSafetyCar != null &&
@@ -476,7 +475,7 @@ class _SprintScoreBreakdown extends StatelessWidget {
             : (p.safetyCar == actualSafetyCar ? 'correct' : 'wrong'),
         note: actualSafetyCar == null
             ? null
-            : '(Actual: ${actualSafetyCar ? 'Yes' : 'No'})',
+            : l.actualAnswer(_yesNo(l, actualSafetyCar)),
       ),
     ];
   }
@@ -573,7 +572,7 @@ class _ScoreBreakdown extends StatelessWidget {
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
               ),
               Text(
-                '${prediction.score ?? 0} PTS',
+                '${prediction.score ?? 0} ${l.pointsAbbreviation}',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
@@ -630,6 +629,11 @@ class _ScoreBreakdown extends StatelessWidget {
         ? null
         : (prediction.dnfCount! - actualDnf).abs();
     final actualSafetyCar = result['safety_car'] as bool?;
+    final jokerAnswer = _localizedStoredAnswer(l, prediction.jokerOption);
+    final correctJokerAnswer = _localizedStoredAnswer(
+      l,
+      result['joker_correct'],
+    );
 
     return [
       _BreakdownData(
@@ -638,7 +642,7 @@ class _ScoreBreakdown extends StatelessWidget {
         status: prediction.winnerDriverId == result['p1'] ? 'correct' : 'wrong',
         note: prediction.winnerDriverId == result['p1']
             ? null
-            : '(Correct: ${code(result['p1'] as String?)})',
+            : l.correctAnswer(code(result['p1'] as String?)),
       ),
       _BreakdownData(
         label: l.podiumBreakdown(podiumNames.map(code).join(' ')),
@@ -646,36 +650,36 @@ class _ScoreBreakdown extends StatelessWidget {
         status: podiumExact
             ? 'correct'
             : (podiumHits > 0 ? 'partial' : 'wrong'),
-        note:
-            '$podiumHits/3 names · $exactPodiumHits/3 position${podiumExact ? ' · perfect bonus' : ''}',
+        note: podiumExact
+            ? l.podiumBreakdownNoteWithBonus(podiumHits, exactPodiumHits)
+            : l.podiumBreakdownNote(podiumHits, exactPodiumHits),
       ),
       _BreakdownData(
-        label: 'Team: ${teamName(prediction.topTeamId)}',
+        label: l.teamBreakdown(teamName(prediction.topTeamId)),
         points: prediction.topTeamId == result['top_team_id'] ? 10 : 0,
         status: prediction.topTeamId == result['top_team_id']
             ? 'correct'
             : 'wrong',
         note: prediction.topTeamId == result['top_team_id']
             ? null
-            : '(Correct: ${teamName(result['top_team_id'] as String?)})',
+            : l.correctAnswer(teamName(result['top_team_id'] as String?)),
       ),
       _BreakdownData(
-        label: 'Pole: ${code(prediction.poleDriverId)}',
+        label: l.poleBreakdown(code(prediction.poleDriverId)),
         points: prediction.poleDriverId == result['pole'] ? 8 : 0,
         status: prediction.poleDriverId == result['pole'] ? 'correct' : 'wrong',
         note: prediction.poleDriverId == result['pole']
             ? null
-            : '(Correct: ${code(result['pole'] as String?)})',
+            : l.correctAnswer(code(result['pole'] as String?)),
       ),
       _BreakdownData(
-        label: 'DNF: ${prediction.dnfCount ?? '-'}',
+        label: l.dnfBreakdown(prediction.dnfCount?.toString() ?? '-'),
         points: dnfDiff == 0 ? 6 : (dnfDiff == 1 ? 3 : 0),
         status: dnfDiff == 0 ? 'correct' : (dnfDiff == 1 ? 'partial' : 'wrong'),
-        note: actualDnf == null ? null : '(Actual: $actualDnf)',
+        note: actualDnf == null ? null : l.actualAnswer('$actualDnf'),
       ),
       _BreakdownData(
-        label:
-            'Safety car: ${prediction.safetyCar == null ? '-' : (prediction.safetyCar! ? 'Yes' : 'No')}',
+        label: l.safetyCarBreakdown(_yesNoOrDash(l, prediction.safetyCar)),
         points:
             prediction.safetyCar != null &&
                 actualSafetyCar != null &&
@@ -687,10 +691,10 @@ class _ScoreBreakdown extends StatelessWidget {
             : (prediction.safetyCar == actualSafetyCar ? 'correct' : 'wrong'),
         note: actualSafetyCar == null
             ? null
-            : '(Actual: ${actualSafetyCar ? 'Yes' : 'No'})',
+            : l.actualAnswer(_yesNo(l, actualSafetyCar)),
       ),
       _BreakdownData(
-        label: l.jokerResult(prediction.jokerOption ?? '-'),
+        label: l.jokerResult(jokerAnswer),
         points:
             prediction.jokerOption != null &&
                 prediction.jokerOption == result['joker_correct']
@@ -703,10 +707,27 @@ class _ScoreBreakdown extends StatelessWidget {
                   : 'wrong'),
         note: result['joker_correct'] == null
             ? null
-            : '(Correct: ${result['joker_correct']})',
+            : l.correctAnswer(correctJokerAnswer),
       ),
     ];
   }
+}
+
+String _yesNo(AppLocalizations l, bool value) => value ? l.yes : l.no;
+
+String _yesNoOrDash(AppLocalizations l, bool? value) {
+  if (value == null) return '-';
+  return _yesNo(l, value);
+}
+
+String _localizedStoredAnswer(AppLocalizations l, Object? value) {
+  final raw = value?.toString().trim();
+  if (raw == null || raw.isEmpty) return '-';
+  return switch (raw.toLowerCase()) {
+    'yes' || 'evet' || 'true' || 'var' => l.yes,
+    'no' || 'hayır' || 'hayir' || 'false' || 'yok' => l.no,
+    _ => raw,
+  };
 }
 
 class _BreakdownData {
@@ -871,7 +892,7 @@ class _ActualResults extends StatelessWidget {
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Divider(color: Color(0xFF15151E), height: 1),
           ),
-          _ResultRow(label: 'Top scoring team:', value: topTeamName),
+          _ResultRow(label: l.topScoringTeamResultLabel, value: topTeamName),
           const SizedBox(height: 6),
           _ResultRow(
             label: sprintMode ? l.sprintPoleResultLabel : l.poleResultLabel,
@@ -879,13 +900,13 @@ class _ActualResults extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           _ResultRow(
-            label: 'DNF count:',
+            label: l.dnfCountResultLabel,
             value: '${result['dnf_count'] ?? '—'}',
           ),
           const SizedBox(height: 6),
           _ResultRow(
-            label: 'Safety car:',
-            value: safetyCar == null ? '—' : (safetyCar ? 'Yes' : 'No'),
+            label: l.safetyCarResultLabel,
+            value: safetyCar == null ? '—' : _yesNo(l, safetyCar),
           ),
         ],
       ),
@@ -990,6 +1011,7 @@ class _CancelledBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1004,9 +1026,9 @@ class _CancelledBanner extends StatelessWidget {
             children: [
               const Icon(Icons.block, color: Color(0xFFE10600)),
               const SizedBox(width: 8),
-              const Text(
-                'RACE CANCELED',
-                style: TextStyle(
+              Text(
+                l.raceCanceledUpper,
+                style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w900,
                   color: Color(0xFFE10600),
@@ -1017,9 +1039,7 @@ class _CancelledBanner extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            note?.isNotEmpty == true
-                ? note!
-                : 'This race was canceled. Predictions will not be scored.',
+            note?.isNotEmpty == true ? note! : l.raceCanceledNoScoringMessage,
             style: TextStyle(
               fontSize: 14,
               height: 1.4,
@@ -1048,7 +1068,6 @@ class _FullClassification extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Önce status grubuna göre, sonra pozisyona (null'lar gruplarının sonuna).
     final sorted = [...rows]
       ..sort((a, b) {
         final s = _statusOrder(a.status).compareTo(_statusOrder(b.status));
@@ -1061,9 +1080,6 @@ class _FullClassification extends StatelessWidget {
         return ap.compareTo(bp);
       });
 
-    // OpenF1 bazen sınıflandırılmış sürücmembers pozisyon vermez.
-    // status='finished' ama position=null olanlara grup içi positionya göre
-    // ardışık numara veriyoruz (mevcut maksimum + 1, ...).
     final maxFinishedPos = sorted
         .where((r) => r.status == 'finished' && r.position != null)
         .map((r) => r.position!)
@@ -1200,25 +1216,25 @@ class _NoResultYet extends StatelessWidget {
   const _NoResultYet();
 
   @override
-  Widget build(BuildContext context) => const Padding(
-    padding: EdgeInsets.all(20),
-    child: Center(
-      child: Column(
-        children: [
-          Icon(Icons.hourglass_top, size: 32, color: Color(0x8AFFFFFF)),
-          SizedBox(height: 8),
-          Text(
-            'Official result has not arrived yet',
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 4),
-          Text(
-            'It will be pulled automatically from OpenF1 when the race ends.',
-            style: TextStyle(color: Color(0x99FFFFFF), fontSize: 12),
-            textAlign: TextAlign.center,
-          ),
-        ],
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Center(
+        child: Column(
+          children: [
+            const Icon(Icons.hourglass_top, size: 32, color: Color(0x8AFFFFFF)),
+            const SizedBox(height: 8),
+            Text(l.officialResultNotArrivedYet, textAlign: TextAlign.center),
+            const SizedBox(height: 4),
+            Text(
+              l.officialResultPulledAutomatically,
+              style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }

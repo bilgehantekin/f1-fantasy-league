@@ -30,6 +30,9 @@ final racesProvider = FutureProvider<List<Race>>((ref) async {
 final driverStandingsProvider = FutureProvider<List<DriverStanding>>((
   ref,
 ) async {
+  final officialStandings = await _officialDriverStandings();
+  if (officialStandings.isNotEmpty) return officialStandings;
+
   final drivers = await _seasonDrivers();
   final rows = await _standingsRows();
   final byDriver = <String, _DriverStandingAccumulator>{};
@@ -75,15 +78,15 @@ final driverStandingsProvider = FutureProvider<List<DriverStanding>>((
           return a.name.compareTo(b.name);
         });
 
-  return [
-    for (var i = 0; i < standings.length; i++)
-      standings[i].copyWith(position: i + 1),
-  ];
+  return _rankDriverStandings(standings);
 });
 
 final constructorStandingsProvider = FutureProvider<List<ConstructorStanding>>((
   ref,
 ) async {
+  final officialStandings = await _officialConstructorStandings();
+  if (officialStandings.isNotEmpty) return officialStandings;
+
   final teams = await _seasonTeams();
   final rows = await _standingsRows();
   final byTeam = <String, _ConstructorStandingAccumulator>{};
@@ -123,10 +126,7 @@ final constructorStandingsProvider = FutureProvider<List<ConstructorStanding>>((
           return a.name.compareTo(b.name);
         });
 
-  return [
-    for (var i = 0; i < standings.length; i++)
-      standings[i].copyWith(position: i + 1),
-  ];
+  return _rankConstructorStandings(standings);
 });
 
 Future<List<Driver>> _seasonDrivers() async {
@@ -145,6 +145,88 @@ Future<List<Team>> _seasonTeams() async {
       .eq('season_id', Env.seasonId)
       .order('name');
   return rows.map((e) => Team.fromJson(e)).toList();
+}
+
+Future<List<DriverStanding>> _officialDriverStandings() async {
+  try {
+    final rows = await supabase
+        .from('official_driver_standings')
+        .select()
+        .eq('season_id', Env.seasonId)
+        .order('position');
+
+    final standings = rows
+        .whereType<Map<String, dynamic>>()
+        .map(
+          (row) => DriverStanding(
+            position: (row['position'] as num).toInt(),
+            code: row['driver_code'] as String,
+            name: row['driver_name'] as String,
+            teamName: row['team_name'] as String,
+            teamColor: (row['team_color'] as String?) ?? '#FFFFFF',
+            points: (row['points'] as num).toInt(),
+          ),
+        )
+        .toList(growable: false);
+    return _rankDriverStandings(standings);
+  } catch (_) {
+    return const [];
+  }
+}
+
+Future<List<ConstructorStanding>> _officialConstructorStandings() async {
+  try {
+    final rows = await supabase
+        .from('official_constructor_standings')
+        .select()
+        .eq('season_id', Env.seasonId)
+        .order('position');
+
+    final standings = rows
+        .whereType<Map<String, dynamic>>()
+        .map(
+          (row) => ConstructorStanding(
+            position: (row['position'] as num).toInt(),
+            name: row['team_name'] as String,
+            color: (row['team_color'] as String?) ?? '#FFFFFF',
+            points: (row['points'] as num).toInt(),
+          ),
+        )
+        .toList(growable: false);
+    return _rankConstructorStandings(standings);
+  } catch (_) {
+    return const [];
+  }
+}
+
+List<DriverStanding> _rankDriverStandings(List<DriverStanding> standings) {
+  final sorted = [...standings]
+    ..sort((a, b) {
+      final points = b.points.compareTo(a.points);
+      if (points != 0) return points;
+      final sourcePosition = a.position.compareTo(b.position);
+      if (sourcePosition != 0) return sourcePosition;
+      return a.name.compareTo(b.name);
+    });
+  return [
+    for (var i = 0; i < sorted.length; i++) sorted[i].copyWith(position: i + 1),
+  ];
+}
+
+List<ConstructorStanding> _rankConstructorStandings(
+  List<ConstructorStanding> standings,
+) {
+  final sorted = [...standings]
+    ..sort((a, b) {
+      final points = b.points.compareTo(a.points);
+      if (points != 0) return points;
+      final sourcePosition = a.position.compareTo(b.position);
+      if (sourcePosition != 0) return sourcePosition;
+      return a.name.compareTo(b.name);
+    });
+  return [
+    for (var i = 0; i < sorted.length; i++) sorted[i].copyWith(position: i + 1),
+  ];
 }
 
 class DriverStanding {

@@ -1,8 +1,12 @@
 import 'package:url_launcher/url_launcher.dart';
 
 class LegalLinks {
-  static final privacy = Uri.parse('https://gridcall.app/privacy');
-  static final terms = Uri.parse('https://gridcall.app/terms');
+  static final privacy = Uri.parse(
+    'https://github.com/bilgehantekin/f1-fantasy-league/blob/main/docs/privacy-policy.md',
+  );
+  static final terms = Uri.parse(
+    'https://github.com/bilgehantekin/f1-fantasy-league/blob/main/docs/terms-of-service.md',
+  );
 
   const LegalLinks._();
 }
