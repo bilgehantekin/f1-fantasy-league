@@ -250,6 +250,277 @@ class AppLocalizationsEn extends AppLocalizations {
   String get beforeRacePredictionsLock => 'Before race predictions close';
 
   @override
+  String get raceResultsAndWeeklySummaryNotifications =>
+      'Race results & weekly summary';
+
+  @override
+  String get raceResultsAndWeeklySummaryNotificationsBody =>
+      'After each weekend, get a local alert when results and league summaries should be ready.';
+
+  @override
+  String get raceResultsNotificationTitle => 'Race results are ready';
+
+  @override
+  String get raceResultsNotificationBody =>
+      'Results and weekly league summaries should be ready. Open GridCall to see standings.';
+
+  @override
+  String get raceResultsNotificationChannelName => 'Race results';
+
+  @override
+  String get raceResultsNotificationChannelDescription =>
+      'Post-race results and weekly summary alerts';
+
+  @override
+  String get weeklySummaryNotificationTitle =>
+      'Weekly league summaries are ready';
+
+  @override
+  String get weeklySummaryNotificationBody =>
+      'Open GridCall to see league standings and weekly summaries.';
+
+  @override
+  String get premium => 'Premium';
+
+  @override
+  String get gridcallPremium => 'GRIDCALL PREMIUM';
+
+  @override
+  String get premiumLeagues => 'PREMIUM LEAGUES';
+
+  @override
+  String get upgradeShort => 'Upgrade';
+
+  @override
+  String get upgradeToPremium => 'Upgrade to Premium';
+
+  @override
+  String get premiumBadge => 'Premium badge';
+
+  @override
+  String get premiumMember => 'Premium member';
+
+  @override
+  String get freeLeagueLimitReached =>
+      'Free accounts can join up to 2 active leagues. Upgrade to Premium to join up to 10.';
+
+  @override
+  String get premiumLeagueLimitDescription =>
+      'Join up to 10 active leagues, mark favorite leagues, show a subtle Premium badge, and unlock detailed league statistics.';
+
+  @override
+  String get premiumUpsellProfileTitle =>
+      'Take league competition one step further';
+
+  @override
+  String get premiumUpsellProfileBody =>
+      'Join up to 10 active leagues, unlock detailed league stats, highlight favorite leagues, and earn your Premium badge.';
+
+  @override
+  String get premiumUpsellLeaguesTitle => 'Race in more leagues';
+
+  @override
+  String get premiumUpsellLeaguesBody =>
+      'Premium lets you join up to 10 active leagues and pin favorite leagues to the top.';
+
+  @override
+  String get favoriteLeague => 'Favorite league';
+
+  @override
+  String get unfavoriteLeague => 'Unfavorite league';
+
+  @override
+  String get favorites => 'Favorites';
+
+  @override
+  String get detailedLeagueStats => 'Detailed league stats';
+
+  @override
+  String get lockedPremiumStats =>
+      'Detailed league stats are a Premium feature. Core standings and weekly summaries stay free.';
+
+  @override
+  String get restorePurchases => 'Restore purchases';
+
+  @override
+  String get monthlyPlan => 'Monthly';
+
+  @override
+  String get annualPlan => 'Annual';
+
+  @override
+  String get monthlyPlanBody => 'Flexible monthly access.';
+
+  @override
+  String get annualPlanBody => 'Best value, about \$2.50/month.';
+
+  @override
+  String get paywallHeroTitle => 'Upgrade your GridCall season';
+
+  @override
+  String get paywallHeroBody =>
+      'Premium adds more league room, detailed league statistics, favorites, and a subtle member badge. Core predictions stay fair for everyone.';
+
+  @override
+  String get paywallBenefitsTitle => 'What you get';
+
+  @override
+  String get paywallChoosePlan => 'Choose your plan';
+
+  @override
+  String get paywallFeatureLeagueLimit => 'Join up to 10 active leagues';
+
+  @override
+  String get paywallFeatureLeagueLimitBody =>
+      'Free accounts stay at 2 active leagues when premium limits are enabled.';
+
+  @override
+  String get paywallFeatureDetailedStats => 'Detailed league statistics';
+
+  @override
+  String get paywallFeatureDetailedStatsBody =>
+      'See league-scoped totals, rank, averages, best weekends, and trend context.';
+
+  @override
+  String get paywallFeatureFavorites => 'Favorite leagues';
+
+  @override
+  String get paywallFeatureFavoritesBody =>
+      'Keep your most important leagues at the top of My Leagues.';
+
+  @override
+  String get paywallFeatureBadge => 'Premium badge';
+
+  @override
+  String get paywallFeatureBadgeBody =>
+      'Show a subtle premium identity on your profile and league standings.';
+
+  @override
+  String get saveWithAnnual => 'about \$2.50/month';
+
+  @override
+  String get premiumUnavailableTitle => 'Premium is not available right now';
+
+  @override
+  String get premiumUnavailableBody =>
+      'Store products are not configured yet. Your free GridCall features still work.';
+
+  @override
+  String get purchaseCompleted =>
+      'Purchase completed. Premium will unlock after your entitlement is verified.';
+
+  @override
+  String get restoreCompleted =>
+      'Purchases restored. Premium will unlock after your entitlement is verified.';
+
+  @override
+  String get purchaseFailed =>
+      'Purchase could not be completed. Please try again later.';
+
+  @override
+  String get averagePoints => 'Average points';
+
+  @override
+  String get predictionCount => 'Predictions';
+
+  @override
+  String get bestWeekend => 'Best weekend';
+
+  @override
+  String get worstWeekend => 'Worst weekend';
+
+  @override
+  String get leagueAverage => 'League average';
+
+  @override
+  String statsWeekendProgress(int members, int completed, int total) {
+    return '$members members · $completed/$total weekends completed';
+  }
+
+  @override
+  String get statsLeagueLabel => 'LEAGUE';
+
+  @override
+  String get statsYourRankLabel => 'YOUR RANK';
+
+  @override
+  String get statsSeasonSummary => 'SEASON SUMMARY';
+
+  @override
+  String get statsTotalShort => 'Total';
+
+  @override
+  String get statsAverageShort => 'Average';
+
+  @override
+  String get statsPointsUnit => 'points';
+
+  @override
+  String get statsPerformanceTrend => 'PERFORMANCE TREND';
+
+  @override
+  String get statsLeagueAverageShort => 'League avg';
+
+  @override
+  String get statsRecentWeekends => 'RECENT WEEKENDS';
+
+  @override
+  String get statsBestWorst => 'BEST & WORST';
+
+  @override
+  String get statsLeaguePosition => 'YOUR LEAGUE POSITION';
+
+  @override
+  String get statsNotEnoughDataTitle => 'Not enough scored data yet';
+
+  @override
+  String get statsNotEnoughDataBody =>
+      'Trend cards will appear after more race weekends are scored.';
+
+  @override
+  String get statsBestShort => 'Best';
+
+  @override
+  String get statsWorstShort => 'Worst';
+
+  @override
+  String get statsYouMarker => 'YOU ▼';
+
+  @override
+  String statsPoints(String value) {
+    return '$value pts';
+  }
+
+  @override
+  String statsSignedPoints(String value) {
+    return '$value pts';
+  }
+
+  @override
+  String get statsLeaderGapPrefix => 'Leader is ';
+
+  @override
+  String get statsLeaderGapSuffix => ' ahead';
+
+  @override
+  String get statsYouAreLeader => 'You are leading';
+
+  @override
+  String statsLeagueAvgAndPosition(int average, int position) {
+    return 'League avg: $average · P$position';
+  }
+
+  @override
+  String statsAheadOfLeagueAverage(int points) {
+    return 'You are $points points ahead of the league average.';
+  }
+
+  @override
+  String statsBehindLeagueAverage(int points) {
+    return 'You are $points points behind the league average.';
+  }
+
+  @override
   String get calendarDriverStandings => 'DRIVER STANDINGS';
 
   @override

@@ -28,6 +28,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Future<void> _onRacesLoaded(List<Race> races) async {
     if (_scheduledOnce) return;
     _scheduledOnce = true;
+    final reminders = await ReminderPreferences.load();
+    final postRace = await PostRaceSummaryPreferences.load();
+    if (!reminders.enabled && !postRace.enabled) {
+      await NotificationService.instance.scheduleForRaces(
+        races,
+        preferences: reminders,
+        postRacePreferences: postRace,
+      );
+      return;
+    }
     final granted = await NotificationService.instance.requestPermissions();
     if (!granted) {
       if (!mounted) return;
@@ -38,7 +48,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       );
       return;
     }
-    await NotificationService.instance.scheduleForRaces(races);
+    await NotificationService.instance.scheduleForRaces(
+      races,
+      preferences: reminders,
+      postRacePreferences: postRace,
+    );
   }
 
   @override
@@ -126,175 +140,305 @@ class _LeagueActionsPanel extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     return Column(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _PrimaryLeagueActionCard(
-                title: l.newLeague,
-                subtitle: l.createYourOwnLeague,
-                buttonLabel: l.create,
-                accentColor: const Color(0xFF00D26A),
-                colors: const [Color(0xFF00D26A), Color(0xFF00A855)],
-                onTap: () => showCreateLeagueDialog(context, ref),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _HomePrimaryActionCard(
+                  title: l.newLeague,
+                  subtitle: l.createYourOwnLeague,
+                  buttonLabel: l.create,
+                  icon: Icons.add_circle_outline,
+                  emphasis: _ActionEmphasis.solid,
+                  onTap: () => showCreateLeagueDialog(context, ref),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _PrimaryLeagueActionCard(
-                title: l.join,
-                subtitle: l.joinWithInviteCode,
-                buttonLabel: l.enterCode,
-                accentColor: const Color(0xFFE10600),
-                colors: const [Color(0xFFE10600), Color(0xFFA00500)],
-                onTap: () => showJoinLeagueDialog(context, ref),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _HomePrimaryActionCard(
+                  title: l.join,
+                  subtitle: l.joinWithInviteCode,
+                  buttonLabel: l.enterCode,
+                  icon: Icons.qr_code_scanner_rounded,
+                  emphasis: _ActionEmphasis.tinted,
+                  onTap: () => showJoinLeagueDialog(context, ref),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 12),
-        InkWell(
+        _HomeWideActionCard(
+          title: l.myLeagues,
+          subtitle: l.viewYourLeagues,
+          icon: Icons.emoji_events_rounded,
           onTap: () => context.push('/leagues'),
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1A26),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF15151E),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.emoji_events,
-                    size: 20,
-                    color: Color(0xFFE10600),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l.myLeagues,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        l.viewYourLeagues,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0x99FFFFFF),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.chevron_right,
-                  size: 20,
-                  color: Colors.white.withValues(alpha: 0.4),
-                ),
-              ],
-            ),
-          ),
         ),
       ],
     );
   }
 }
 
-class _PrimaryLeagueActionCard extends StatelessWidget {
+enum _ActionEmphasis { solid, tinted }
+
+class _HomePrimaryActionCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final String buttonLabel;
-  final Color accentColor;
-  final List<Color> colors;
+  final IconData icon;
+  final _ActionEmphasis emphasis;
   final VoidCallback onTap;
 
-  const _PrimaryLeagueActionCard({
+  const _HomePrimaryActionCard({
     required this.title,
     required this.subtitle,
     required this.buttonLabel,
-    required this.accentColor,
-    required this.colors,
+    required this.icon,
+    required this.emphasis,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: colors,
-        ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.add, size: 20),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: tt.titleMedium?.copyWith(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
+    final isSolid = emphasis == _ActionEmphasis.solid;
+    return Semantics(
+      button: true,
+      label: title,
+      hint: subtitle,
+      child: Material(
+        color: AppColors.surfaceLow,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          splashColor: AppColors.f1Red.withValues(alpha: 0.10),
+          highlightColor: AppColors.f1Red.withValues(alpha: 0.05),
+          child: Ink(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.06),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.f1Red.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, size: 22, color: AppColors.f1Red),
                   ),
-                ),
+                  const SizedBox(height: 14),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: tt.titleMedium?.copyWith(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: tt.bodySmall?.copyWith(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.55),
+                      height: 1.25,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _ActionPill(label: buttonLabel, solid: isSolid),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: tt.bodySmall?.copyWith(
-              fontSize: 11,
-              color: Colors.white.withValues(alpha: 0.9),
-              height: 1.2,
             ),
           ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: onTap,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: accentColor,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                textStyle: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionPill extends StatelessWidget {
+  final String label;
+  final bool solid;
+
+  const _ActionPill({required this.label, required this.solid});
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = solid
+        ? AppColors.f1Red
+        : AppColors.f1Red.withValues(alpha: 0.12);
+    final fg = solid ? Colors.white : AppColors.f1Red;
+    final border = solid
+        ? null
+        : Border.all(
+            color: AppColors.f1Red.withValues(alpha: 0.35),
+            width: 1,
+          );
+    return Container(
+      width: double.infinity,
+      height: 38,
+      decoration: BoxDecoration(
+        color: bg,
+        border: border,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      alignment: Alignment.center,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.8,
+                color: fg,
               ),
-              child: Text(buttonLabel),
             ),
           ),
+          const SizedBox(width: 6),
+          Icon(Icons.arrow_forward_rounded, size: 14, color: fg),
         ],
+      ),
+    );
+  }
+}
+
+class _HomeWideActionCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _HomeWideActionCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+    return Semantics(
+      button: true,
+      label: title,
+      hint: subtitle,
+      child: Material(
+        color: AppColors.surfaceLow,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          splashColor: AppColors.f1Red.withValues(alpha: 0.10),
+          highlightColor: AppColors.f1Red.withValues(alpha: 0.05),
+          child: Ink(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.06),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.22),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppColors.f1Red.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      icon,
+                      size: 24,
+                      color: AppColors.f1Red,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: tt.titleMedium?.copyWith(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: tt.bodySmall?.copyWith(
+                            fontSize: 12.5,
+                            color: Colors.white.withValues(alpha: 0.55),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: AppColors.f1Red.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.chevron_right_rounded,
+                      size: 20,
+                      color: AppColors.f1Red,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -463,7 +607,7 @@ class _RacesSection extends StatelessWidget {
           error: (e, _) => _SectionError(error: e),
           data: (list) {
             if (list.isEmpty) {
-               return _EmptySection(text: l.noRacesForSeason);
+              return _EmptySection(text: l.noRacesForSeason);
             }
             final visibleRaces = buildPreviousAndNextRaces(list);
             return Column(

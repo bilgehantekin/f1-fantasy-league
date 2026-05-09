@@ -12,6 +12,29 @@ final reminderPreferencesProvider = FutureProvider<ReminderPreferences>(
   (ref) => ReminderPreferences.load(),
 );
 
+final postRaceSummaryPreferencesProvider =
+    FutureProvider<PostRaceSummaryPreferences>(
+      (ref) => PostRaceSummaryPreferences.load(),
+    );
+
+class NotificationPreferenceDraft {
+  final ReminderPreferences reminders;
+  final PostRaceSummaryPreferences postRaceSummary;
+
+  const NotificationPreferenceDraft({
+    required this.reminders,
+    required this.postRaceSummary,
+  });
+
+  NotificationPreferenceDraft copyWith({
+    ReminderPreferences? reminders,
+    PostRaceSummaryPreferences? postRaceSummary,
+  }) => NotificationPreferenceDraft(
+    reminders: reminders ?? this.reminders,
+    postRaceSummary: postRaceSummary ?? this.postRaceSummary,
+  );
+}
+
 class NotificationSettingsScreen extends ConsumerStatefulWidget {
   const NotificationSettingsScreen({super.key});
 
@@ -22,12 +45,13 @@ class NotificationSettingsScreen extends ConsumerStatefulWidget {
 
 class _NotificationSettingsScreenState
     extends ConsumerState<NotificationSettingsScreen> {
-  ReminderPreferences? _draft;
+  NotificationPreferenceDraft? _draft;
   bool _saving = false;
 
   @override
   Widget build(BuildContext context) {
     final prefsAsync = ref.watch(reminderPreferencesProvider);
+    final postRacePrefsAsync = ref.watch(postRaceSummaryPreferencesProvider);
     final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.carbon,
@@ -38,14 +62,28 @@ class _NotificationSettingsScreenState
           message: friendlyError(e),
           onRetry: () => ref.invalidate(reminderPreferencesProvider),
         ),
-        data: _buildSettings,
+        data: (prefs) => postRacePrefsAsync.when(
+          loading: () => AppLoadingState(label: l.settingsLoading),
+          error: (e, _) => AppErrorState(
+            message: friendlyError(e),
+            onRetry: () => ref.invalidate(postRaceSummaryPreferencesProvider),
+          ),
+          data: (postRacePrefs) => _buildSettings(prefs, postRacePrefs),
+        ),
       ),
     );
   }
 
-  Widget _buildSettings(ReminderPreferences prefs) {
-    _draft ??= prefs;
+  Widget _buildSettings(
+    ReminderPreferences prefs,
+    PostRaceSummaryPreferences postRacePrefs,
+  ) {
+    _draft ??= NotificationPreferenceDraft(
+      reminders: prefs,
+      postRaceSummary: postRacePrefs,
+    );
     final draft = _draft!;
+    final reminders = draft.reminders;
     final l = AppLocalizations.of(context);
 
     return ListView(
@@ -56,9 +94,10 @@ class _NotificationSettingsScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SwitchListTile(
-                value: draft.enabled,
-                onChanged: (value) =>
-                    _updateDraft(draft.copyWith(enabled: value)),
+                value: reminders.enabled,
+                onChanged: (value) => _updateDraft(
+                  draft.copyWith(reminders: reminders.copyWith(enabled: value)),
+                ),
                 title: Text(l.predictionReminders),
                 subtitle: Text(l.beforeRacePredictionsLock),
                 contentPadding: EdgeInsets.zero,
@@ -79,33 +118,53 @@ class _NotificationSettingsScreenState
                   ButtonSegment(value: 1, label: Text(l.oneHour)),
                   ButtonSegment(value: 6, label: Text(l.sixHours)),
                 ],
-                selected: {draft.hoursBeforeLock},
-                onSelectionChanged: draft.enabled
+                selected: {reminders.hoursBeforeLock},
+                onSelectionChanged: reminders.enabled
                     ? (values) => _updateDraft(
-                        draft.copyWith(hoursBeforeLock: values.first),
+                        draft.copyWith(
+                          reminders: reminders.copyWith(
+                            hoursBeforeLock: values.first,
+                          ),
+                        ),
                       )
                     : null,
               ),
               const SizedBox(height: 12),
               CheckboxListTile(
-                value: draft.onlyMissingPrediction,
-                onChanged: draft.enabled
+                value: reminders.onlyMissingPrediction,
+                onChanged: reminders.enabled
                     ? (value) => _updateDraft(
-                        draft.copyWith(onlyMissingPrediction: value ?? true),
+                        draft.copyWith(
+                          reminders: reminders.copyWith(
+                            onlyMissingPrediction: value ?? true,
+                          ),
+                        ),
                       )
                     : null,
                 title: Text(l.onlyMissing),
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
               ),
+              const Divider(),
+              SwitchListTile(
+                value: draft.postRaceSummary.enabled,
+                onChanged: (value) => _updateDraft(
+                  draft.copyWith(
+                    postRaceSummary: draft.postRaceSummary.copyWith(
+                      enabled: value,
+                    ),
+                  ),
+                ),
+                title: Text(l.raceResultsAndWeeklySummaryNotifications),
+                subtitle: Text(l.raceResultsAndWeeklySummaryNotificationsBody),
+                contentPadding: EdgeInsets.zero,
+              ),
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: _saving ? null : _saveDraft,
-                  child: Text(
-                    _saving ? l.savingBig : l.saveBig,
-                  ),
+                  child: Text(_saving ? l.savingBig : l.saveBig),
                 ),
               ),
             ],
@@ -115,7 +174,7 @@ class _NotificationSettingsScreenState
     );
   }
 
-  void _updateDraft(ReminderPreferences prefs) {
+  void _updateDraft(NotificationPreferenceDraft prefs) {
     setState(() => _draft = prefs);
   }
 
@@ -125,7 +184,7 @@ class _NotificationSettingsScreenState
 
     setState(() => _saving = true);
     try {
-      if (prefs.enabled) {
+      if (prefs.reminders.enabled || prefs.postRaceSummary.enabled) {
         final granted = await NotificationService.instance.requestPermissions();
         if (!granted) {
           if (!mounted) return;
@@ -139,12 +198,15 @@ class _NotificationSettingsScreenState
           return;
         }
       }
-      await prefs.save();
+      await prefs.reminders.save();
+      await prefs.postRaceSummary.save();
       ref.invalidate(reminderPreferencesProvider);
+      ref.invalidate(postRaceSummaryPreferencesProvider);
       final races = await ref.read(racesProvider.future);
       await NotificationService.instance.scheduleForRaces(
         races,
-        preferences: prefs,
+        preferences: prefs.reminders,
+        postRacePreferences: prefs.postRaceSummary,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

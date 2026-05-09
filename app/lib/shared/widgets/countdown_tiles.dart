@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/generated/app_localizations.dart';
+
 class CountdownTiles extends StatelessWidget {
   final Duration remaining;
   final bool locked;
@@ -12,6 +14,8 @@ class CountdownTiles extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
+    final l = AppLocalizations.of(context);
+
     if (locked || remaining.isNegative) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
@@ -26,7 +30,7 @@ class CountdownTiles extends StatelessWidget {
             const Icon(Icons.lock, color: Color(0xFFFF9F1C), size: 18),
             const SizedBox(width: 8),
             Text(
-              'LOCKED',
+              l.lockedUpper,
               style: tt.labelLarge?.copyWith(color: const Color(0xFFFF9F1C)),
             ),
           ],
@@ -39,7 +43,6 @@ class CountdownTiles extends StatelessWidget {
     final mins = remaining.inMinutes.remainder(60);
     final secs = remaining.inSeconds.remainder(60);
 
-    // Urgency color
     final urgent = remaining.inHours < 6;
     final color = urgent ? const Color(0xFFFF2D55) : const Color(0xFF00D26A);
 
@@ -47,14 +50,29 @@ class CountdownTiles extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (days > 0) ...[
-          _Tile(value: days, label: 'DAYS', color: color),
+          _Tile(value: days, label: l.countdownDays, color: color),
           const SizedBox(width: 6),
         ],
-        _Tile(value: hours, label: 'HRS', color: color, twoDigit: true),
+        _Tile(
+          value: hours,
+          label: l.countdownHours,
+          color: color,
+          twoDigit: true,
+        ),
         const SizedBox(width: 6),
-        _Tile(value: mins, label: 'MIN', color: color, twoDigit: true),
+        _Tile(
+          value: mins,
+          label: l.countdownMinutes,
+          color: color,
+          twoDigit: true,
+        ),
         const SizedBox(width: 6),
-        _Tile(value: secs, label: 'SEC', color: color, twoDigit: true),
+        _Tile(
+          value: secs,
+          label: l.countdownSeconds,
+          color: color,
+          twoDigit: true,
+        ),
       ],
     );
   }

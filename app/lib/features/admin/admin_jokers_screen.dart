@@ -44,8 +44,9 @@ class AdminJokersScreen extends ConsumerWidget {
                   child: races.when(
                     loading: () =>
                         const Center(child: CircularProgressIndicator()),
-                    error: (e, _) =>
-                        Center(child: Text(l.errorWithMessage(friendlyError(e)))),
+                    error: (e, _) => Center(
+                      child: Text(l.errorWithMessage(friendlyError(e))),
+                    ),
                     data: (list) => TabBarView(
                       children: [
                         ListView.builder(
@@ -92,9 +93,9 @@ class _RaceDataTile extends ConsumerWidget {
           title: Text(l.raceRoundAndName(race.round, race.name)),
           subtitle: Text(
             [
-               '${l.mainRace}: ${a.mainResult == null ? l.adminNone : l.adminDnfClassification(a.mainDnf ?? 0, a.mainClassificationRows)}',
-               if (race.hasSprint)
-                 '${l.sprintUpper}: ${a.sprintResult == null ? l.adminNone : l.adminDnfClassification(a.sprintDnf ?? 0, a.sprintClassificationRows)}',
+              '${l.mainRace}: ${a.mainResult == null ? l.adminNone : l.adminDnfClassification(a.mainDnf ?? 0, a.mainClassificationRows)}',
+              if (race.hasSprint)
+                '${l.sprintUpper}: ${a.sprintResult == null ? l.adminNone : l.adminDnfClassification(a.sprintDnf ?? 0, a.sprintClassificationRows)}',
               'Q ${fmt.format(race.qualifyingAt.toLocal())}',
               'R ${fmt.format(race.raceAt.toLocal())}',
               if (race.hasSprint &&
@@ -185,11 +186,15 @@ class _RaceJokerTile extends ConsumerWidget {
               ),
               TextField(
                 controller: optsCtrl,
-                decoration: InputDecoration(labelText: l.adminOptionsCommaSeparated),
+                decoration: InputDecoration(
+                  labelText: l.adminOptionsCommaSeparated,
+                ),
               ),
               TextField(
                 controller: correctCtrl,
-                decoration: InputDecoration(labelText: l.adminCorrectAnswerAfterRace),
+                decoration: InputDecoration(
+                  labelText: l.adminCorrectAnswerAfterRace,
+                ),
               ),
               TextField(
                 controller: pointsCtrl,
@@ -232,9 +237,7 @@ class _RaceJokerTile extends ConsumerWidget {
       ref.invalidate(adminJokerProvider(race.id));
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l.errorWithMessage(friendlyError(e)))),
         );
       }

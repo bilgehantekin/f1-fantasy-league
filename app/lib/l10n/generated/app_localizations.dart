@@ -548,6 +548,480 @@ abstract class AppLocalizations {
   /// **'Before race predictions close'**
   String get beforeRacePredictionsLock;
 
+  /// No description provided for @raceResultsAndWeeklySummaryNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Race results & weekly summary'**
+  String get raceResultsAndWeeklySummaryNotifications;
+
+  /// No description provided for @raceResultsAndWeeklySummaryNotificationsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'After each weekend, get a local alert when results and league summaries should be ready.'**
+  String get raceResultsAndWeeklySummaryNotificationsBody;
+
+  /// No description provided for @raceResultsNotificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Race results are ready'**
+  String get raceResultsNotificationTitle;
+
+  /// No description provided for @raceResultsNotificationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Results and weekly league summaries should be ready. Open GridCall to see standings.'**
+  String get raceResultsNotificationBody;
+
+  /// No description provided for @raceResultsNotificationChannelName.
+  ///
+  /// In en, this message translates to:
+  /// **'Race results'**
+  String get raceResultsNotificationChannelName;
+
+  /// No description provided for @raceResultsNotificationChannelDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Post-race results and weekly summary alerts'**
+  String get raceResultsNotificationChannelDescription;
+
+  /// No description provided for @weeklySummaryNotificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly league summaries are ready'**
+  String get weeklySummaryNotificationTitle;
+
+  /// No description provided for @weeklySummaryNotificationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Open GridCall to see league standings and weekly summaries.'**
+  String get weeklySummaryNotificationBody;
+
+  /// No description provided for @premium.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium'**
+  String get premium;
+
+  /// No description provided for @gridcallPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'GRIDCALL PREMIUM'**
+  String get gridcallPremium;
+
+  /// No description provided for @premiumLeagues.
+  ///
+  /// In en, this message translates to:
+  /// **'PREMIUM LEAGUES'**
+  String get premiumLeagues;
+
+  /// No description provided for @upgradeShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade'**
+  String get upgradeShort;
+
+  /// No description provided for @upgradeToPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade to Premium'**
+  String get upgradeToPremium;
+
+  /// No description provided for @premiumBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium badge'**
+  String get premiumBadge;
+
+  /// No description provided for @premiumMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium member'**
+  String get premiumMember;
+
+  /// No description provided for @freeLeagueLimitReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Free accounts can join up to 2 active leagues. Upgrade to Premium to join up to 10.'**
+  String get freeLeagueLimitReached;
+
+  /// No description provided for @premiumLeagueLimitDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Join up to 10 active leagues, mark favorite leagues, show a subtle Premium badge, and unlock detailed league statistics.'**
+  String get premiumLeagueLimitDescription;
+
+  /// No description provided for @premiumUpsellProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Take league competition one step further'**
+  String get premiumUpsellProfileTitle;
+
+  /// No description provided for @premiumUpsellProfileBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Join up to 10 active leagues, unlock detailed league stats, highlight favorite leagues, and earn your Premium badge.'**
+  String get premiumUpsellProfileBody;
+
+  /// No description provided for @premiumUpsellLeaguesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Race in more leagues'**
+  String get premiumUpsellLeaguesTitle;
+
+  /// No description provided for @premiumUpsellLeaguesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium lets you join up to 10 active leagues and pin favorite leagues to the top.'**
+  String get premiumUpsellLeaguesBody;
+
+  /// No description provided for @favoriteLeague.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite league'**
+  String get favoriteLeague;
+
+  /// No description provided for @unfavoriteLeague.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfavorite league'**
+  String get unfavoriteLeague;
+
+  /// No description provided for @favorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get favorites;
+
+  /// No description provided for @detailedLeagueStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Detailed league stats'**
+  String get detailedLeagueStats;
+
+  /// No description provided for @lockedPremiumStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Detailed league stats are a Premium feature. Core standings and weekly summaries stay free.'**
+  String get lockedPremiumStats;
+
+  /// No description provided for @restorePurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore purchases'**
+  String get restorePurchases;
+
+  /// No description provided for @monthlyPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get monthlyPlan;
+
+  /// No description provided for @annualPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Annual'**
+  String get annualPlan;
+
+  /// No description provided for @monthlyPlanBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Flexible monthly access.'**
+  String get monthlyPlanBody;
+
+  /// No description provided for @annualPlanBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Best value, about \$2.50/month.'**
+  String get annualPlanBody;
+
+  /// No description provided for @paywallHeroTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade your GridCall season'**
+  String get paywallHeroTitle;
+
+  /// No description provided for @paywallHeroBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium adds more league room, detailed league statistics, favorites, and a subtle member badge. Core predictions stay fair for everyone.'**
+  String get paywallHeroBody;
+
+  /// No description provided for @paywallBenefitsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What you get'**
+  String get paywallBenefitsTitle;
+
+  /// No description provided for @paywallChoosePlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your plan'**
+  String get paywallChoosePlan;
+
+  /// No description provided for @paywallFeatureLeagueLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Join up to 10 active leagues'**
+  String get paywallFeatureLeagueLimit;
+
+  /// No description provided for @paywallFeatureLeagueLimitBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Free accounts stay at 2 active leagues when premium limits are enabled.'**
+  String get paywallFeatureLeagueLimitBody;
+
+  /// No description provided for @paywallFeatureDetailedStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Detailed league statistics'**
+  String get paywallFeatureDetailedStats;
+
+  /// No description provided for @paywallFeatureDetailedStatsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'See league-scoped totals, rank, averages, best weekends, and trend context.'**
+  String get paywallFeatureDetailedStatsBody;
+
+  /// No description provided for @paywallFeatureFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite leagues'**
+  String get paywallFeatureFavorites;
+
+  /// No description provided for @paywallFeatureFavoritesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep your most important leagues at the top of My Leagues.'**
+  String get paywallFeatureFavoritesBody;
+
+  /// No description provided for @paywallFeatureBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium badge'**
+  String get paywallFeatureBadge;
+
+  /// No description provided for @paywallFeatureBadgeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Show a subtle premium identity on your profile and league standings.'**
+  String get paywallFeatureBadgeBody;
+
+  /// No description provided for @saveWithAnnual.
+  ///
+  /// In en, this message translates to:
+  /// **'about \$2.50/month'**
+  String get saveWithAnnual;
+
+  /// No description provided for @premiumUnavailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium is not available right now'**
+  String get premiumUnavailableTitle;
+
+  /// No description provided for @premiumUnavailableBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Store products are not configured yet. Your free GridCall features still work.'**
+  String get premiumUnavailableBody;
+
+  /// No description provided for @purchaseCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase completed. Premium will unlock after your entitlement is verified.'**
+  String get purchaseCompleted;
+
+  /// No description provided for @restoreCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases restored. Premium will unlock after your entitlement is verified.'**
+  String get restoreCompleted;
+
+  /// No description provided for @purchaseFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase could not be completed. Please try again later.'**
+  String get purchaseFailed;
+
+  /// No description provided for @averagePoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Average points'**
+  String get averagePoints;
+
+  /// No description provided for @predictionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Predictions'**
+  String get predictionCount;
+
+  /// No description provided for @bestWeekend.
+  ///
+  /// In en, this message translates to:
+  /// **'Best weekend'**
+  String get bestWeekend;
+
+  /// No description provided for @worstWeekend.
+  ///
+  /// In en, this message translates to:
+  /// **'Worst weekend'**
+  String get worstWeekend;
+
+  /// No description provided for @leagueAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'League average'**
+  String get leagueAverage;
+
+  /// No description provided for @statsWeekendProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{members} members · {completed}/{total} weekends completed'**
+  String statsWeekendProgress(int members, int completed, int total);
+
+  /// No description provided for @statsLeagueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'LEAGUE'**
+  String get statsLeagueLabel;
+
+  /// No description provided for @statsYourRankLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR RANK'**
+  String get statsYourRankLabel;
+
+  /// No description provided for @statsSeasonSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'SEASON SUMMARY'**
+  String get statsSeasonSummary;
+
+  /// No description provided for @statsTotalShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get statsTotalShort;
+
+  /// No description provided for @statsAverageShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Average'**
+  String get statsAverageShort;
+
+  /// No description provided for @statsPointsUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'points'**
+  String get statsPointsUnit;
+
+  /// No description provided for @statsPerformanceTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'PERFORMANCE TREND'**
+  String get statsPerformanceTrend;
+
+  /// No description provided for @statsLeagueAverageShort.
+  ///
+  /// In en, this message translates to:
+  /// **'League avg'**
+  String get statsLeagueAverageShort;
+
+  /// No description provided for @statsRecentWeekends.
+  ///
+  /// In en, this message translates to:
+  /// **'RECENT WEEKENDS'**
+  String get statsRecentWeekends;
+
+  /// No description provided for @statsBestWorst.
+  ///
+  /// In en, this message translates to:
+  /// **'BEST & WORST'**
+  String get statsBestWorst;
+
+  /// No description provided for @statsLeaguePosition.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR LEAGUE POSITION'**
+  String get statsLeaguePosition;
+
+  /// No description provided for @statsNotEnoughDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough scored data yet'**
+  String get statsNotEnoughDataTitle;
+
+  /// No description provided for @statsNotEnoughDataBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Trend cards will appear after more race weekends are scored.'**
+  String get statsNotEnoughDataBody;
+
+  /// No description provided for @statsBestShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Best'**
+  String get statsBestShort;
+
+  /// No description provided for @statsWorstShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Worst'**
+  String get statsWorstShort;
+
+  /// No description provided for @statsYouMarker.
+  ///
+  /// In en, this message translates to:
+  /// **'YOU ▼'**
+  String get statsYouMarker;
+
+  /// No description provided for @statsPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} pts'**
+  String statsPoints(String value);
+
+  /// No description provided for @statsSignedPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} pts'**
+  String statsSignedPoints(String value);
+
+  /// No description provided for @statsLeaderGapPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Leader is '**
+  String get statsLeaderGapPrefix;
+
+  /// No description provided for @statsLeaderGapSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **' ahead'**
+  String get statsLeaderGapSuffix;
+
+  /// No description provided for @statsYouAreLeader.
+  ///
+  /// In en, this message translates to:
+  /// **'You are leading'**
+  String get statsYouAreLeader;
+
+  /// No description provided for @statsLeagueAvgAndPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'League avg: {average} · P{position}'**
+  String statsLeagueAvgAndPosition(int average, int position);
+
+  /// No description provided for @statsAheadOfLeagueAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'You are {points} points ahead of the league average.'**
+  String statsAheadOfLeagueAverage(int points);
+
+  /// No description provided for @statsBehindLeagueAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'You are {points} points behind the league average.'**
+  String statsBehindLeagueAverage(int points);
+
   /// No description provided for @calendarDriverStandings.
   ///
   /// In en, this message translates to:

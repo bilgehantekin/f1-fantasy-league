@@ -9,16 +9,20 @@ import '../features/league/leagues_screen.dart';
 import '../features/league/league_detail_screen.dart';
 import '../features/league/join_league_screen.dart';
 import '../features/league/league_settings_screen.dart';
+import '../features/league/league_stats_screen.dart';
 import '../features/league/weekly_summary_screen.dart';
 import '../features/lineup/race_lineup_screen.dart';
 import '../features/live/live_race_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/prediction/prediction_screen.dart';
+import '../features/premium/paywall_screen.dart';
 import '../features/profile/notification_settings_screen.dart';
 import '../features/profile/profile_controller.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/results/results_screen.dart';
 import '../shared/models.dart';
+import 'env.dart';
+import 'navigation.dart';
 import 'supabase.dart';
 
 class _RouterRefresh extends ChangeNotifier {
@@ -32,6 +36,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.listen(profileProvider, (_, _) => refresh.ping());
 
   return GoRouter(
+    navigatorKey: appNavigatorKey,
     refreshListenable: refresh,
     initialLocation: '/calendar',
     redirect: (context, state) {
@@ -92,6 +97,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             LeagueSettingsScreen(leagueId: s.pathParameters['id']!),
       ),
       GoRoute(
+        path: '/leagues/:id/stats',
+        builder: (_, s) => LeagueStatsScreen(leagueId: s.pathParameters['id']!),
+      ),
+      GoRoute(
         path: '/leagues/:lid/race/:rid/predict',
         builder: (_, s) => PredictionScreen(
           raceId: s.pathParameters['rid']!,
@@ -124,6 +133,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings/notifications',
         builder: (_, _) => const NotificationSettingsScreen(),
       ),
+      if (Env.enablePremium)
+        GoRoute(path: '/premium', builder: (_, _) => const PaywallScreen()),
     ],
   );
 });

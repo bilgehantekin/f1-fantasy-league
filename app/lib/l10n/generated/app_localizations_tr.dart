@@ -250,6 +250,276 @@ class AppLocalizationsTr extends AppLocalizations {
   String get beforeRacePredictionsLock => 'Yarış tahminleri kapanmadan önce';
 
   @override
+  String get raceResultsAndWeeklySummaryNotifications =>
+      'Yarış sonuçları ve haftalık özet';
+
+  @override
+  String get raceResultsAndWeeklySummaryNotificationsBody =>
+      'Her hafta sonundan sonra sonuçlar ve lig özetleri hazır olduğunda bildirim al.';
+
+  @override
+  String get raceResultsNotificationTitle => 'Yarış sonuçları hazır';
+
+  @override
+  String get raceResultsNotificationBody =>
+      'Sonuçlar ve haftalık lig özetleri hazır olmalı. Sıralamaları görmek için GridCall\'u aç.';
+
+  @override
+  String get raceResultsNotificationChannelName => 'Yarış sonuçları';
+
+  @override
+  String get raceResultsNotificationChannelDescription =>
+      'Yarış sonrası sonuç ve haftalık özet bildirimleri';
+
+  @override
+  String get weeklySummaryNotificationTitle => 'Haftalık lig özetleri hazır';
+
+  @override
+  String get weeklySummaryNotificationBody =>
+      'Lig sıralamaları ve haftalık özetler için GridCall\'u aç.';
+
+  @override
+  String get premium => 'Premium';
+
+  @override
+  String get gridcallPremium => 'GRIDCALL PREMIUM';
+
+  @override
+  String get premiumLeagues => 'PREMIUM LİGLER';
+
+  @override
+  String get upgradeShort => 'Yükselt';
+
+  @override
+  String get upgradeToPremium => 'Premium\'a yükselt';
+
+  @override
+  String get premiumBadge => 'Premium rozeti';
+
+  @override
+  String get premiumMember => 'Premium üye';
+
+  @override
+  String get freeLeagueLimitReached =>
+      'Ücretsiz hesaplar en fazla 2 aktif lige katılabilir. Premium ile 10 lige kadar katılabilirsin.';
+
+  @override
+  String get premiumLeagueLimitDescription =>
+      '10 aktif lige kadar katıl, favori liglerini işaretle, sade bir Premium rozeti göster ve detaylı lig istatistiklerini aç.';
+
+  @override
+  String get premiumUpsellProfileTitle =>
+      'Lig rekabetini bir üst seviyeye taşı';
+
+  @override
+  String get premiumUpsellProfileBody =>
+      '10 aktif lige kadar katıl, detaylı lig istatistiklerini aç, favori liglerini öne çıkar ve Premium rozetini kazan.';
+
+  @override
+  String get premiumUpsellLeaguesTitle => 'Daha fazla ligde yarış';
+
+  @override
+  String get premiumUpsellLeaguesBody =>
+      'Premium ile 10 aktif lige kadar katıl, favori liglerini en üste sabitle.';
+
+  @override
+  String get favoriteLeague => 'Ligi favorile';
+
+  @override
+  String get unfavoriteLeague => 'Favoriden çıkar';
+
+  @override
+  String get favorites => 'Favoriler';
+
+  @override
+  String get detailedLeagueStats => 'Detaylı lig istatistikleri';
+
+  @override
+  String get lockedPremiumStats =>
+      'Detaylı lig istatistikleri Premium özelliktir. Temel sıralamalar ve haftalık özetler ücretsiz kalır.';
+
+  @override
+  String get restorePurchases => 'Satın alımları geri yükle';
+
+  @override
+  String get monthlyPlan => 'Aylık';
+
+  @override
+  String get annualPlan => 'Yıllık';
+
+  @override
+  String get monthlyPlanBody => 'Esnek aylık erişim.';
+
+  @override
+  String get annualPlanBody => 'En avantajlı seçenek, yaklaşık \$2.50/ay.';
+
+  @override
+  String get paywallHeroTitle => 'GridCall sezonunu yükselt';
+
+  @override
+  String get paywallHeroBody =>
+      'Premium; daha fazla lig alanı, detaylı lig istatistikleri, favoriler ve sade bir üye rozeti ekler. Temel tahminler herkes için adil kalır.';
+
+  @override
+  String get paywallBenefitsTitle => 'Neler dahil';
+
+  @override
+  String get paywallChoosePlan => 'Planını seç';
+
+  @override
+  String get paywallFeatureLeagueLimit => '10 aktif lige kadar katıl';
+
+  @override
+  String get paywallFeatureLeagueLimitBody =>
+      'Premium limitleri açıldığında ücretsiz hesaplar 2 aktif ligde kalır.';
+
+  @override
+  String get paywallFeatureDetailedStats => 'Detaylı lig istatistikleri';
+
+  @override
+  String get paywallFeatureDetailedStatsBody =>
+      'Lig bazlı toplam, sıra, ortalama, en iyi hafta sonu ve sezon trendini gör.';
+
+  @override
+  String get paywallFeatureFavorites => 'Favori ligler';
+
+  @override
+  String get paywallFeatureFavoritesBody =>
+      'En önemli liglerini Liglerim ekranının en üstünde tut.';
+
+  @override
+  String get paywallFeatureBadge => 'Premium rozeti';
+
+  @override
+  String get paywallFeatureBadgeBody =>
+      'Profilinde ve lig sıralamalarında sade bir premium kimliği göster.';
+
+  @override
+  String get saveWithAnnual => 'yaklaşık \$2.50/ay';
+
+  @override
+  String get premiumUnavailableTitle => 'Premium şu anda kullanılamıyor';
+
+  @override
+  String get premiumUnavailableBody =>
+      'Mağaza ürünleri henüz yapılandırılmamış. Ücretsiz GridCall özellikleri çalışmaya devam eder.';
+
+  @override
+  String get purchaseCompleted =>
+      'Satın alma tamamlandı. Premium, entitlement doğrulandıktan sonra açılır.';
+
+  @override
+  String get restoreCompleted =>
+      'Satın alımlar geri yüklendi. Premium, entitlement doğrulandıktan sonra açılır.';
+
+  @override
+  String get purchaseFailed =>
+      'Satın alma tamamlanamadı. Lütfen daha sonra tekrar dene.';
+
+  @override
+  String get averagePoints => 'Ortalama puan';
+
+  @override
+  String get predictionCount => 'Tahminler';
+
+  @override
+  String get bestWeekend => 'En iyi hafta sonu';
+
+  @override
+  String get worstWeekend => 'En kötü hafta sonu';
+
+  @override
+  String get leagueAverage => 'Lig ortalaması';
+
+  @override
+  String statsWeekendProgress(int members, int completed, int total) {
+    return '$members üye · $completed/$total hafta sonu tamamlandı';
+  }
+
+  @override
+  String get statsLeagueLabel => 'LİG';
+
+  @override
+  String get statsYourRankLabel => 'SIRALAMAN';
+
+  @override
+  String get statsSeasonSummary => 'Sezon özeti';
+
+  @override
+  String get statsTotalShort => 'Toplam';
+
+  @override
+  String get statsAverageShort => 'Ortalama';
+
+  @override
+  String get statsPointsUnit => 'puan';
+
+  @override
+  String get statsPerformanceTrend => 'Performans trendi';
+
+  @override
+  String get statsLeagueAverageShort => 'Lig avg';
+
+  @override
+  String get statsRecentWeekends => 'Son hafta sonları';
+
+  @override
+  String get statsBestWorst => 'En iyi & en kötü';
+
+  @override
+  String get statsLeaguePosition => 'Lige göre konumun';
+
+  @override
+  String get statsNotEnoughDataTitle => 'Henüz yeterli skor verisi yok';
+
+  @override
+  String get statsNotEnoughDataBody =>
+      'Daha fazla yarış hafta sonu skorlandıktan sonra trend kartları burada görünecek.';
+
+  @override
+  String get statsBestShort => 'En iyi';
+
+  @override
+  String get statsWorstShort => 'En kötü';
+
+  @override
+  String get statsYouMarker => 'SEN ▼';
+
+  @override
+  String statsPoints(String value) {
+    return '$value puan';
+  }
+
+  @override
+  String statsSignedPoints(String value) {
+    return '$value puan';
+  }
+
+  @override
+  String get statsLeaderGapPrefix => 'Lider ';
+
+  @override
+  String get statsLeaderGapSuffix => ' önde';
+
+  @override
+  String get statsYouAreLeader => 'Liderlik sende';
+
+  @override
+  String statsLeagueAvgAndPosition(int average, int position) {
+    return 'Lig avg: $average · P$position';
+  }
+
+  @override
+  String statsAheadOfLeagueAverage(int points) {
+    return 'Lig ortalamasından $points puan öndesin.';
+  }
+
+  @override
+  String statsBehindLeagueAverage(int points) {
+    return 'Lig ortalamasının $points puan gerisindesin.';
+  }
+
+  @override
   String get calendarDriverStandings => 'SÜRÜCÜ SIRALAMASI';
 
   @override

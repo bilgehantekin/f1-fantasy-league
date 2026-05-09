@@ -29,6 +29,26 @@ class Env {
     'ENABLE_DEMO_CONTENT',
     defaultValue: false,
   );
+  static const enablePremium = bool.fromEnvironment(
+    'ENABLE_PREMIUM',
+    defaultValue: false,
+  );
+  static const revenueCatAppleApiKey = String.fromEnvironment(
+    'REVENUECAT_APPLE_API_KEY',
+    defaultValue: '',
+  );
+  static const revenueCatGoogleApiKey = String.fromEnvironment(
+    'REVENUECAT_GOOGLE_API_KEY',
+    defaultValue: '',
+  );
+  static const premiumMonthlyProductId = String.fromEnvironment(
+    'PREMIUM_MONTHLY_PRODUCT_ID',
+    defaultValue: 'gridcall_premium_monthly',
+  );
+  static const premiumAnnualProductId = String.fromEnvironment(
+    'PREMIUM_ANNUAL_PRODUCT_ID',
+    defaultValue: 'gridcall_premium_annual',
+  );
   static const raceCardDebugRace = String.fromEnvironment(
     'RACE_CARD_DEBUG_RACE',
     defaultValue: '',

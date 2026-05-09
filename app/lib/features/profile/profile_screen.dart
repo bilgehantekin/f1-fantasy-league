@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/error_messages.dart';
+import '../../core/env.dart';
 import '../../core/legal_links.dart';
 import '../../core/navigation.dart';
 import '../../core/supabase.dart';
@@ -11,7 +12,10 @@ import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets/app_state.dart';
+import '../../shared/widgets/premium_badge.dart';
 import '../league/league_controller.dart';
+import '../premium/premium_service.dart';
+import '../premium/premium_upsell_card.dart';
 import 'profile_controller.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -23,6 +27,8 @@ class ProfileScreen extends ConsumerWidget {
     final statsAsync = ref.watch(profileStatsProvider);
     final myBadgesAsync = ref.watch(myBadgesProvider);
     final allBadgesAsync = ref.watch(allBadgesProvider);
+    final isPremium =
+        ref.watch(currentUserPremiumProvider).asData?.value ?? false;
     final l = AppLocalizations.of(context);
 
     return Scaffold(
@@ -110,6 +116,10 @@ class ProfileScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+              if (Env.enablePremium && !isPremium) ...[
+                const SizedBox(height: 24),
+                const PremiumUpsellCard(),
+              ],
               const SizedBox(height: 24),
               _SectionTitle(label: l.badgesUpper),
               myBadgesAsync.when(
@@ -122,6 +132,7 @@ class ProfileScreen extends ConsumerWidget {
                     data: (allBadges) => _BadgesCarousel(
                       allBadges: allBadges,
                       myBadges: myBadges,
+                      isPremium: p.isPremium,
                     ),
                   );
                 },
@@ -388,8 +399,25 @@ class _HeroProfile extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             profile.username,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              color: profile.isPremium ? const Color(0xFFFFD166) : Colors.white,
+              shadows: profile.isPremium
+                  ? const [
+                      Shadow(
+                        color: Color(0xFF3A2A08),
+                        blurRadius: 8,
+                        offset: Offset(0, 1),
+                      ),
+                    ]
+                  : null,
+            ),
           ),
+          if (profile.isPremium) ...[
+            const SizedBox(height: 8),
+            const PremiumBadge(),
+          ],
           const SizedBox(height: 16),
           // Stats grid would go here but we'll use _StatsCards separately
         ],
@@ -538,8 +566,13 @@ class _SectionTitle extends StatelessWidget {
 class _BadgesCarousel extends StatefulWidget {
   final List<AppBadge> allBadges;
   final List<UserBadge> myBadges;
+  final bool isPremium;
 
-  const _BadgesCarousel({required this.allBadges, required this.myBadges});
+  const _BadgesCarousel({
+    required this.allBadges,
+    required this.myBadges,
+    required this.isPremium,
+  });
 
   @override
   State<_BadgesCarousel> createState() => _BadgesCarouselState();
@@ -565,10 +598,23 @@ class _BadgesCarouselState extends State<_BadgesCarousel> {
     }
     final earnedBadges = earnedBadgesById.values.toList();
     final earnedBadgeIds = earnedBadges.map((badge) => badge.id).toSet();
+    final premiumBadge = AppBadge(
+      id: 'premium',
+      code: 'premium',
+      name: AppLocalizations.of(context).premiumBadge,
+      description: AppLocalizations.of(context).premiumMember,
+      icon: '💎',
+      rarity: AppLocalizations.of(context).premium,
+    );
     final badges = [
+      if (widget.isPremium) premiumBadge,
       ...earnedBadges,
       ...widget.allBadges.where((badge) => !earnedBadgeIds.contains(badge.id)),
     ];
+    final premiumEarnedIds = {
+      ...earnedBadgeIds,
+      if (widget.isPremium) premiumBadge.id,
+    };
     final pages = <List<AppBadge>>[
       for (var i = 0; i < badges.length; i += 3)
         badges.sublist(i, (i + 3).clamp(0, badges.length)),
@@ -615,7 +661,7 @@ class _BadgesCarouselState extends State<_BadgesCarousel> {
                               child: i < pageBadges.length
                                   ? _BadgeTile(
                                       badge: pageBadges[i],
-                                      isEarned: earnedBadgeIds.contains(
+                                      isEarned: premiumEarnedIds.contains(
                                         pageBadges[i].id,
                                       ),
                                     )

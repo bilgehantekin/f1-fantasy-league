@@ -89,6 +89,136 @@
   "notificationSettingsUpdated": "Notification settings updated.",
   "notificationPermissionRequired": "Notification permission is required for reminders. Enable notifications from system settings.",
   "beforeRacePredictionsLock": "Before race predictions close",
+  "raceResultsAndWeeklySummaryNotifications": "Race results & weekly summary",
+  "raceResultsAndWeeklySummaryNotificationsBody": "After each weekend, get a local alert when results and league summaries should be ready.",
+  "raceResultsNotificationTitle": "Race results are ready",
+  "raceResultsNotificationBody": "Results and weekly league summaries should be ready. Open GridCall to see standings.",
+  "raceResultsNotificationChannelName": "Race results",
+  "raceResultsNotificationChannelDescription": "Post-race results and weekly summary alerts",
+  "weeklySummaryNotificationTitle": "Weekly league summaries are ready",
+  "weeklySummaryNotificationBody": "Open GridCall to see league standings and weekly summaries.",
+  "premium": "Premium",
+  "gridcallPremium": "GRIDCALL PREMIUM",
+  "premiumLeagues": "PREMIUM LEAGUES",
+  "upgradeShort": "Upgrade",
+  "upgradeToPremium": "Upgrade to Premium",
+  "premiumBadge": "Premium badge",
+  "premiumMember": "Premium member",
+  "freeLeagueLimitReached": "Free accounts can join up to 2 active leagues. Upgrade to Premium to join up to 10.",
+  "premiumLeagueLimitDescription": "Join up to 10 active leagues, mark favorite leagues, show a subtle Premium badge, and unlock detailed league statistics.",
+  "premiumUpsellProfileTitle": "Take league competition one step further",
+  "premiumUpsellProfileBody": "Join up to 10 active leagues, unlock detailed league stats, highlight favorite leagues, and earn your Premium badge.",
+  "premiumUpsellLeaguesTitle": "Race in more leagues",
+  "premiumUpsellLeaguesBody": "Premium lets you join up to 10 active leagues and pin favorite leagues to the top.",
+  "favoriteLeague": "Favorite league",
+  "unfavoriteLeague": "Unfavorite league",
+  "favorites": "Favorites",
+  "detailedLeagueStats": "Detailed league stats",
+  "lockedPremiumStats": "Detailed league stats are a Premium feature. Core standings and weekly summaries stay free.",
+  "restorePurchases": "Restore purchases",
+  "monthlyPlan": "Monthly",
+  "annualPlan": "Annual",
+  "monthlyPlanBody": "Flexible monthly access.",
+  "annualPlanBody": "Best value, about $2.50/month.",
+  "paywallHeroTitle": "Upgrade your GridCall season",
+  "paywallHeroBody": "Premium adds more league room, detailed league statistics, favorites, and a subtle member badge. Core predictions stay fair for everyone.",
+  "paywallBenefitsTitle": "What you get",
+  "paywallChoosePlan": "Choose your plan",
+  "paywallFeatureLeagueLimit": "Join up to 10 active leagues",
+  "paywallFeatureLeagueLimitBody": "Free accounts stay at 2 active leagues when premium limits are enabled.",
+  "paywallFeatureDetailedStats": "Detailed league statistics",
+  "paywallFeatureDetailedStatsBody": "See league-scoped totals, rank, averages, best weekends, and trend context.",
+  "paywallFeatureFavorites": "Favorite leagues",
+  "paywallFeatureFavoritesBody": "Keep your most important leagues at the top of My Leagues.",
+  "paywallFeatureBadge": "Premium badge",
+  "paywallFeatureBadgeBody": "Show a subtle premium identity on your profile and league standings.",
+  "saveWithAnnual": "about $2.50/month",
+  "premiumUnavailableTitle": "Premium is not available right now",
+  "premiumUnavailableBody": "Store products are not configured yet. Your free GridCall features still work.",
+  "purchaseCompleted": "Purchase completed. Premium will unlock after your entitlement is verified.",
+  "restoreCompleted": "Purchases restored. Premium will unlock after your entitlement is verified.",
+  "purchaseFailed": "Purchase could not be completed. Please try again later.",
+  "averagePoints": "Average points",
+  "predictionCount": "Predictions",
+  "bestWeekend": "Best weekend",
+  "worstWeekend": "Worst weekend",
+  "leagueAverage": "League average",
+  "statsWeekendProgress": "{members} members · {completed}/{total} weekends completed",
+  "@statsWeekendProgress": {
+    "placeholders": {
+      "members": {
+        "type": "int"
+      },
+      "completed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "statsLeagueLabel": "LEAGUE",
+  "statsYourRankLabel": "YOUR RANK",
+  "statsSeasonSummary": "SEASON SUMMARY",
+  "statsTotalShort": "Total",
+  "statsAverageShort": "Average",
+  "statsPointsUnit": "points",
+  "statsPerformanceTrend": "PERFORMANCE TREND",
+  "statsLeagueAverageShort": "League avg",
+  "statsRecentWeekends": "RECENT WEEKENDS",
+  "statsBestWorst": "BEST & WORST",
+  "statsLeaguePosition": "YOUR LEAGUE POSITION",
+  "statsNotEnoughDataTitle": "Not enough scored data yet",
+  "statsNotEnoughDataBody": "Trend cards will appear after more race weekends are scored.",
+  "statsBestShort": "Best",
+  "statsWorstShort": "Worst",
+  "statsYouMarker": "YOU ▼",
+  "statsPoints": "{value} pts",
+  "@statsPoints": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "statsSignedPoints": "{value} pts",
+  "@statsSignedPoints": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "statsLeaderGapPrefix": "Leader is ",
+  "statsLeaderGapSuffix": " ahead",
+  "statsYouAreLeader": "You are leading",
+  "statsLeagueAvgAndPosition": "League avg: {average} · P{position}",
+  "@statsLeagueAvgAndPosition": {
+    "placeholders": {
+      "average": {
+        "type": "int"
+      },
+      "position": {
+        "type": "int"
+      }
+    }
+  },
+  "statsAheadOfLeagueAverage": "You are {points} points ahead of the league average.",
+  "@statsAheadOfLeagueAverage": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "statsBehindLeagueAverage": "You are {points} points behind the league average.",
+  "@statsBehindLeagueAverage": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
   "calendarDriverStandings": "DRIVER STANDINGS",
   "calendarConstructorStandings": "TEAM STANDINGS",
   "races": "RACES",

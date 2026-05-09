@@ -472,6 +472,7 @@ class League {
   final int seasonId;
   final int? memberCount;
   final int? myRank;
+  final bool isFavorite;
   League({
     required this.id,
     required this.name,
@@ -481,6 +482,7 @@ class League {
     required this.seasonId,
     this.memberCount,
     this.myRank,
+    this.isFavorite = false,
   });
   factory League.fromJson(Map<String, dynamic> j) => League(
     id: j['id'] as String,
@@ -491,9 +493,10 @@ class League {
     seasonId: j['season_id'] as int,
     memberCount: (j['member_count'] as num?)?.toInt(),
     myRank: (j['my_rank'] as num?)?.toInt(),
+    isFavorite: (j['is_favorite'] as bool?) ?? false,
   );
 
-  League copyWith({int? memberCount, int? myRank}) => League(
+  League copyWith({int? memberCount, int? myRank, bool? isFavorite}) => League(
     id: id,
     name: name,
     type: type,
@@ -502,6 +505,7 @@ class League {
     seasonId: seasonId,
     memberCount: memberCount ?? this.memberCount,
     myRank: myRank ?? this.myRank,
+    isFavorite: isFavorite ?? this.isFavorite,
   );
 }
 
@@ -562,22 +566,26 @@ class StandingRow {
   final String username;
   final int score;
   final int rank;
+  final bool isPremium;
   StandingRow({
     required this.userId,
     required this.username,
     required this.score,
     required this.rank,
+    this.isPremium = false,
   });
   factory StandingRow.weekly(Map<String, dynamic> j) => StandingRow(
     userId: j['user_id'] as String,
     username: j['username'] as String,
     score: (j['score'] ?? 0) as int,
     rank: (j['rnk'] as num).toInt(),
+    isPremium: (j['is_premium'] as bool?) ?? false,
   );
   factory StandingRow.season(Map<String, dynamic> j) => StandingRow(
     userId: j['user_id'] as String,
     username: j['username'] as String,
     score: ((j['total_score'] ?? 0) as num).toInt(),
     rank: (j['rnk'] as num).toInt(),
+    isPremium: (j['is_premium'] as bool?) ?? false,
   );
 }

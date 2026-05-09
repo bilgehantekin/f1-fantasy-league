@@ -10,6 +10,7 @@ import 'core/notifications.dart';
 import 'core/router.dart';
 import 'core/supabase.dart';
 import 'core/theme.dart';
+import 'features/premium/premium_service.dart';
 import 'l10n/generated/app_localizations.dart';
 
 Future<void> main() async {
@@ -39,6 +40,7 @@ class GridCallApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    ref.watch(premiumAuthSyncProvider);
     return MaterialApp.router(
       title: 'GridCall',
       theme: buildTheme(),

@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/error_messages.dart';
+import '../../core/env.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../shared/widgets/app_state.dart';
 import 'league_controller.dart';
+import '../premium/premium_league_cta.dart';
+import '../premium/premium_service.dart';
 
 class LeaguesScreen extends ConsumerStatefulWidget {
   const LeaguesScreen({super.key});
@@ -21,6 +24,8 @@ class _LeaguesScreenState extends ConsumerState<LeaguesScreen> {
     final leagues = ref.watch(myLeaguesProvider);
     final tt = Theme.of(context).textTheme;
     final l = AppLocalizations.of(context);
+    final isPremium =
+        ref.watch(currentUserPremiumProvider).asData?.value ?? false;
 
     return Scaffold(
       backgroundColor: AppColors.carbon,
@@ -52,6 +57,10 @@ class _LeaguesScreenState extends ConsumerState<LeaguesScreen> {
         children: [
           _SectionTitle(label: l.activeLeagues),
           const SizedBox(height: 12),
+          if (Env.enablePremium && !isPremium) ...[
+            const PremiumLeagueCta(),
+            const SizedBox(height: 16),
+          ],
           leagues.when(
             loading: () => AppLoadingState(label: l.leaguesLoading),
             error: (e, _) => AppErrorState(
@@ -103,6 +112,14 @@ class _LeaguesScreenState extends ConsumerState<LeaguesScreen> {
                                               ),
                                             ),
                                             const SizedBox(width: 8),
+                                            if (league.isFavorite) ...[
+                                              const Icon(
+                                                Icons.star,
+                                                size: 15,
+                                                color: Color(0xFFFFD166),
+                                              ),
+                                              const SizedBox(width: 6),
+                                            ],
                                             const Icon(
                                               Icons.lock_outline,
                                               size: 14,

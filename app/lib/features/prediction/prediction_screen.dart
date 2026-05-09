@@ -125,7 +125,9 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      _showSaveError(AppLocalizations.of(context).errorWithMessage(friendlyError(e)));
+      _showSaveError(
+        AppLocalizations.of(context).errorWithMessage(friendlyError(e)),
+      );
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -263,7 +265,9 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      _showSaveError(AppLocalizations.of(context).errorWithMessage(friendlyError(e)));
+      _showSaveError(
+        AppLocalizations.of(context).errorWithMessage(friendlyError(e)),
+      );
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -511,11 +515,17 @@ class _PredictionBody extends StatelessWidget {
       final id = d.teamId;
       if (id == null || byId.containsKey(id)) continue;
       byId[id] = _TeamChoice(
-          id: id,
-          code: d.teamCode ?? d.teamName ?? AppLocalizations.of(context).teamFallbackUpper,
-          name: d.teamName ?? d.teamCode ?? AppLocalizations.of(context).teamFallback,
-          color: d.teamColor,
-        );
+        id: id,
+        code:
+            d.teamCode ??
+            d.teamName ??
+            AppLocalizations.of(context).teamFallbackUpper,
+        name:
+            d.teamName ??
+            d.teamCode ??
+            AppLocalizations.of(context).teamFallback,
+        color: d.teamColor,
+      );
     }
     final list = byId.values.toList()..sort((a, b) => a.name.compareTo(b.name));
     return list;
@@ -811,7 +821,9 @@ class _PredictionBody extends StatelessWidget {
                 children: [
                   if (onClear != null) ...[
                     IconButton(
-                      tooltip: AppLocalizations.of(context).clearPredictionTooltip,
+                      tooltip: AppLocalizations.of(
+                        context,
+                      ).clearPredictionTooltip,
                       onPressed: locked || saving ? null : onClear,
                       style: IconButton.styleFrom(
                         backgroundColor: const Color(0xFF1F1F2E),
@@ -828,8 +840,9 @@ class _PredictionBody extends StatelessWidget {
                   ],
                   if (onCopyToOtherLeagues != null) ...[
                     IconButton(
-                      tooltip:
-                          AppLocalizations.of(context).copyToOtherLeaguesTooltip,
+                      tooltip: AppLocalizations.of(
+                        context,
+                      ).copyToOtherLeaguesTooltip,
                       onPressed: copying ? null : onCopyToOtherLeagues,
                       style: IconButton.styleFrom(
                         backgroundColor: const Color(0xFF1F1F2E),
@@ -1296,13 +1309,7 @@ class _PodiumPicker extends StatelessWidget {
 
     final positions = [
       ('P1', const Color(0xFFFFD700), p1, l.selectDriverFirstPlace, 1),
-      (
-        'P2',
-        const Color(0xFFC0C0C0),
-        p2,
-        l.selectDriverSecondPlace,
-        2,
-      ),
+      ('P2', const Color(0xFFC0C0C0), p2, l.selectDriverSecondPlace, 2),
       ('P3', const Color(0xFFCD7F32), p3, l.selectDriverThirdPlace, 3),
     ];
 
@@ -2013,13 +2020,7 @@ class _SprintPodiumPicker extends StatelessWidget {
 
     final positions = [
       ('P1', const Color(0xFFFFD700), p1, l.selectDriverFirstPlace, 1),
-      (
-        'P2',
-        const Color(0xFFC0C0C0),
-        p2,
-        l.selectDriverSecondPlace,
-        2,
-      ),
+      ('P2', const Color(0xFFC0C0C0), p2, l.selectDriverSecondPlace, 2),
       ('P3', const Color(0xFFCD7F32), p3, l.selectDriverThirdPlace, 3),
     ];
 

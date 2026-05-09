@@ -85,6 +85,12 @@ String friendlyError(Object e) {
       (normalized.contains('invite_code') && normalized.contains('null'))) {
     return l.invalidInviteCode;
   }
+  if (normalized.contains('free_league_limit_reached')) {
+    return l.freeLeagueLimitReached;
+  }
+  if (normalized.contains('premium_required')) {
+    return l.lockedPremiumStats;
+  }
   if (normalized.contains('already')) {
     return l.errorActionAlreadyCompleted;
   }

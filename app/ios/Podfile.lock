@@ -10,6 +10,12 @@ PODS:
     - Flutter
   - permission_handler_apple (9.3.0):
     - Flutter
+  - purchases_flutter (10.0.2):
+    - Flutter
+    - PurchasesHybridCommon (= 18.4.0)
+  - PurchasesHybridCommon (18.4.0):
+    - RevenueCat (= 5.70.0)
+  - RevenueCat (5.70.0)
   - Sentry/HybridSDK (8.58.1)
   - sentry_flutter (9.19.0):
     - Flutter
@@ -30,6 +36,7 @@ DEPENDENCIES:
   - flutter_native_splash (from `.symlinks/plugins/flutter_native_splash/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
+  - purchases_flutter (from `.symlinks/plugins/purchases_flutter/ios`)
   - sentry_flutter (from `.symlinks/plugins/sentry_flutter/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -37,6 +44,8 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - PurchasesHybridCommon
+    - RevenueCat
     - Sentry
 
 EXTERNAL SOURCES:
@@ -52,6 +61,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/package_info_plus/ios"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
+  purchases_flutter:
+    :path: ".symlinks/plugins/purchases_flutter/ios"
   sentry_flutter:
     :path: ".symlinks/plugins/sentry_flutter/ios"
   share_plus:
@@ -68,6 +79,9 @@ SPEC CHECKSUMS:
   flutter_native_splash: c32d145d68aeda5502d5f543ee38c192065986cf
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
+  purchases_flutter: 93c46839a7edc925d1e9478584b3d3e1cd6eebe2
+  PurchasesHybridCommon: 2cd3e4b74c60f5a61603d78e4071274217cd9f6b
+  RevenueCat: f30d8ee4fd36ce56afa40923d314239761eb58a2
   Sentry: 958d9619ceccf6abb8c4736003fa336dac1a80a7
   sentry_flutter: bdfd7a7b8931c4ecefa37fde9e44a15cd0af30b1
   share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a

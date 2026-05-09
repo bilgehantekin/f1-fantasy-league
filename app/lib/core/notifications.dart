@@ -1,15 +1,22 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 import 'env.dart';
+import '../l10n/generated/app_localizations.dart';
+import 'navigation.dart';
 import 'supabase.dart';
 import '../shared/models.dart';
 
 const _scheduledReminderIdsKey = 'reminders.scheduledNotificationIds';
+const _scheduledPostRaceIdsKey = 'postRace.scheduledNotificationIds';
+const _postRaceKind = 'post_race_summary';
 
 int stableNotificationId(String raceId, String leagueId, String kind) {
   final input = '$raceId:$leagueId:$kind';
@@ -18,6 +25,24 @@ int stableNotificationId(String raceId, String leagueId, String kind) {
     hash = (hash * 31 + codeUnit) & 0x7fffffff;
   }
   return hash;
+}
+
+int postRaceSummaryNotificationId(String raceId) =>
+    stableNotificationId(raceId, 'public', _postRaceKind);
+
+DateTime postRaceSummaryNotificationTime(Race race) {
+  final raceSession = race.sessions
+      .where((session) {
+        final type = session.sessionType.toLowerCase();
+        final name = session.sessionName.toLowerCase();
+        return type == 'race' || name == 'race' || name.contains('grand prix');
+      })
+      .fold<RaceSession?>(null, (best, session) {
+        if (best == null) return session;
+        return session.sortOrder > best.sortOrder ? session : best;
+      });
+  final base = raceSession?.endsAt ?? race.raceAt.add(const Duration(hours: 2));
+  return base.add(const Duration(hours: 3));
 }
 
 class ReminderPreferences {
@@ -71,6 +96,29 @@ class ReminderPreferences {
   }
 }
 
+class PostRaceSummaryPreferences {
+  final bool enabled;
+
+  const PostRaceSummaryPreferences({required this.enabled});
+
+  static const disabled = PostRaceSummaryPreferences(enabled: false);
+
+  static Future<PostRaceSummaryPreferences> load() async {
+    final prefs = await SharedPreferences.getInstance();
+    return PostRaceSummaryPreferences(
+      enabled: prefs.getBool('postRaceSummary.enabled') ?? false,
+    );
+  }
+
+  Future<void> save() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('postRaceSummary.enabled', enabled);
+  }
+
+  PostRaceSummaryPreferences copyWith({bool? enabled}) =>
+      PostRaceSummaryPreferences(enabled: enabled ?? this.enabled);
+}
+
 class NotificationService {
   NotificationService._();
   static final instance = NotificationService._();
@@ -94,6 +142,14 @@ class NotificationService {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     await _plugin.initialize(
       const InitializationSettings(android: android, iOS: ios),
+      onDidReceiveNotificationResponse: (response) {
+        final payload = response.payload;
+        if (payload == null || payload.isEmpty || !payload.startsWith('/')) {
+          return;
+        }
+        final context = appNavigatorKey.currentContext;
+        if (context != null) context.go(payload);
+      },
     );
     _initialized = true;
   }
@@ -135,14 +191,21 @@ class NotificationService {
   Future<void> scheduleForRaces(
     List<Race> races, {
     ReminderPreferences? preferences,
+    PostRaceSummaryPreferences? postRacePreferences,
   }) async {
     await init();
     final prefs = preferences ?? await ReminderPreferences.load();
+    final postRacePrefs =
+        postRacePreferences ?? await PostRaceSummaryPreferences.load();
     await _cancelScheduledReminderIds();
-    if (!prefs.enabled) return;
+    await _cancelScheduledPostRaceIds();
 
     final now = DateTime.now();
     final leagueIds = await _seasonLeagueIds();
+    if (postRacePrefs.enabled) {
+      await _schedulePostRaceSummaries(races, leagueIds: leagueIds, now: now);
+    }
+    if (!prefs.enabled) return;
     if (leagueIds.isEmpty) return;
     final completedKeys = prefs.onlyMissingPrediction
         ? await _completedPredictionKeys(leagueIds)
@@ -207,6 +270,21 @@ class NotificationService {
     await _saveScheduledReminderIds(scheduledIds);
   }
 
+  Future<void> reschedulePostRaceSummaries(
+    List<Race> races, {
+    PostRaceSummaryPreferences? preferences,
+  }) async {
+    await init();
+    await _cancelScheduledPostRaceIds();
+    final prefs = preferences ?? await PostRaceSummaryPreferences.load();
+    if (!prefs.enabled) return;
+    await _schedulePostRaceSummaries(
+      races,
+      leagueIds: await _seasonLeagueIds(),
+      now: DateTime.now(),
+    );
+  }
+
   Future<void> cancelForRace(String raceId) async {
     await init();
     final leagueIds = await _seasonLeagueIds();
@@ -255,6 +333,10 @@ class NotificationService {
     required String title,
     required String body,
     required DateTime when,
+    String? payload,
+    String channelId = 'gridcall_reminders',
+    String channelName = 'Reminders',
+    String channelDescription = 'Pre-race prediction reminders',
   }) async {
     try {
       await _plugin.zonedSchedule(
@@ -262,22 +344,23 @@ class NotificationService {
         title,
         body,
         tz.TZDateTime.from(when, tz.local),
-        const NotificationDetails(
-          iOS: DarwinNotificationDetails(
+        NotificationDetails(
+          iOS: const DarwinNotificationDetails(
             presentAlert: true,
             presentBadge: true,
             presentSound: true,
             presentBanner: true,
           ),
           android: AndroidNotificationDetails(
-            'gridcall_reminders',
-            'Reminders',
-            channelDescription: 'Pre-race prediction reminders',
+            channelId,
+            channelName,
+            channelDescription: channelDescription,
             importance: Importance.high,
             priority: Priority.high,
           ),
         ),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: payload,
       );
       return true;
     } catch (e) {
@@ -301,6 +384,16 @@ class NotificationService {
     await prefs.remove(_scheduledReminderIdsKey);
   }
 
+  Future<void> _cancelScheduledPostRaceIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rawIds = prefs.getStringList(_scheduledPostRaceIdsKey) ?? const [];
+    for (final rawId in rawIds) {
+      final id = int.tryParse(rawId);
+      if (id != null) await _plugin.cancel(id);
+    }
+    await prefs.remove(_scheduledPostRaceIdsKey);
+  }
+
   Future<void> _saveScheduledReminderIds(Set<int> ids) async {
     final prefs = await SharedPreferences.getInstance();
     if (ids.isEmpty) {
@@ -311,6 +404,75 @@ class NotificationService {
       _scheduledReminderIdsKey,
       ids.map((id) => id.toString()).toList()..sort(),
     );
+  }
+
+  Future<void> _saveScheduledPostRaceIds(Set<int> ids) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (ids.isEmpty) {
+      await prefs.remove(_scheduledPostRaceIdsKey);
+      return;
+    }
+    await prefs.setStringList(
+      _scheduledPostRaceIdsKey,
+      ids.map((id) => id.toString()).toList()..sort(),
+    );
+  }
+
+  Future<void> _schedulePostRaceSummaries(
+    List<Race> races, {
+    required Set<String> leagueIds,
+    required DateTime now,
+  }) async {
+    final scheduledIds = <int>{};
+    final preferredLeagueId = await _preferredLeagueId(leagueIds);
+    for (final race in races) {
+      if (race.isCancelled) continue;
+      final when = postRaceSummaryNotificationTime(race);
+      if (!when.isAfter(now)) continue;
+      final id = postRaceSummaryNotificationId(race.id);
+      final route = preferredLeagueId == null
+          ? '/race/${race.id}/results'
+          : '/leagues/$preferredLeagueId/race/${race.id}/summary';
+      final l = _localizations();
+      final scheduled = await _scheduleAt(
+        id: id,
+        title: l.raceResultsNotificationTitle,
+        body: l.raceResultsNotificationBody,
+        when: when,
+        payload: route,
+        channelId: 'gridcall_post_race',
+        channelName: l.raceResultsNotificationChannelName,
+        channelDescription: l.raceResultsNotificationChannelDescription,
+      );
+      if (scheduled) scheduledIds.add(id);
+    }
+    await _saveScheduledPostRaceIds(scheduledIds);
+  }
+
+  Future<String?> _preferredLeagueId(Set<String> leagueIds) async {
+    final user = supabase.auth.currentUser;
+    if (user == null || leagueIds.isEmpty) return null;
+    try {
+      final favorites = await supabase
+          .from('league_favorites')
+          .select('league_id')
+          .eq('user_id', user.id)
+          .inFilter('league_id', leagueIds.toList())
+          .order('created_at')
+          .limit(1);
+      if (favorites.isNotEmpty) return favorites.first['league_id'] as String;
+    } catch (_) {
+      // Premium favorites may not exist on older deployments yet.
+    }
+    final sorted = leagueIds.toList()..sort();
+    return sorted.first;
+  }
+
+  AppLocalizations _localizations() {
+    final locale = Intl.getCurrentLocale().toLowerCase().startsWith('tr')
+        ? const Locale('tr')
+        : const Locale('en');
+    return lookupAppLocalizations(locale);
   }
 
   String _predictionKey({

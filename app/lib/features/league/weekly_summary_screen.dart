@@ -177,16 +177,21 @@ class _WeeklySummaryScreenState extends ConsumerState<WeeklySummaryScreen> {
       await Share.shareXFiles(
         [XFile(file.path, mimeType: 'image/png', name: fileName)],
         subject: l.weeklySummarySubject(league.name, race.name),
-        text: _shareText(AppLocalizations.of(context), league.name, race.name, summary),
+        text: _shareText(
+          AppLocalizations.of(context),
+          league.name,
+          race.name,
+          summary,
+        ),
         sharePositionOrigin: box == null
             ? null
             : box.localToGlobal(Offset.zero) & box.size,
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.shareError(friendlyError(e)))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.shareError(friendlyError(e)))));
     } finally {
       if (mounted) setState(() => _sharing = false);
     }

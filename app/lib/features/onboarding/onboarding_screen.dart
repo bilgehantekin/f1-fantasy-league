@@ -19,6 +19,7 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _username = TextEditingController();
   bool _remindersEnabled = true;
+  bool _postRaceSummaryEnabled = true;
   bool _onlyMissing = true;
   int _hoursBeforeLock = 1;
   bool _busy = false;
@@ -54,10 +55,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         hoursBeforeLock: _hoursBeforeLock,
         onlyMissingPrediction: _onlyMissing,
       );
-      if (_remindersEnabled) {
+      final postRacePrefs = PostRaceSummaryPreferences(
+        enabled: _postRaceSummaryEnabled,
+      );
+      if (_remindersEnabled || _postRaceSummaryEnabled) {
         final granted = await NotificationService.instance.requestPermissions();
         if (!granted) {
           await reminderPrefs.copyWith(enabled: false).save();
+          await postRacePrefs.copyWith(enabled: false).save();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -69,9 +74,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           }
         } else {
           await reminderPrefs.save();
+          await postRacePrefs.save();
         }
       } else {
         await reminderPrefs.save();
+        await postRacePrefs.save();
       }
 
       await completeOnboarding(username: username);
@@ -249,6 +256,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       controlAffinity: ListTileControlAffinity.leading,
                     ),
                   ],
+                  const Divider(height: 24),
+                  SwitchListTile(
+                    value: _postRaceSummaryEnabled,
+                    onChanged: (v) =>
+                        setState(() => _postRaceSummaryEnabled = v),
+                    title: Text(l.raceResultsAndWeeklySummaryNotifications),
+                    subtitle: Text(
+                      l.raceResultsAndWeeklySummaryNotificationsBody,
+                    ),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  const SizedBox(height: 8),
                   Text(
                     l.preferenceLater,
                     style: TextStyle(

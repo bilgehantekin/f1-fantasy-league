@@ -89,6 +89,136 @@
   "notificationSettingsUpdated": "Bildirim ayarları güncellendi.",
   "notificationPermissionRequired": "Hatırlatmalar için bildirim izni gerekli. Sistem ayarlarından bildirimleri açabilirsin.",
   "beforeRacePredictionsLock": "Yarış tahminleri kapanmadan önce",
+  "raceResultsAndWeeklySummaryNotifications": "Yarış sonuçları ve haftalık özet",
+  "raceResultsAndWeeklySummaryNotificationsBody": "Her hafta sonundan sonra sonuçlar ve lig özetleri hazır olduğunda bildirim al.",
+  "raceResultsNotificationTitle": "Yarış sonuçları hazır",
+  "raceResultsNotificationBody": "Sonuçlar ve haftalık lig özetleri hazır olmalı. Sıralamaları görmek için GridCall'u aç.",
+  "raceResultsNotificationChannelName": "Yarış sonuçları",
+  "raceResultsNotificationChannelDescription": "Yarış sonrası sonuç ve haftalık özet bildirimleri",
+  "weeklySummaryNotificationTitle": "Haftalık lig özetleri hazır",
+  "weeklySummaryNotificationBody": "Lig sıralamaları ve haftalık özetler için GridCall'u aç.",
+  "premium": "Premium",
+  "gridcallPremium": "GRIDCALL PREMIUM",
+  "premiumLeagues": "PREMIUM LİGLER",
+  "upgradeShort": "Yükselt",
+  "upgradeToPremium": "Premium'a yükselt",
+  "premiumBadge": "Premium rozeti",
+  "premiumMember": "Premium üye",
+  "freeLeagueLimitReached": "Ücretsiz hesaplar en fazla 2 aktif lige katılabilir. Premium ile 10 lige kadar katılabilirsin.",
+  "premiumLeagueLimitDescription": "10 aktif lige kadar katıl, favori liglerini işaretle, sade bir Premium rozeti göster ve detaylı lig istatistiklerini aç.",
+  "premiumUpsellProfileTitle": "Lig rekabetini bir üst seviyeye taşı",
+  "premiumUpsellProfileBody": "10 aktif lige kadar katıl, detaylı lig istatistiklerini aç, favori liglerini öne çıkar ve Premium rozetini kazan.",
+  "premiumUpsellLeaguesTitle": "Daha fazla ligde yarış",
+  "premiumUpsellLeaguesBody": "Premium ile 10 aktif lige kadar katıl, favori liglerini en üste sabitle.",
+  "favoriteLeague": "Ligi favorile",
+  "unfavoriteLeague": "Favoriden çıkar",
+  "favorites": "Favoriler",
+  "detailedLeagueStats": "Detaylı lig istatistikleri",
+  "lockedPremiumStats": "Detaylı lig istatistikleri Premium özelliktir. Temel sıralamalar ve haftalık özetler ücretsiz kalır.",
+  "restorePurchases": "Satın alımları geri yükle",
+  "monthlyPlan": "Aylık",
+  "annualPlan": "Yıllık",
+  "monthlyPlanBody": "Esnek aylık erişim.",
+  "annualPlanBody": "En avantajlı seçenek, yaklaşık $2.50/ay.",
+  "paywallHeroTitle": "GridCall sezonunu yükselt",
+  "paywallHeroBody": "Premium; daha fazla lig alanı, detaylı lig istatistikleri, favoriler ve sade bir üye rozeti ekler. Temel tahminler herkes için adil kalır.",
+  "paywallBenefitsTitle": "Neler dahil",
+  "paywallChoosePlan": "Planını seç",
+  "paywallFeatureLeagueLimit": "10 aktif lige kadar katıl",
+  "paywallFeatureLeagueLimitBody": "Premium limitleri açıldığında ücretsiz hesaplar 2 aktif ligde kalır.",
+  "paywallFeatureDetailedStats": "Detaylı lig istatistikleri",
+  "paywallFeatureDetailedStatsBody": "Lig bazlı toplam, sıra, ortalama, en iyi hafta sonu ve sezon trendini gör.",
+  "paywallFeatureFavorites": "Favori ligler",
+  "paywallFeatureFavoritesBody": "En önemli liglerini Liglerim ekranının en üstünde tut.",
+  "paywallFeatureBadge": "Premium rozeti",
+  "paywallFeatureBadgeBody": "Profilinde ve lig sıralamalarında sade bir premium kimliği göster.",
+  "saveWithAnnual": "yaklaşık $2.50/ay",
+  "premiumUnavailableTitle": "Premium şu anda kullanılamıyor",
+  "premiumUnavailableBody": "Mağaza ürünleri henüz yapılandırılmamış. Ücretsiz GridCall özellikleri çalışmaya devam eder.",
+  "purchaseCompleted": "Satın alma tamamlandı. Premium, entitlement doğrulandıktan sonra açılır.",
+  "restoreCompleted": "Satın alımlar geri yüklendi. Premium, entitlement doğrulandıktan sonra açılır.",
+  "purchaseFailed": "Satın alma tamamlanamadı. Lütfen daha sonra tekrar dene.",
+  "averagePoints": "Ortalama puan",
+  "predictionCount": "Tahminler",
+  "bestWeekend": "En iyi hafta sonu",
+  "worstWeekend": "En kötü hafta sonu",
+  "leagueAverage": "Lig ortalaması",
+  "statsWeekendProgress": "{members} üye · {completed}/{total} hafta sonu tamamlandı",
+  "@statsWeekendProgress": {
+    "placeholders": {
+      "members": {
+        "type": "int"
+      },
+      "completed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "statsLeagueLabel": "LİG",
+  "statsYourRankLabel": "SIRALAMAN",
+  "statsSeasonSummary": "Sezon özeti",
+  "statsTotalShort": "Toplam",
+  "statsAverageShort": "Ortalama",
+  "statsPointsUnit": "puan",
+  "statsPerformanceTrend": "Performans trendi",
+  "statsLeagueAverageShort": "Lig avg",
+  "statsRecentWeekends": "Son hafta sonları",
+  "statsBestWorst": "En iyi & en kötü",
+  "statsLeaguePosition": "Lige göre konumun",
+  "statsNotEnoughDataTitle": "Henüz yeterli skor verisi yok",
+  "statsNotEnoughDataBody": "Daha fazla yarış hafta sonu skorlandıktan sonra trend kartları burada görünecek.",
+  "statsBestShort": "En iyi",
+  "statsWorstShort": "En kötü",
+  "statsYouMarker": "SEN ▼",
+  "statsPoints": "{value} puan",
+  "@statsPoints": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "statsSignedPoints": "{value} puan",
+  "@statsSignedPoints": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "statsLeaderGapPrefix": "Lider ",
+  "statsLeaderGapSuffix": " önde",
+  "statsYouAreLeader": "Liderlik sende",
+  "statsLeagueAvgAndPosition": "Lig avg: {average} · P{position}",
+  "@statsLeagueAvgAndPosition": {
+    "placeholders": {
+      "average": {
+        "type": "int"
+      },
+      "position": {
+        "type": "int"
+      }
+    }
+  },
+  "statsAheadOfLeagueAverage": "Lig ortalamasından {points} puan öndesin.",
+  "@statsAheadOfLeagueAverage": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "statsBehindLeagueAverage": "Lig ortalamasının {points} puan gerisindesin.",
+  "@statsBehindLeagueAverage": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
   "calendarDriverStandings": "SÜRÜCÜ SIRALAMASI",
   "calendarConstructorStandings": "TAKIM SIRALAMASI",
   "races": "YARIŞLAR",

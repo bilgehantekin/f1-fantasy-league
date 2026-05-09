@@ -15,8 +15,10 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../shared/models.dart';
 import '../../shared/turkish_text.dart';
 import '../../shared/widgets/app_state.dart';
+import '../../shared/widgets/premium_stats_icon.dart';
 import '../../shared/widgets/race_card_new.dart';
 import '../calendar/calendar_controller.dart';
+import '../premium/premium_service.dart';
 import 'league_controller.dart';
 import 'league_share_card.dart';
 
@@ -58,6 +60,8 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
     final league = leagueAsync.asData?.value;
     final standings = standingsAsync.asData?.value ?? <StandingRow>[];
     final l = AppLocalizations.of(context);
+    final isPremium =
+        ref.watch(currentUserPremiumProvider).asData?.value ?? false;
 
     return Scaffold(
       backgroundColor: AppColors.carbon,
@@ -84,6 +88,29 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
           error: (error, stackTrace) => Text(l.leagueFallback.toUpperCase()),
         ),
         actions: [
+          if (Env.enablePremium) ...[
+            IconButton(
+              icon: const PremiumStatsIcon(size: 30),
+              tooltip: l.detailedLeagueStats,
+              onPressed: () =>
+                  context.push('/leagues/${widget.leagueId}/stats'),
+            ),
+          ],
+          if (Env.enablePremium && isPremium) ...[
+            IconButton(
+              icon: Icon(
+                league?.isFavorite == true ? Icons.star : Icons.star_border,
+                size: 22,
+                color: league?.isFavorite == true
+                    ? const Color(0xFFFFD166)
+                    : null,
+              ),
+              tooltip: league?.isFavorite == true
+                  ? l.unfavoriteLeague
+                  : l.favoriteLeague,
+              onPressed: league == null ? null : () => _toggleFavorite(league),
+            ),
+          ],
           IconButton(
             icon: const Icon(Icons.settings_outlined, size: 20),
             tooltip: l.leagueSettingsTooltip,
@@ -213,9 +240,10 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
       await Share.shareXFiles(
         [XFile.fromData(bytes, mimeType: 'image/png', name: fileName)],
         subject: AppLocalizations.of(context).joinLeagueSubject(league.name),
-        text: AppLocalizations.of(
-          context,
-        ).joinLeagueShareText(_inviteLinkFor(league.inviteCode), league.inviteCode),
+        text: AppLocalizations.of(context).joinLeagueShareText(
+          _inviteLinkFor(league.inviteCode),
+          league.inviteCode,
+        ),
         fileNameOverrides: [fileName],
         sharePositionOrigin: box == null
             ? null
@@ -224,10 +252,40 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).shareError(friendlyError(e)))),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).shareError(friendlyError(e)),
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _sharing = false);
+    }
+  }
+
+  Future<void> _toggleFavorite(League league) async {
+    try {
+      await setLeagueFavorite(league.id, !league.isFavorite);
+      ref.invalidate(leagueProvider(widget.leagueId));
+      ref.invalidate(myLeaguesProvider);
+    } catch (e) {
+      if (!mounted) return;
+      final raw = e.toString().toLowerCase();
+      if (raw.contains('premium_required')) {
+        if (Env.enablePremium) {
+          context.push('/premium');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context).lockedPremiumStats),
+            ),
+          );
+        }
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 }
@@ -462,15 +520,15 @@ class _WeeklyStandings extends ConsumerWidget {
               : weeklyStandingsProvider(key),
         );
         return standingsAsync.when(
-            loading: () => AppLoadingState(label: l.weeklyStandingsLoading),
-            error: (e, _) => AppErrorState(message: friendlyError(e)),
-            data: (rows) => _StandingsList(
-              rows: rows,
-              myUserId: myUserId,
-              emptyTitle: l.noPointsThisWeek,
-              emptyMessage: l.weeklyScoresCalculated(weeklyRace.race.name),
-            ),
-          );
+          loading: () => AppLoadingState(label: l.weeklyStandingsLoading),
+          error: (e, _) => AppErrorState(message: friendlyError(e)),
+          data: (rows) => _StandingsList(
+            rows: rows,
+            myUserId: myUserId,
+            emptyTitle: l.noPointsThisWeek,
+            emptyMessage: l.weeklyScoresCalculated(weeklyRace.race.name),
+          ),
+        );
       },
     );
   }
@@ -645,11 +703,11 @@ class _RacesTab extends StatelessWidget {
                     savedPredictionCount: savedPredictionCount,
                     totalPredictionCount: totalPredictionCount,
                     keepStartLightsVisible: true,
-                     actionLabel:
-                         mainStatus == RaceStatus.upcoming ||
-                             mainStatus == RaceStatus.locked
-                         ? l.makePrediction
-                         : null,
+                    actionLabel:
+                        mainStatus == RaceStatus.upcoming ||
+                            mainStatus == RaceStatus.locked
+                        ? l.makePrediction
+                        : null,
                     actionIcon: Icons.add_circle_outline,
                     onTap: () => _openLeagueRace(
                       context,
@@ -794,7 +852,9 @@ class _RacesTab extends StatelessWidget {
                           keepStartLightsVisible: pinnedRaceIds.contains(
                             race.id,
                           ),
-                          actionLabel: AppLocalizations.of(context).makePrediction,
+                          actionLabel: AppLocalizations.of(
+                            context,
+                          ).makePrediction,
                           actionIcon: Icons.add_circle_outline,
                           onTap: () => _openLeagueRace(
                             pageContext,
@@ -1038,10 +1098,21 @@ class _StandingRow extends StatelessWidget {
                     child: Text(
                       row.username,
                       maxLines: 1,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w900,
-                        color: Colors.white,
+                        color: row.isPremium
+                            ? const Color(0xFFFFD166)
+                            : Colors.white,
+                        shadows: row.isPremium
+                            ? const [
+                                Shadow(
+                                  color: Color(0xFF3A2A08),
+                                  blurRadius: 8,
+                                  offset: Offset(0, 1),
+                                ),
+                              ]
+                            : null,
                       ),
                     ),
                   ),

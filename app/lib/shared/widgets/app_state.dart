@@ -102,10 +102,11 @@ class AppErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Semantics(
       container: true,
       liveRegion: true,
-      label: 'Error. $message',
+      label: '${l.appErrorTitle}. $message',
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -119,7 +120,7 @@ class AppErrorState extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                AppLocalizations.of(context).appErrorTitle,
+                l.appErrorTitle,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 16,
@@ -137,7 +138,7 @@ class AppErrorState extends StatelessWidget {
                 FilledButton.icon(
                   onPressed: onRetry,
                   icon: const Icon(Icons.refresh, size: 18),
-                  label: Text(AppLocalizations.of(context).retry),
+                  label: Text(l.retry),
                 ),
               ],
             ],

@@ -12,8 +12,9 @@ final myLeaguesProvider = FutureProvider<List<League>>((ref) async {
       .select('*, league_memberships!inner(user_id)')
       .eq('league_memberships.user_id', user.id);
   final leagues = rows.map((e) => League.fromJson(e)).toList();
+  final favoriteIds = await _favoriteLeagueIds(user.id);
 
-  return Future.wait(
+  final hydrated = await Future.wait(
     leagues.map((league) async {
       final members = await supabase
           .from('league_memberships')
@@ -31,22 +32,42 @@ final myLeaguesProvider = FutureProvider<List<League>>((ref) async {
           break;
         }
       }
-      return league.copyWith(memberCount: members.length, myRank: myRank);
+      return league.copyWith(
+        memberCount: members.length,
+        myRank: myRank,
+        isFavorite: favoriteIds.contains(league.id),
+      );
     }),
   );
+  hydrated.sort(compareLeaguesForMyLeagues);
+  return hydrated;
 });
 
+int compareLeaguesForMyLeagues(League a, League b) {
+  if (a.isFavorite != b.isFavorite) return a.isFavorite ? -1 : 1;
+  return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+}
+
 final leagueProvider = FutureProvider.family<League, String>((ref, id) async {
+  final user = ref.watch(currentUserProvider);
   final row = await supabase.from('leagues').select().eq('id', id).single();
   final members = await supabase
       .from('league_memberships')
       .select('user_id')
       .eq('league_id', id);
-  return League.fromJson(row).copyWith(memberCount: members.length);
+  final favoriteIds = user == null
+      ? <String>{}
+      : await _favoriteLeagueIds(user.id);
+  return League.fromJson(
+    row,
+  ).copyWith(memberCount: members.length, isFavorite: favoriteIds.contains(id));
 });
 
 final seasonStandingsProvider =
-    FutureProvider.family<List<StandingRow>, String>((ref, leagueId) async {
+    FutureProvider.autoDispose.family<List<StandingRow>, String>((
+      ref,
+      leagueId,
+    ) async {
       final rows = await supabase.rpc(
         'league_season_standings',
         params: {'p_league_id': leagueId, 'p_season_id': Env.seasonId},
@@ -57,7 +78,7 @@ final seasonStandingsProvider =
     });
 
 final previousSeasonStandingsProvider =
-    FutureProvider.family<List<StandingRow>, PreviousStandingsKey>((
+    FutureProvider.autoDispose.family<List<StandingRow>, PreviousStandingsKey>((
       ref,
       key,
     ) async {
@@ -75,7 +96,7 @@ final previousSeasonStandingsProvider =
     });
 
 final weeklyStandingsProvider =
-    FutureProvider.family<List<StandingRow>, WeeklySummaryKey>((
+    FutureProvider.autoDispose.family<List<StandingRow>, WeeklySummaryKey>((
       ref,
       key,
     ) async {
@@ -93,7 +114,7 @@ final weeklyStandingsProvider =
     });
 
 final weeklyWeekendStandingsProvider =
-    FutureProvider.family<List<StandingRow>, WeeklySummaryKey>((
+    FutureProvider.autoDispose.family<List<StandingRow>, WeeklySummaryKey>((
       ref,
       key,
     ) async {
@@ -117,6 +138,7 @@ final weeklyWeekendStandingsProvider =
       ]);
 
       final scoresByUser = <String, ({String username, int score})>{};
+      final premiumByUser = <String, bool>{};
       for (final result in results) {
         for (final item in result as List) {
           final row = StandingRow.weekly(item as Map<String, dynamic>);
@@ -125,6 +147,8 @@ final weeklyWeekendStandingsProvider =
             username: row.username,
             score: (current?.score ?? 0) + row.score,
           );
+          premiumByUser[row.userId] =
+              premiumByUser[row.userId] == true || row.isPremium;
         }
       }
 
@@ -146,6 +170,7 @@ final weeklyWeekendStandingsProvider =
             username: entry.value.username,
             score: entry.value.score,
             rank: i + 1,
+            isPremium: premiumByUser[entry.key] ?? false,
           ),
         );
       }
@@ -283,17 +308,39 @@ Future<void> leaveLeague(String leagueId) async {
   await supabase.rpc('leave_league', params: {'p_league_id': leagueId});
 }
 
+Future<bool> setLeagueFavorite(String leagueId, bool favorite) async {
+  final res = await supabase.rpc(
+    'set_league_favorite',
+    params: {'p_league_id': leagueId, 'p_favorite': favorite},
+  );
+  return res == true;
+}
+
+Future<Set<String>> _favoriteLeagueIds(String userId) async {
+  try {
+    final rows = await supabase
+        .from('league_favorites')
+        .select('league_id')
+        .eq('user_id', userId);
+    return rows.map((e) => e['league_id'] as String).toSet();
+  } catch (_) {
+    return {};
+  }
+}
+
 class LeagueMember {
   final String userId;
   final String username;
   final String role;
   final DateTime joinedAt;
+  final bool isPremium;
 
   LeagueMember({
     required this.userId,
     required this.username,
     required this.role,
     required this.joinedAt,
+    this.isPremium = false,
   });
 
   factory LeagueMember.fromJson(Map<String, dynamic> j) => LeagueMember(
@@ -301,6 +348,7 @@ class LeagueMember {
     username: j['username'] as String,
     role: j['role'] as String,
     joinedAt: DateTime.parse(j['joined_at'] as String),
+    isPremium: (j['is_premium'] as bool?) ?? false,
   );
 }
 

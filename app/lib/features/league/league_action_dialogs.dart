@@ -428,6 +428,9 @@ String _humanizeError(BuildContext context, Object e) {
       raw.contains('invite_code') && raw.contains('null')) {
     return l.invalidInviteCode;
   }
+  if (raw.contains('FREE_LEAGUE_LIMIT_REACHED')) {
+    return l.freeLeagueLimitReached;
+  }
   if (raw.contains('Authentication required') ||
       raw.contains('JWT') ||
       raw.contains('not authenticated')) {

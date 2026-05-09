@@ -258,7 +258,7 @@ class ShareStandingLine extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Text(
-              'PTS',
+              AppLocalizations.of(context).pointsAbbreviation,
               style: TextStyle(
                 fontSize: compact ? 14 : 16,
                 fontWeight: FontWeight.w800,
