@@ -60,8 +60,7 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen>
     final league = leagueAsync.asData?.value;
     final standings = standingsAsync.asData?.value ?? <StandingRow>[];
     final l = AppLocalizations.of(context);
-    final isPremium =
-        ref.watch(currentUserPremiumProvider).asData?.value ?? false;
+    final isPremium = ref.watch(effectiveIsPremiumProvider);
 
     return Scaffold(
       backgroundColor: AppColors.carbon,
@@ -326,6 +325,7 @@ class _StandingsTabState extends ConsumerState<_StandingsTab> {
   @override
   Widget build(BuildContext context) {
     final myUserId = ref.watch(currentUserProvider)?.id;
+    final myIsPremium = ref.watch(effectiveIsPremiumProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -342,11 +342,13 @@ class _StandingsTabState extends ConsumerState<_StandingsTab> {
                   racesAsync: widget.racesAsync,
                   leagueId: widget.leagueId,
                   myUserId: myUserId,
+                  myIsPremium: myIsPremium,
                 )
               : _WeeklyStandings(
                   leagueId: widget.leagueId,
                   racesAsync: widget.racesAsync,
                   myUserId: myUserId,
+                  myIsPremium: myIsPremium,
                 ),
         ),
       ],
@@ -439,12 +441,14 @@ class _GeneralStandings extends StatelessWidget {
   final AsyncValue<List<StandingRow>> standingsAsync;
   final AsyncValue<List<Race>> racesAsync;
   final String? myUserId;
+  final bool myIsPremium;
 
   const _GeneralStandings({
     required this.leagueId,
     required this.standingsAsync,
     required this.racesAsync,
     required this.myUserId,
+    required this.myIsPremium,
   });
 
   @override
@@ -473,6 +477,7 @@ class _GeneralStandings extends StatelessWidget {
           return _StandingsList(
             rows: rows,
             myUserId: myUserId,
+            myIsPremium: myIsPremium,
             rankDeltas: _rankDeltas(rows, previousRows),
             emptyTitle: l.noPointsYet,
             emptyMessage: l.leagueShareEmpty,
@@ -487,11 +492,13 @@ class _WeeklyStandings extends ConsumerWidget {
   final String leagueId;
   final AsyncValue<List<Race>> racesAsync;
   final String? myUserId;
+  final bool myIsPremium;
 
   const _WeeklyStandings({
     required this.leagueId,
     required this.racesAsync,
     required this.myUserId,
+    required this.myIsPremium,
   });
 
   @override
@@ -525,6 +532,7 @@ class _WeeklyStandings extends ConsumerWidget {
           data: (rows) => _StandingsList(
             rows: rows,
             myUserId: myUserId,
+            myIsPremium: myIsPremium,
             emptyTitle: l.noPointsThisWeek,
             emptyMessage: l.weeklyScoresCalculated(weeklyRace.race.name),
           ),
@@ -606,6 +614,7 @@ Map<String, int> _rankDeltas(
 class _StandingsList extends StatelessWidget {
   final List<StandingRow> rows;
   final String? myUserId;
+  final bool myIsPremium;
   final Map<String, int> rankDeltas;
   final String emptyTitle;
   final String emptyMessage;
@@ -613,6 +622,7 @@ class _StandingsList extends StatelessWidget {
   const _StandingsList({
     required this.rows,
     required this.myUserId,
+    required this.myIsPremium,
     this.rankDeltas = const {},
     required this.emptyTitle,
     required this.emptyMessage,
@@ -633,6 +643,8 @@ class _StandingsList extends StatelessWidget {
           _StandingRow(
             row: row,
             isMe: row.userId == myUserId,
+            isPremium:
+                row.userId == myUserId ? myIsPremium || row.isPremium : row.isPremium,
             rankDelta: rankDeltas[row.userId] ?? 0,
           ),
       ],
@@ -791,6 +803,12 @@ class _RacesTab extends StatelessWidget {
         final pinnedRaceIds = buildPreviousAndNextRaces(
           races,
         ).map((race) => race.id).toSet();
+        // Sadece bir sonraki yarış "tahminlere açık" görünsün; diğer ileri
+        // tarihliler kilitli olarak listelenir ve "Tahmin yap" butonu
+        // gizlenir.
+        final firstUpcomingId = buildPreviousAndNextRaces(
+          races,
+        ).where((race) => !countsAsPreviousRace(race)).map((r) => r.id).firstOrNull;
         return DraggableScrollableSheet(
           expand: false,
           initialChildSize: 0.88,
@@ -842,6 +860,7 @@ class _RacesTab extends StatelessWidget {
                       final savedPredictionCount =
                           (mainSaved ? 1 : 0) + (sprintSaved ? 1 : 0);
                       final totalPredictionCount = race.hasSprint ? 2 : 1;
+                      final isFirstUpcoming = race.id == firstUpcomingId;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: RaceCardNew(
@@ -852,6 +871,7 @@ class _RacesTab extends StatelessWidget {
                           keepStartLightsVisible: pinnedRaceIds.contains(
                             race.id,
                           ),
+                          forceLocked: !isFirstUpcoming,
                           actionLabel: AppLocalizations.of(
                             context,
                           ).makePrediction,
@@ -886,7 +906,7 @@ class _RaceScopeLabel extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: Text(
-        turkishUpper(label),
+        turkishUpper(label, context: context),
         style: const TextStyle(
           color: Color(0x99FFFFFF),
           fontSize: 11,
@@ -1036,11 +1056,13 @@ class _InviteCodeCardState extends State<_InviteCodeCard> {
 class _StandingRow extends StatelessWidget {
   final StandingRow row;
   final bool isMe;
+  final bool isPremium;
   final int rankDelta;
 
   const _StandingRow({
     required this.row,
     required this.isMe,
+    required this.isPremium,
     required this.rankDelta,
   });
 
@@ -1101,10 +1123,10 @@ class _StandingRow extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w900,
-                        color: row.isPremium
+                        color: isPremium
                             ? const Color(0xFFFFD166)
                             : Colors.white,
-                        shadows: row.isPremium
+                        shadows: isPremium
                             ? const [
                                 Shadow(
                                   color: Color(0xFF3A2A08),

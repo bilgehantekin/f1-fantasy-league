@@ -66,6 +66,15 @@ class LeagueSettingsScreen extends ConsumerWidget {
                         icon: const Icon(Icons.refresh),
                         label: Text(l.refreshInviteCode),
                       ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: () => _delete(context, ref),
+                        icon: const Icon(Icons.delete_outline),
+                        label: Text(l.deleteLeague),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.liveRed,
+                        ),
+                      ),
                     ] else
                       OutlinedButton.icon(
                         onPressed: () => _leave(context, ref),
@@ -88,19 +97,35 @@ class LeagueSettingsScreen extends ConsumerWidget {
                   onRetry: () =>
                       ref.invalidate(leagueMembersProvider(leagueId)),
                 ),
-                data: (members) => Column(
-                  children: [
-                    for (final member in members)
-                      _MemberTile(
-                        member: member,
-                        isOwner: isOwner,
-                        isSelf: member.userId == currentUserId,
-                        onRemove: () => _removeMember(context, ref, member),
-                        onTransfer: () =>
-                            _transferOwnership(context, ref, member),
-                      ),
-                  ],
-                ),
+                data: (members) {
+                  // Sort: owner first, current user second (if not owner),
+                  // others after.
+                  final sorted = [...members]..sort((a, b) {
+                    int weight(LeagueMember m) {
+                      if (m.role == 'owner') return 0;
+                      if (m.userId == currentUserId) return 1;
+                      return 2;
+                    }
+                    final w = weight(a).compareTo(weight(b));
+                    if (w != 0) return w;
+                    return a.username
+                        .toLowerCase()
+                        .compareTo(b.username.toLowerCase());
+                  });
+                  return Column(
+                    children: [
+                      for (final member in sorted)
+                        _MemberTile(
+                          member: member,
+                          isOwner: isOwner,
+                          isSelf: member.userId == currentUserId,
+                          onRemove: () => _removeMember(context, ref, member),
+                          onTransfer: () =>
+                              _transferOwnership(context, ref, member),
+                        ),
+                    ],
+                  );
+                },
               ),
             ],
           );
@@ -168,6 +193,26 @@ class LeagueSettingsScreen extends ConsumerWidget {
     ref.invalidate(seasonStandingsProvider(leagueId));
     ref.invalidate(leagueMembersProvider(leagueId));
     if (context.mounted) context.go('/calendar');
+  }
+
+  Future<void> _delete(BuildContext context, WidgetRef ref) async {
+    final ok = await _confirm(
+      context,
+      AppLocalizations.of(context).deleteLeagueQuestion,
+      AppLocalizations.of(context).deleteLeagueBody,
+    );
+    if (!ok) return;
+    try {
+      await deleteLeague(leagueId);
+      ref.invalidate(myLeaguesProvider);
+      ref.invalidate(leagueMembersProvider(leagueId));
+      if (context.mounted) context.go('/calendar');
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
+    }
   }
 
   Future<void> _removeMember(
@@ -272,12 +317,32 @@ class _MemberTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  member.username,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                  ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        member.username,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    if (isSelf) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        AppLocalizations.of(context).you,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.9,
+                          color: AppColors.f1Red,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(

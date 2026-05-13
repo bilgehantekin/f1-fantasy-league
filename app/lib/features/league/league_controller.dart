@@ -308,6 +308,10 @@ Future<void> leaveLeague(String leagueId) async {
   await supabase.rpc('leave_league', params: {'p_league_id': leagueId});
 }
 
+Future<void> deleteLeague(String leagueId) async {
+  await supabase.from('leagues').delete().eq('id', leagueId);
+}
+
 Future<bool> setLeagueFavorite(String leagueId, bool favorite) async {
   final res = await supabase.rpc(
     'set_league_favorite',

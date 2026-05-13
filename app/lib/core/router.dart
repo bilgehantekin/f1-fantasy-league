@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -39,6 +39,9 @@ final routerProvider = Provider<GoRouter>((ref) {
     navigatorKey: appNavigatorKey,
     refreshListenable: refresh,
     initialLocation: '/calendar',
+    errorBuilder: (context, state) => const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
+    ),
     redirect: (context, state) {
       return resolveAuthRedirect(
         loggedIn: supabase.auth.currentUser != null,
@@ -49,6 +52,16 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/auth', builder: (_, _) => const AuthScreen()),
+      // OAuth callback URL'i — Supabase SDK code exchange'i arka planda
+      // yapar; bu route sadece deep link'in go_router'a düşüp exception
+      // fırlatmasını engellemek için var. Auth tamamlanınca redirect
+      // mantığı kullanıcıyı /calendar'a yönlendirir.
+      GoRoute(
+        path: '/auth-callback',
+        builder: (_, _) => const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+      ),
       GoRoute(path: '/onboarding', builder: (_, _) => const OnboardingScreen()),
       GoRoute(path: '/calendar', builder: (_, _) => const CalendarScreen()),
       GoRoute(

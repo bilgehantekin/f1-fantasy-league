@@ -378,6 +378,12 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Webhooks from third parties (RevenueCat) sign requests with their own
+# bearer secret, not a Supabase JWT. Disable JWT verification at the gateway
+# so the request reaches the function, which performs its own auth check.
+[functions.revenuecat-webhook]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

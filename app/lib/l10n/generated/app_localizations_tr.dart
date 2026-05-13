@@ -332,7 +332,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get favorites => 'Favoriler';
 
   @override
-  String get detailedLeagueStats => 'Detaylı lig istatistikleri';
+  String get detailedLeagueStats => 'Detaylı Lig İstatistikleri';
 
   @override
   String get lockedPremiumStats =>
@@ -351,20 +351,57 @@ class AppLocalizationsTr extends AppLocalizations {
   String get monthlyPlanBody => 'Esnek aylık erişim.';
 
   @override
-  String get annualPlanBody => 'En avantajlı seçenek, yaklaşık \$2.50/ay.';
+  String get annualPlanBody => 'En avantajlı plan.';
 
   @override
-  String get paywallHeroTitle => 'GridCall sezonunu yükselt';
+  String pricePerMonthShort(String price) {
+    return '~$price/ay';
+  }
+
+  @override
+  String get manageSubscription => 'Aboneliği yönet';
+
+  @override
+  String get paywallHeroTitle => 'Tahmin liglerini bir üst seviyeye taşı';
 
   @override
   String get paywallHeroBody =>
-      'Premium; daha fazla lig alanı, detaylı lig istatistikleri, favoriler ve sade bir üye rozeti ekler. Temel tahminler herkes için adil kalır.';
+      'Daha fazla ligde yarış, detaylı lig istatistiklerini aç ve Premium rozetinle sıralamalarda öne çık.';
 
   @override
-  String get paywallBenefitsTitle => 'Neler dahil';
+  String get paywallBenefitsTitle => 'Neler kazanırsın';
 
   @override
   String get paywallChoosePlan => 'Planını seç';
+
+  @override
+  String get paywallBrandPremium => 'PREMIUM';
+
+  @override
+  String get paywallPerYear => '/ yıl';
+
+  @override
+  String get paywallPerMonth => '/ ay';
+
+  @override
+  String get paywallMonthlyCancelAnytime => 'İstediğin zaman iptal et';
+
+  @override
+  String paywallPerMonthLong(String price) {
+    return 'Yaklaşık $price / ay';
+  }
+
+  @override
+  String paywallStartMembership(String plan) {
+    return '$plan üyeliği başlat';
+  }
+
+  @override
+  String get paywallBestValueShort => 'EN AVANTAJLI';
+
+  @override
+  String get paywallFooterDisclaimer =>
+      'Ödeme App Store hesabından alınır. Abonelik, iptal edilmedikçe otomatik yenilenir. Satın alma işlemini App Store hesap ayarlarından yönetebilirsin.';
 
   @override
   String get paywallFeatureLeagueLimit => '10 aktif lige kadar katıl';
@@ -395,7 +432,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Profilinde ve lig sıralamalarında sade bir premium kimliği göster.';
 
   @override
-  String get saveWithAnnual => 'yaklaşık \$2.50/ay';
+  String get saveWithAnnual => 'İndirim';
 
   @override
   String get premiumUnavailableTitle => 'Premium şu anda kullanılamıyor';
@@ -405,12 +442,10 @@ class AppLocalizationsTr extends AppLocalizations {
       'Mağaza ürünleri henüz yapılandırılmamış. Ücretsiz GridCall özellikleri çalışmaya devam eder.';
 
   @override
-  String get purchaseCompleted =>
-      'Satın alma tamamlandı. Premium, entitlement doğrulandıktan sonra açılır.';
+  String get purchaseCompleted => 'Satın alma tamamlandı. Premium aktif.';
 
   @override
-  String get restoreCompleted =>
-      'Satın alımlar geri yüklendi. Premium, entitlement doğrulandıktan sonra açılır.';
+  String get restoreCompleted => 'Satın alımlar geri yüklendi. Premium aktif.';
 
   @override
   String get purchaseFailed =>
@@ -433,7 +468,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String statsWeekendProgress(int members, int completed, int total) {
-    return '$members üye · $completed/$total hafta sonu tamamlandı';
+    return '$members üye · $completed/$total hafta tamamlandı';
   }
 
   @override
@@ -443,7 +478,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get statsYourRankLabel => 'SIRALAMAN';
 
   @override
-  String get statsSeasonSummary => 'Sezon özeti';
+  String get statsSeasonSummary => 'SEZON ÖZETİ';
 
   @override
   String get statsTotalShort => 'Toplam';
@@ -455,19 +490,19 @@ class AppLocalizationsTr extends AppLocalizations {
   String get statsPointsUnit => 'puan';
 
   @override
-  String get statsPerformanceTrend => 'Performans trendi';
+  String get statsPerformanceTrend => 'PERFORMANS TRENDİ';
 
   @override
-  String get statsLeagueAverageShort => 'Lig avg';
+  String get statsLeagueAverageShort => 'Lig Ort';
 
   @override
-  String get statsRecentWeekends => 'Son hafta sonları';
+  String get statsRecentWeekends => 'SON HAFTALAR';
 
   @override
-  String get statsBestWorst => 'En iyi & en kötü';
+  String get statsBestWorst => 'EN İYİ & EN KÖTÜ';
 
   @override
-  String get statsLeaguePosition => 'Lige göre konumun';
+  String get statsLeaguePosition => 'LİGE GÖRE KONUMUN';
 
   @override
   String get statsNotEnoughDataTitle => 'Henüz yeterli skor verisi yok';
@@ -483,7 +518,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get statsWorstShort => 'En kötü';
 
   @override
-  String get statsYouMarker => 'SEN ▼';
+  String get statsYouMarker => 'SEN';
 
   @override
   String statsPoints(String value) {
@@ -506,7 +541,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String statsLeagueAvgAndPosition(int average, int position) {
-    return 'Lig avg: $average · P$position';
+    return 'Lig Ort: $average · P$position';
   }
 
   @override
@@ -786,7 +821,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get refreshInviteCode => 'DAVET KODUNU YENİLE';
 
   @override
-  String get leaveLeague => 'LİGTEN AYRIL';
+  String get leaveLeague => 'LİGDEN AYRIL';
 
   @override
   String get members => 'ÜYELER';
@@ -858,6 +893,16 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get leaveLeagueBody =>
       'Tekrar katılmak için yeni bir davet koduna ihtiyacın olacak.';
+
+  @override
+  String get deleteLeague => 'LİGİ SİL';
+
+  @override
+  String get deleteLeagueQuestion => 'Ligi silmek istediğine emin misin?';
+
+  @override
+  String get deleteLeagueBody =>
+      'Lig, tüm üyelikler ve tahminler kalıcı olarak silinecek. Bu işlem geri alınamaz.';
 
   @override
   String removeMemberQuestion(String username) {
@@ -999,6 +1044,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get polePositionHint => 'Pole pozisyonunu kim alır?';
+
+  @override
+  String get selectDriver => 'Sürücü seç';
 
   @override
   String get dnfCount => 'DNF SAYISI';
@@ -1314,23 +1362,17 @@ class AppLocalizationsTr extends AppLocalizations {
   String get signOut => 'Çıkış yap';
 
   @override
-  String get requestAccountDeletion => 'Hesap silme talebi oluştur';
+  String get requestAccountDeletion => 'Hesabımı sil';
 
   @override
-  String get deleteYourAccount => 'Hesabını sil';
+  String get deleteYourAccount => 'Hesabını silmek istediğine emin misin?';
 
   @override
   String get accountDeletionBody =>
-      'Hesabın, tüm tahminlerin, lig üyeliklerin, rozetlerin ve profil bilgilerin bu talebi oluşturduktan sonra 30 gün içinde kalıcı olarak silinecek. Bu süre içinde fikrini değiştirirsen bilgehan.2002@gmail.com adresine e-posta göndererek iptal talep edebilirsin.\n\nTalep oluşturulduktan sonra oturumun kapatılacak ve hesabın diğer kullanıcılara görünmeyecek.';
+      'Hesabın ve tüm verilerin (tahminler, lig üyelikleri, rozetler, profil) 30 gün içinde kalıcı olarak silinecek. Bu işlem geri alınamaz.\n\nOnaylar onaylamaz oturumun kapatılacak ve hesabın diğer kullanıcılara görünmez olacak.';
 
   @override
-  String get noteOptional => 'Not (isteğe bağlı)';
-
-  @override
-  String get deletionReasonHint => 'Silme sebebini yazabilirsin';
-
-  @override
-  String get createRequest => 'Talep oluştur';
+  String get createRequest => 'Hesabımı sil';
 
   @override
   String accountDeletionScheduled(String date) {
@@ -1447,6 +1489,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get badgeThreeInRow => 'Üçü Bir Arada';
 
   @override
+  String get badgeJokerMaster => 'Joker Üstadı';
+
+  @override
+  String get badgeFastestCaller => 'Hız Şeytanı';
+
+  @override
   String get newLeague => 'YENİ LİG';
 
   @override
@@ -1519,6 +1567,9 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get timeLeftUntilPredictionsClose =>
       'Tahminlerin kapanmasına kalan süre';
+
+  @override
+  String get predictionsNotYetOpen => 'Tahminlere henüz açılmadı';
 
   @override
   String get mainPodiumPointsInfo => 'isim +5 / sıra +2 / tam isabet +3';
@@ -1719,16 +1770,16 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get qualifyingScheduleLabel => 'QUALIFYING';
+  String get qualifyingScheduleLabel => 'SIRALAMA';
 
   @override
-  String get sprintQualifyingScheduleLabel => 'SPRINT QUALIFYING';
+  String get sprintQualifyingScheduleLabel => 'SPRINT SIRALAMA';
 
   @override
-  String get raceScheduleLabel => 'RACE';
+  String get raceScheduleLabel => 'YARIŞ';
 
   @override
-  String get sprintRaceScheduleLabel => 'SPRINT RACE';
+  String get sprintRaceScheduleLabel => 'SPRINT YARIŞ';
 
   @override
   String startLightTooltip(Object label, Object description) {

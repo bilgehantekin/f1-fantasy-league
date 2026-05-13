@@ -157,7 +157,7 @@ class _LeagueActionsPanel extends ConsumerWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _HomePrimaryActionCard(
-                  title: l.join,
+                  title: l.joinLeague,
                   subtitle: l.joinWithInviteCode,
                   buttonLabel: l.enterCode,
                   icon: Icons.qr_code_scanner_rounded,
@@ -687,6 +687,11 @@ class _RacesSection extends StatelessWidget {
         final pinnedRaceIds = buildPreviousAndNextRaces(
           races,
         ).map((race) => race.id).toSet();
+        // İleri tarihli yarışların hepsinin "Tahminlere açık" gibi durmaması
+        // için sadece bir sonraki (next) yarışın id'sini açık bırakıyoruz.
+        final firstUpcomingId = buildPreviousAndNextRaces(
+          races,
+        ).where((race) => !countsAsPreviousRace(race)).map((r) => r.id).firstOrNull;
         return DraggableScrollableSheet(
           expand: false,
           initialChildSize: 0.88,
@@ -708,7 +713,7 @@ class _RacesSection extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(16, 18, 8, 12),
                   child: Row(
                     children: [
-                      Expanded(child: _SectionHeader(title: l.allRaces)),
+                      Expanded(child: _SectionHeader(title: l.allRacesUpper)),
                       IconButton(
                         icon: const Icon(Icons.close, size: 20),
                         onPressed: () => Navigator.of(sheetContext).pop(),
@@ -723,6 +728,9 @@ class _RacesSection extends StatelessWidget {
                     itemCount: sorted.length,
                     itemBuilder: (context, index) {
                       final race = sorted[index];
+                      // Sadece yaklaşan ilk yarış "tahminlere açık" görünür;
+                      // diğer ileri tarihli yarışlar kilitli olarak listelenir.
+                      final isFirstUpcoming = race.id == firstUpcomingId;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: RaceCardNew(
@@ -731,6 +739,7 @@ class _RacesSection extends StatelessWidget {
                           keepStartLightsVisible: pinnedRaceIds.contains(
                             race.id,
                           ),
+                          forceLocked: !isFirstUpcoming,
                           onTap: () => _openCalendarRace(pageContext, race),
                         ),
                       );
@@ -756,7 +765,7 @@ class _RaceScopeLabel extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: Text(
-        turkishUpper(label),
+        turkishUpper(label, context: context),
         style: const TextStyle(
           color: Color(0x99FFFFFF),
           fontSize: 11,

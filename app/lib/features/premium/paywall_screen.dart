@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../core/legal_links.dart';
 import '../../core/navigation.dart';
-import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../shared/widgets/app_state.dart';
+import '../league/league_controller.dart';
+import '../profile/profile_controller.dart';
 import 'premium_service.dart' as premium;
+import 'premium_theme.dart';
 
 class PaywallScreen extends ConsumerStatefulWidget {
   const PaywallScreen({super.key});
@@ -23,27 +26,27 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final enabled = ref.watch(premium.isPremiumEnabledProvider);
-    final products = ref.watch(premium.premiumProductsProvider);
+    final offering = ref.watch(premium.premiumOfferingProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.carbon,
+      backgroundColor: PremiumColors.carbon,
       body: !enabled
           ? AppEmptyState(
               icon: Icons.lock_outline,
               title: l.premiumUnavailableTitle,
               message: l.premiumUnavailableBody,
             )
-          : products.when(
+          : offering.when(
               loading: () => AppLoadingState(label: l.settingsLoading),
               error: (e, _) => AppErrorState(message: l.premiumUnavailableBody),
               data: (data) => _Body(
-                products: data,
+                offering: data,
                 busy: _busy,
-                onPurchase: (product) async {
+                onPurchase: (package) async {
                   setState(() => _busy = true);
                   final result = await ref
                       .read(premium.premiumServiceProvider)
-                      .purchase(product);
+                      .purchasePackage(package);
                   if (mounted) setState(() => _busy = false);
                   _showResult(result, successMessage: l.purchaseCompleted);
                 },
@@ -66,131 +69,163 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   }) {
     if (!mounted || result.canceled) return;
     final l = AppLocalizations.of(context);
-    ref.invalidate(premium.currentUserPremiumProvider);
+    if (result.purchased) {
+      ref.invalidate(premium.currentUserPremiumProvider);
+      ref.invalidate(profileProvider);
+      ref.invalidate(myLeaguesProvider);
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(result.purchased ? successMessage : l.purchaseFailed),
       ),
     );
+    if (result.purchased) safeBack(context);
   }
 }
 
-class _Body extends StatelessWidget {
-  final premium.PremiumProducts products;
+class _Body extends StatefulWidget {
+  final premium.PremiumOffering offering;
   final bool busy;
-  final ValueChanged<StoreProduct> onPurchase;
+  final ValueChanged<Package> onPurchase;
   final VoidCallback onRestore;
 
   const _Body({
-    required this.products,
+    required this.offering,
     required this.busy,
     required this.onPurchase,
     required this.onRestore,
   });
 
   @override
+  State<_Body> createState() => _BodyState();
+}
+
+class _BodyState extends State<_Body> {
+  Package? _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.offering.annual ?? widget.offering.monthly;
+  }
+
+  @override
+  void didUpdateWidget(covariant _Body old) {
+    super.didUpdateWidget(old);
+    _selected ??= widget.offering.annual ?? widget.offering.monthly;
+  }
+
+  bool get _selectedIsAnnual =>
+      _selected != null && _selected == widget.offering.annual;
+
+  @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    return ListView(
-      padding: EdgeInsets.zero,
-      children: [
-        _PaywallHero(onRestore: busy ? null : onRestore),
-        const SizedBox(height: 8),
-        _SectionTitle(label: l.paywallBenefitsTitle),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceLow,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.surfaceHi),
+    final available = widget.offering.available;
+    return SafeArea(
+      bottom: false,
+      child: Column(
+        children: [
+          _Hero(
+            onClose: () => safeBack(context),
+            onRestore: widget.busy ? null : widget.onRestore,
           ),
-          child: Column(
-            children: [
-              _Feature(
-                label: l.paywallFeatureLeagueLimit,
-                description: l.paywallFeatureLeagueLimitBody,
-                icon: Icons.groups_2_outlined,
-              ),
-              const Divider(height: 1, color: AppColors.surfaceHi),
-              _Feature(
-                label: l.paywallFeatureDetailedStats,
-                description: l.paywallFeatureDetailedStatsBody,
-                icon: Icons.query_stats,
-              ),
-              const Divider(height: 1, color: AppColors.surfaceHi),
-              _Feature(
-                label: l.paywallFeatureFavorites,
-                description: l.paywallFeatureFavoritesBody,
-                icon: Icons.star_border,
-              ),
-              const Divider(height: 1, color: AppColors.surfaceHi),
-              _Feature(
-                label: l.paywallFeatureBadge,
-                description: l.paywallFeatureBadgeBody,
-                icon: Icons.workspace_premium,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        _SectionTitle(label: l.paywallChoosePlan),
-        if (!products.available) ...[
+          const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: AppEmptyState(
-              icon: Icons.storefront_outlined,
-              title: l.premiumUnavailableTitle,
-              message: l.premiumUnavailableBody,
-            ),
+            child: _FeaturesCard(),
           ),
+          const Spacer(),
           const SizedBox(height: 12),
-        ] else
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              children: [
-                _PlanButton(
-                  label: l.annualPlan,
-                  price: products.annual!.priceString,
-                  badge: l.saveWithAnnual,
-                  busy: busy,
-                  onPressed: () => onPurchase(products.annual!),
-                ),
-                const SizedBox(height: 10),
-                _PlanButton(
-                  label: l.monthlyPlan,
-                  price: products.monthly!.priceString,
-                  busy: busy,
-                  onPressed: () => onPurchase(products.monthly!),
-                ),
-              ],
-            ),
+            child: _SectionTitle(label: l.paywallChoosePlan),
           ),
-        const SizedBox(height: 16),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 12,
-          children: [
-            TextButton(
-              onPressed: () async => openExternalLink(LegalLinks.terms),
-              child: Text(l.terms),
+          if (!available)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: AppEmptyState(
+                icon: Icons.storefront_outlined,
+                title: l.premiumUnavailableTitle,
+                message: l.premiumUnavailableBody,
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  if (widget.offering.annual != null) ...[
+                    _PlanCard(
+                      title: l.annualPlan,
+                      sub: _annualMonthlyEquivalent(
+                        context,
+                        widget.offering.annual!.storeProduct,
+                      ),
+                      price: widget.offering.annual!.storeProduct.priceString,
+                      unit: l.paywallPerYear,
+                      badge: l.paywallBestValueShort,
+                      selected: _selected == widget.offering.annual,
+                      onTap: () => setState(
+                        () => _selected = widget.offering.annual,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (widget.offering.monthly != null)
+                    _PlanCard(
+                      title: l.monthlyPlan,
+                      sub: l.paywallMonthlyCancelAnytime,
+                      price: widget.offering.monthly!.storeProduct.priceString,
+                      unit: l.paywallPerMonth,
+                      selected: _selected == widget.offering.monthly,
+                      onTap: () => setState(
+                        () => _selected = widget.offering.monthly,
+                      ),
+                    ),
+                ],
+              ),
             ),
-            TextButton(
-              onPressed: () async => openExternalLink(LegalLinks.privacy),
-              child: Text(l.privacy),
+          const SizedBox(height: 12),
+          _CtaButton(
+            label: l.paywallStartMembership(
+              _selectedIsAnnual ? l.annualPlan : l.monthlyPlan,
             ),
-          ],
-        ),
-        const SizedBox(height: 24),
-      ],
+            enabled: available && _selected != null && !widget.busy,
+            busy: widget.busy,
+            onTap: () {
+              final pkg = _selected;
+              if (pkg != null) widget.onPurchase(pkg);
+            },
+          ),
+          const SizedBox(height: 8),
+          _Footer(),
+          SizedBox(height: 6 + MediaQuery.paddingOf(context).bottom),
+        ],
+      ),
     );
   }
 }
 
-class _PaywallHero extends StatelessWidget {
+String _annualMonthlyEquivalent(BuildContext context, StoreProduct product) {
+  final l = AppLocalizations.of(context);
+  final perMonth = product.price / 12.0;
+  final locale = Localizations.localeOf(context);
+  final formatLocale = locale.languageCode == 'tr' ? 'tr_TR' : 'en_US';
+  final formatter = NumberFormat.simpleCurrency(
+    locale: formatLocale,
+    name: product.currencyCode,
+  );
+  return l.paywallPerMonthLong(formatter.format(perMonth));
+}
+
+// ─── Hero ─────────────────────────────────────────────────────
+
+class _Hero extends StatelessWidget {
+  final VoidCallback onClose;
   final VoidCallback? onRestore;
 
-  const _PaywallHero({required this.onRestore});
+  const _Hero({required this.onClose, required this.onRestore});
 
   @override
   Widget build(BuildContext context) {
@@ -198,112 +233,106 @@ class _PaywallHero extends StatelessWidget {
     return Container(
       padding: EdgeInsets.only(
         top: MediaQuery.paddingOf(context).top,
-        bottom: 24,
+        bottom: 12,
       ),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: RadialGradient(
           center: Alignment.topCenter,
           radius: 1.2,
-          colors: [
-            const Color(0xFFFFD166).withValues(alpha: 0.2),
-            AppColors.f1Red.withValues(alpha: 0.08),
-            AppColors.carbon,
-          ],
-          stops: const [0, 0.42, 1],
+          colors: [Color(0x1AC9A24A), PremiumColors.carbon],
+          stops: [0.0, 0.7],
         ),
       ),
       child: Column(
         children: [
           SizedBox(
-            height: 56,
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  tooltip: l.cancel,
-                  onPressed: () => safeBack(context),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: onRestore,
-                  child: Text(l.restorePurchases),
-                ),
-                const SizedBox(width: 8),
-              ],
+            height: 48,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.close,
+                      color: Color(0xB3FFFFFF),
+                      size: 22,
+                    ),
+                    onPressed: onClose,
+                  ),
+                  TextButton(
+                    onPressed: onRestore,
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      side: const BorderSide(color: Color(0x26FFFFFF)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      minimumSize: const Size(0, 32),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      l.restorePurchases.toUpperCase(),
+                      style: const TextStyle(
+                        fontFamily: 'TitilliumWeb',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.4,
+                        color: Color(0xB3FFFFFF),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           Container(
-            width: 72,
-            height: 72,
+            width: 56,
+            height: 56,
+            margin: const EdgeInsets.only(top: 4, bottom: 12),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFFFE08A),
-                  Color(0xFFFFD166),
-                  Color(0xFFF2A900),
-                ],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFFFD166).withValues(alpha: 0.35),
-                  blurRadius: 28,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+              color: PremiumColors.goldFill(0.12),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: PremiumColors.goldBorder(0.33)),
             ),
             child: const Icon(
               Icons.workspace_premium,
-              color: Color(0xFF1A1208),
-              size: 38,
+              size: 30,
+              color: PremiumColors.gold,
             ),
           ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(999),
-              color: const Color(0xFFFFD166).withValues(alpha: 0.08),
-              border: Border.all(
-                color: const Color(0xFFFFD166).withValues(alpha: 0.34),
-              ),
+          Text.rich(
+            TextSpan(
+              children: [
+                const TextSpan(text: 'GRIDCALL '),
+                TextSpan(
+                  text: l.paywallBrandPremium,
+                  style: const TextStyle(color: PremiumColors.gold),
+                ),
+              ],
             ),
-            child: Text(
-              l.premiumMember.toUpperCase(),
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.3,
-                color: Color(0xFFFFD166),
-              ),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontFamily: 'TitilliumWeb',
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+              height: 1.05,
+              letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 6),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Text(
               l.paywallHeroTitle,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.w900,
-                height: 1.05,
-                letterSpacing: -0.4,
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 30),
-            child: Text(
-              l.paywallHeroBody,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                height: 1.42,
-                color: Colors.white.withValues(alpha: 0.64),
+                fontFamily: 'TitilliumWeb',
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Color(0xCCFFFFFF),
+                height: 1.25,
               ),
             ),
           ),
@@ -313,219 +342,471 @@ class _PaywallHero extends StatelessWidget {
   }
 }
 
+// ─── Section title ────────────────────────────────────────────
+
 class _SectionTitle extends StatelessWidget {
   final String label;
-
   const _SectionTitle({required this.label});
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-    child: Row(
-      children: [
-        Container(
-          width: 4,
-          height: 16,
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFD166),
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          label.toUpperCase(),
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.5,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _Feature extends StatelessWidget {
-  final String label;
-  final String description;
-  final IconData icon;
-
-  const _Feature({
-    required this.label,
-    required this.description,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.all(14),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFD166).withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(9),
-            border: Border.all(
-              color: const Color(0xFFFFD166).withValues(alpha: 0.22),
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 14,
+            decoration: BoxDecoration(
+              color: PremiumColors.gold,
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
-          child: Icon(icon, color: const Color(0xFFFFD166), size: 19),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
+          const SizedBox(width: 8),
+          Text(
+            label.toUpperCase(),
+            style: const TextStyle(
+              fontFamily: 'TitilliumWeb',
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Features ─────────────────────────────────────────────────
+
+class _FeaturesCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final features = <_FeatureData>[
+      _FeatureData(
+        icon: Icons.groups_outlined,
+        title: l.paywallFeatureLeagueLimit,
+        subtitle: l.paywallFeatureLeagueLimitBody,
+      ),
+      _FeatureData(
+        icon: Icons.show_chart,
+        title: l.paywallFeatureDetailedStats,
+        subtitle: l.paywallFeatureDetailedStatsBody,
+      ),
+      _FeatureData(
+        icon: Icons.star_outline,
+        title: l.paywallFeatureFavorites,
+        subtitle: l.paywallFeatureFavoritesBody,
+      ),
+      _FeatureData(
+        icon: Icons.shield_outlined,
+        title: l.paywallFeatureBadge,
+        subtitle: l.paywallFeatureBadgeBody,
+      ),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _SectionTitle(label: l.paywallBenefitsTitle),
+        Container(
+          decoration: BoxDecoration(
+            color: PremiumColors.surfaceLow,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: PremiumColors.surfaceHi),
+          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                description,
-                style: TextStyle(
-                  fontSize: 12,
-                  height: 1.35,
-                  color: Colors.white.withValues(alpha: 0.58),
-                ),
-              ),
+              for (var i = 0; i < features.length; i++) ...[
+                _FeatureRow(data: features[i]),
+                if (i < features.length - 1)
+                  const Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: PremiumColors.surfaceHi,
+                  ),
+              ],
             ],
           ),
         ),
       ],
-    ),
-  );
+    );
+  }
 }
 
-class _PlanButton extends StatelessWidget {
-  final String label;
-  final String price;
-  final String? badge;
-  final bool busy;
-  final VoidCallback onPressed;
-
-  const _PlanButton({
-    required this.label,
-    required this.price,
-    this.badge,
-    required this.busy,
-    required this.onPressed,
+class _FeatureData {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  _FeatureData({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
   });
+}
+
+class _FeatureRow extends StatelessWidget {
+  final _FeatureData data;
+  const _FeatureRow({required this.data});
 
   @override
   Widget build(BuildContext context) {
-    final selected = badge != null;
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: busy ? null : onPressed,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.all(1.2),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            gradient: selected
-                ? const LinearGradient(
-                    colors: [
-                      Color(0xFFFFD166),
-                      Color(0xFFF2A900),
-                      AppColors.f1Red,
-                    ],
-                  )
-                : null,
-            color: selected ? null : AppColors.surfaceHi,
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(14),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 30,
+            height: 30,
             decoration: BoxDecoration(
-              color: selected ? const Color(0xFF1B1610) : AppColors.surfaceLow,
-              borderRadius: BorderRadius.circular(13),
+              color: PremiumColors.goldFill(0.10),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: PremiumColors.goldBorder(0.20)),
             ),
-            child: Row(
+            child: Icon(data.icon, size: 16, color: PremiumColors.gold),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  selected
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
-                  color: selected
-                      ? const Color(0xFFFFD166)
-                      : Colors.white.withValues(alpha: 0.34),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            label,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          if (badge != null) ...[
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 7,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFD166),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  badge!,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFF1A1208),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        selected
-                            ? AppLocalizations.of(context).annualPlanBody
-                            : AppLocalizations.of(context).monthlyPlanBody,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.55),
-                        ),
-                      ),
-                    ],
+                Text(
+                  data.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontFamily: 'TitilliumWeb',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    height: 1.2,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(height: 2),
                 Text(
-                  price,
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: selected ? const Color(0xFFFFD166) : Colors.white,
+                  data.subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontFamily: 'TitilliumWeb',
+                    fontSize: 11,
+                    color: Color(0x94FFFFFF),
+                    height: 1.25,
                   ),
                 ),
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Plan card ────────────────────────────────────────────────
+
+class _PlanCard extends StatelessWidget {
+  final bool selected;
+  final VoidCallback onTap;
+  final String title;
+  final String price;
+  final String unit;
+  final String sub;
+  final String? badge;
+
+  const _PlanCard({
+    required this.selected,
+    required this.onTap,
+    required this.title,
+    required this.price,
+    required this.unit,
+    required this.sub,
+    this.badge,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        decoration: BoxDecoration(
+          color: PremiumColors.surfaceLow,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? PremiumColors.gold : PremiumColors.surfaceHi,
+            width: selected ? 1.5 : 1,
+          ),
         ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        child: Row(
+          children: [
+            _Radio(selected: selected),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontFamily: 'TitilliumWeb',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
+                      ),
+                      if (badge != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: PremiumColors.goldFill(0.14),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: PremiumColors.goldBorder(0.33),
+                            ),
+                          ),
+                          child: Text(
+                            badge!,
+                            style: const TextStyle(
+                              fontFamily: 'TitilliumWeb',
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                              color: PremiumColors.gold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    sub,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'TitilliumWeb',
+                      fontSize: 11,
+                      color: Color(0x8CFFFFFF),
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  price,
+                  style: TextStyle(
+                    fontFamily: 'TitilliumWeb',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: selected ? PremiumColors.gold : Colors.white,
+                    height: 1,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  unit,
+                  style: const TextStyle(
+                    fontFamily: 'TitilliumWeb',
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0x80FFFFFF),
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Radio extends StatelessWidget {
+  final bool selected;
+  const _Radio({required this.selected});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 20,
+      height: 20,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: selected ? PremiumColors.goldFill(0.12) : Colors.transparent,
+        border: Border.all(
+          color: selected
+              ? PremiumColors.gold
+              : Colors.white.withValues(alpha: 0.25),
+          width: 2,
+        ),
+      ),
+      child: selected
+          ? Center(
+              child: Container(
+                width: 10,
+                height: 10,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: PremiumColors.gold,
+                ),
+              ),
+            )
+          : null,
+    );
+  }
+}
+
+// ─── CTA ──────────────────────────────────────────────────────
+
+class _CtaButton extends StatelessWidget {
+  final String label;
+  final bool enabled;
+  final bool busy;
+  final VoidCallback onTap;
+
+  const _CtaButton({
+    required this.label,
+    required this.enabled,
+    required this.busy,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: SizedBox(
+        height: 50,
+        child: ElevatedButton(
+          onPressed: enabled ? onTap : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: PremiumColors.gold,
+            foregroundColor: PremiumColors.goldOnText,
+            disabledBackgroundColor: PremiumColors.surfaceHi,
+            disabledForegroundColor: Colors.white.withValues(alpha: 0.5),
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: busy
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.4,
+                    color: PremiumColors.goldOnText,
+                  ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.workspace_premium,
+                      size: 16,
+                      color: enabled
+                          ? PremiumColors.goldOnText
+                          : Colors.white.withValues(alpha: 0.5),
+                    ),
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Text(
+                        label.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: 'TitilliumWeb',
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Footer ───────────────────────────────────────────────────
+
+class _Footer extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: [
+          Text(
+            l.paywallFooterDisclaimer,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontFamily: 'TitilliumWeb',
+              fontSize: 10.5,
+              color: Color(0x80FFFFFF),
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              GestureDetector(
+                onTap: () async => openExternalLink(LegalLinks.terms),
+                child: Text(
+                  l.terms,
+                  style: const TextStyle(
+                    fontFamily: 'TitilliumWeb',
+                    fontSize: 11,
+                    color: Color(0x8CFFFFFF),
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+              const Text(
+                ' · ',
+                style: TextStyle(fontSize: 11, color: Color(0x8CFFFFFF)),
+              ),
+              GestureDetector(
+                onTap: () async => openExternalLink(LegalLinks.privacy),
+                child: Text(
+                  l.privacy,
+                  style: const TextStyle(
+                    fontFamily: 'TitilliumWeb',
+                    fontSize: 11,
+                    color: Color(0x8CFFFFFF),
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

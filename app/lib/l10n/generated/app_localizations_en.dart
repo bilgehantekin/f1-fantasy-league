@@ -333,7 +333,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get favorites => 'Favorites';
 
   @override
-  String get detailedLeagueStats => 'Detailed league stats';
+  String get detailedLeagueStats => 'Detailed League Stats';
 
   @override
   String get lockedPremiumStats =>
@@ -352,20 +352,58 @@ class AppLocalizationsEn extends AppLocalizations {
   String get monthlyPlanBody => 'Flexible monthly access.';
 
   @override
-  String get annualPlanBody => 'Best value, about \$2.50/month.';
+  String get annualPlanBody => 'Best value plan.';
 
   @override
-  String get paywallHeroTitle => 'Upgrade your GridCall season';
+  String pricePerMonthShort(String price) {
+    return '~$price/mo';
+  }
+
+  @override
+  String get manageSubscription => 'Manage subscription';
+
+  @override
+  String get paywallHeroTitle =>
+      'Take your prediction leagues to the next level';
 
   @override
   String get paywallHeroBody =>
-      'Premium adds more league room, detailed league statistics, favorites, and a subtle member badge. Core predictions stay fair for everyone.';
+      'Race in more leagues, unlock detailed league stats, and stand out in standings with a Premium badge.';
 
   @override
   String get paywallBenefitsTitle => 'What you get';
 
   @override
   String get paywallChoosePlan => 'Choose your plan';
+
+  @override
+  String get paywallBrandPremium => 'PREMIUM';
+
+  @override
+  String get paywallPerYear => '/ yr';
+
+  @override
+  String get paywallPerMonth => '/ mo';
+
+  @override
+  String get paywallMonthlyCancelAnytime => 'Cancel anytime';
+
+  @override
+  String paywallPerMonthLong(String price) {
+    return 'About $price / month';
+  }
+
+  @override
+  String paywallStartMembership(String plan) {
+    return 'Start $plan membership';
+  }
+
+  @override
+  String get paywallBestValueShort => 'BEST VALUE';
+
+  @override
+  String get paywallFooterDisclaimer =>
+      'Payment is charged to your App Store account. Subscriptions auto-renew unless canceled. Manage in your App Store account settings.';
 
   @override
   String get paywallFeatureLeagueLimit => 'Join up to 10 active leagues';
@@ -396,7 +434,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Show a subtle premium identity on your profile and league standings.';
 
   @override
-  String get saveWithAnnual => 'about \$2.50/month';
+  String get saveWithAnnual => 'Save';
 
   @override
   String get premiumUnavailableTitle => 'Premium is not available right now';
@@ -406,12 +444,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Store products are not configured yet. Your free GridCall features still work.';
 
   @override
-  String get purchaseCompleted =>
-      'Purchase completed. Premium will unlock after your entitlement is verified.';
+  String get purchaseCompleted => 'Purchase complete. Premium unlocked.';
 
   @override
-  String get restoreCompleted =>
-      'Purchases restored. Premium will unlock after your entitlement is verified.';
+  String get restoreCompleted => 'Purchases restored. Premium unlocked.';
 
   @override
   String get purchaseFailed =>
@@ -459,7 +495,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statsPerformanceTrend => 'PERFORMANCE TREND';
 
   @override
-  String get statsLeagueAverageShort => 'League avg';
+  String get statsLeagueAverageShort => 'League Avg';
 
   @override
   String get statsRecentWeekends => 'RECENT WEEKENDS';
@@ -484,7 +520,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statsWorstShort => 'Worst';
 
   @override
-  String get statsYouMarker => 'YOU ▼';
+  String get statsYouMarker => 'YOU';
 
   @override
   String statsPoints(String value) {
@@ -507,7 +543,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String statsLeagueAvgAndPosition(int average, int position) {
-    return 'League avg: $average · P$position';
+    return 'League Avg: $average · P$position';
   }
 
   @override
@@ -862,6 +898,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'You will need a new invite code to join again.';
 
   @override
+  String get deleteLeague => 'DELETE LEAGUE';
+
+  @override
+  String get deleteLeagueQuestion =>
+      'Are you sure you want to delete this league?';
+
+  @override
+  String get deleteLeagueBody =>
+      'The league, all memberships and predictions will be permanently deleted. This action cannot be undone.';
+
+  @override
   String removeMemberQuestion(String username) {
     return 'Remove $username?';
   }
@@ -1002,6 +1049,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get polePositionHint => 'Who will take Pole?';
+
+  @override
+  String get selectDriver => 'Select driver';
 
   @override
   String get dnfCount => 'DNF COUNT';
@@ -1322,23 +1372,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signOut => 'Sign out';
 
   @override
-  String get requestAccountDeletion => 'Request account deletion';
+  String get requestAccountDeletion => 'Delete my account';
 
   @override
-  String get deleteYourAccount => 'Delete your account';
+  String get deleteYourAccount =>
+      'Are you sure you want to delete your account?';
 
   @override
   String get accountDeletionBody =>
-      'Your account, predictions, league memberships, badges, and profile information will be permanently deleted within 30 days after you create this request. If you change your mind during this period, you can request cancellation by emailing bilgehan.2002@gmail.com.\n\nAfter the request is created, you will be signed out and your account will no longer be visible to other users.';
+      'Your account and all your data (predictions, league memberships, badges, profile) will be permanently deleted within 30 days. This action cannot be undone.\n\nOnce confirmed, you will be signed out and your account will no longer be visible to other users.';
 
   @override
-  String get noteOptional => 'Note (optional)';
-
-  @override
-  String get deletionReasonHint => 'You can write your reason for deletion';
-
-  @override
-  String get createRequest => 'Create request';
+  String get createRequest => 'Delete my account';
 
   @override
   String accountDeletionScheduled(String date) {
@@ -1456,6 +1501,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get badgeThreeInRow => 'Three in a Row';
 
   @override
+  String get badgeJokerMaster => 'Joker Master';
+
+  @override
+  String get badgeFastestCaller => 'Fastest Lap Caller';
+
+  @override
   String get newLeague => 'NEW LEAGUE';
 
   @override
@@ -1529,6 +1580,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get timeLeftUntilPredictionsClose =>
       'Time left until predictions close';
+
+  @override
+  String get predictionsNotYetOpen => 'Predictions are not open yet';
 
   @override
   String get mainPodiumPointsInfo => 'names +5 / position +2 / perfect +3';

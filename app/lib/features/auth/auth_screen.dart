@@ -1,6 +1,12 @@
+import 'dart:convert';
+import 'dart:io' show Platform;
+import 'dart:math' show Random;
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../l10n/generated/app_localizations.dart';
@@ -95,6 +101,72 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// Apple yönlendirmesi: iOS'ta App Store kuralları gereği native Sign in
+  /// with Apple flow'u kullanılır; Android'de Apple sayfasına web flow ile
+  /// gidilir (Apple bunu izin veriyor, App Store kısıtlaması yok).
+  Future<void> _handleAppleSignIn() async {
+    if (!kIsWeb && Platform.isIOS) {
+      await _signInWithAppleNative();
+    } else {
+      await _signInWithOAuth(OAuthProvider.apple);
+    }
+  }
+
+  Future<void> _signInWithAppleNative() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+      _info = null;
+    });
+    try {
+      final rawNonce = _generateNonce();
+      final hashedNonce = sha256
+          .convert(utf8.encode(rawNonce))
+          .toString();
+
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
+      );
+
+      final idToken = credential.identityToken;
+      if (idToken == null) {
+        throw const AuthException('Apple identity token missing');
+      }
+
+      await supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: idToken,
+        nonce: rawNonce,
+      );
+    } on SignInWithAppleAuthorizationException catch (e) {
+      // Kullanıcı diyalogu kapattıysa hata gösterme
+      if (e.code == AuthorizationErrorCode.canceled) return;
+      if (mounted) {
+        setState(() => _error = friendlyError(e));
+      }
+    } on AuthException catch (e) {
+      if (mounted) setState(() => _error = friendlyAuthError(e));
+    } catch (e) {
+      if (mounted) setState(() => _error = friendlyError(e));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  String _generateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(
+      length,
+      (_) => charset[random.nextInt(charset.length)],
+    ).join();
   }
 
   Future<void> _resetPassword() async {
@@ -282,9 +354,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   _OAuthButton(
                     label: l.continueApple,
                     icon: Icons.apple,
-                    onPressed: _busy
-                        ? null
-                        : () => _signInWithOAuth(OAuthProvider.apple),
+                    onPressed: _busy ? null : _handleAppleSignIn,
                   ),
                   TextButton(
                     onPressed: _busy

@@ -261,18 +261,22 @@ class RaceClassificationRow {
       );
 }
 
+enum JokerKind { choice, driver }
+
 class JokerQuestion {
   final String id;
   final String raceId;
   final String text;
   final List<String> options;
   final int points;
+  final JokerKind kind;
   JokerQuestion({
     required this.id,
     required this.raceId,
     required this.text,
     required this.options,
     required this.points,
+    this.kind = JokerKind.choice,
   });
   factory JokerQuestion.fromJson(Map<String, dynamic> j) => JokerQuestion(
     id: j['id'] as String,
@@ -280,6 +284,9 @@ class JokerQuestion {
     text: j['text'] as String,
     options: (j['options'] as List).map((e) => e as String).toList(),
     points: j['points'] as int,
+    kind: ((j['kind'] as String?) ?? 'choice') == 'driver'
+        ? JokerKind.driver
+        : JokerKind.choice,
   );
 }
 

@@ -6,6 +6,7 @@ import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../country_flags.dart';
 import '../models.dart';
+import '../turkish_text.dart';
 import 'live_pulse_dot.dart';
 
 enum RaceCardKind { main, sprint }
@@ -18,6 +19,30 @@ bool countsAsPreviousRace(Race race, {DateTime? now}) {
   final t = now ?? DateTime.now();
   if (race.status == RaceStatus.cancelled) return true;
   return !race.raceAt.add(previousRaceDelay).isAfter(t);
+}
+
+/// Sezonun sırasındaki **bir sonraki** yarışı döndürür. Diğer ileri tarihli
+/// yarışlar tahmine açık kabul edilmez — bu helper "All Races" listesinde,
+/// tahmin ekranında ve diğer yerlerde tek doğruluk kaynağı olarak kullanılır.
+Race? nextUpcomingRace(List<Race> races, {DateTime? now}) {
+  if (races.isEmpty) return null;
+  final t = now ?? DateTime.now();
+  final sorted = [...races]..sort((a, b) => a.raceAt.compareTo(b.raceAt));
+  for (final race in sorted) {
+    if (!countsAsPreviousRace(race, now: t)) return race;
+  }
+  return null;
+}
+
+/// Bu yarış şu an tahmin yapılabilir mi? Sadece bir sonraki yarış gerçekten
+/// açıktır; ileri tarihli sonraki yarışlar future-locked kabul edilir.
+bool isRaceOpenForPicksNow(
+  Race race,
+  List<Race> seasonRaces, {
+  DateTime? now,
+}) {
+  final next = nextUpcomingRace(seasonRaces, now: now);
+  return next?.id == race.id;
 }
 
 List<Race> buildPreviousAndNextRaces(List<Race> races, {DateTime? now}) {
@@ -424,6 +449,11 @@ class RaceCardNew extends StatelessWidget {
   final IconData? actionIcon;
   final bool keepStartLightsVisible;
 
+  /// "All races" listesinde sadece bir sonraki yarışın açık görünmesi için
+  /// kullanılır. true verildiğinde upcoming durumdaki kart kilitli (locked)
+  /// olarak render edilir; finished / live / cancelled durumları etkilenmez.
+  final bool forceLocked;
+
   /// Lig bağlamında mı gösteriliyor? Calendar (ana ekran) için false:
   /// biten yarışlarda kullanıcının skor/positionlamasını gizler, canlı yarışlarda
   /// ilerleme bilgisini göstermez.
@@ -439,15 +469,22 @@ class RaceCardNew extends StatelessWidget {
     this.actionLabel,
     this.actionIcon,
     this.keepStartLightsVisible = false,
+    this.forceLocked = false,
     this.showLeagueContext = true,
     this.kind = RaceCardKind.main,
   });
 
   bool get _isSprint => kind == RaceCardKind.sprint;
 
-  RaceStatus get _status => kind == RaceCardKind.main
-      ? effectiveRaceCardDisplayStatus((race: race, kind: kind))
-      : effectiveRaceCardNavigationStatus((race: race, kind: kind));
+  RaceStatus get _status {
+    final base = kind == RaceCardKind.main
+        ? effectiveRaceCardDisplayStatus((race: race, kind: kind))
+        : effectiveRaceCardNavigationStatus((race: race, kind: kind));
+    if (forceLocked && base == RaceStatus.upcoming) {
+      return RaceStatus.locked;
+    }
+    return base;
+  }
 
   DateTime? get _qualifyingAt =>
       _isSprint ? race.sprintQualifyingAt : race.qualifyingAt;
@@ -487,7 +524,7 @@ class RaceCardNew extends StatelessWidget {
         AppColors.lockOrange,
         AppColors.lockOrange,
         Icons.lock_outline,
-        l.locked.toUpperCase(),
+        turkishUpper(l.locked, context: context),
       ),
       RaceStatus.live => (
         AppColors.surfaceLow,
@@ -501,14 +538,14 @@ class RaceCardNew extends StatelessWidget {
         AppColors.finished,
         AppColors.finished,
         Icons.check_circle_outline,
-        l.finished.toUpperCase(),
+        turkishUpper(l.finished, context: context),
       ),
       RaceStatus.cancelled => (
         AppColors.surface,
         AppColors.finished,
         AppColors.finished,
         Icons.block,
-        l.canceled.toUpperCase(),
+        turkishUpper(l.canceled, context: context),
       ),
     };
 
@@ -650,7 +687,9 @@ class RaceCardNew extends StatelessWidget {
               const Duration(hours: 4),
             ),
           );
-      final forceInactive = !isRaceWeek || _status == RaceStatus.cancelled;
+      final forceInactive =
+          !keepStartLightsVisible &&
+          (!isRaceWeek || _status == RaceStatus.cancelled);
       final sessions = race.sessions
           .take(5)
           .map(
@@ -760,16 +799,18 @@ class RaceCardNew extends StatelessWidget {
   }
 
   _StartLightState? _completedLightState(DateTime now) {
+    if (!keepStartLightsVisible) return null;
     if (_status != RaceStatus.finished) return null;
-    final finishedAt = _raceAt;
-    if (finishedAt == null) return _StartLightState.finished;
-    return now.isBefore(finishedAt.add(const Duration(days: 1)))
-        ? _StartLightState.finished
-        : _StartLightState.inactive;
+    return _StartLightState.finished;
   }
 
   _StartLightState? _pinnedLightState(DateTime now) {
     if (!keepStartLightsVisible) return null;
+    // Eğer DB'de gerçek session zamanları varsa pin override uygulanmaz —
+    // her dot kendi session'ının zamanına göre canlı/finished/upcoming
+    // hesaplansın. Pin override sadece sessions listesi boşken (sentetik
+    // P1/Q/R timing'i) anlamlı bir fallback üretmek içindi.
+    if (race.sessions.isNotEmpty) return null;
     final startsAt = _raceAt;
     if (_status == RaceStatus.finished ||
         _status == RaceStatus.cancelled ||
@@ -816,11 +857,14 @@ class RaceCardNew extends StatelessWidget {
   }
 
   Widget _buildUpcomingContent(BuildContext context) {
+    // Action button (örn. "Tahmin yap") sadece tahminlere açık yarışta
+    // görünür; kilitlenmiş kartlarda butonu gizliyoruz.
+    final showAction = actionLabel != null && _status == RaceStatus.upcoming;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildScheduleRow(context),
-        if (actionLabel != null) ...[
+        if (showAction) ...[
           const SizedBox(height: 12),
           _CardAction(label: actionLabel!, icon: actionIcon),
         ],

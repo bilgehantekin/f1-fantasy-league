@@ -25,6 +25,11 @@ supabase/.temp/
 supabase/.env
 supabase/functions/.env
 
+# Secrets (Apple Sign In private key vb.)
+temp/
+AuthKey_*.p8
+*.p8
+
 # IDE
 .idea/
 .vscode/

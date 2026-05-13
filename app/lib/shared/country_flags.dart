@@ -11,6 +11,7 @@ const _flags = <String, String>{
   'Monaco Grand Prix': '🇲🇨',
   'Canadian Grand Prix': '🇨🇦',
   'Spanish Grand Prix': '🇪🇸',
+  'Barcelona-Catalunya Grand Prix': '🇪🇸',
   'Austrian Grand Prix': '🇦🇹',
   'British Grand Prix': '🇬🇧',
   'Hungarian Grand Prix': '🇭🇺',

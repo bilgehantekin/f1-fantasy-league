@@ -1,8 +1,10 @@
+import 'env_config.dart';
+
 class Env {
   static const appEnv = String.fromEnvironment('APP_ENV', defaultValue: 'dev');
   static const appLocale = String.fromEnvironment(
     'APP_LOCALE',
-    defaultValue: '',
+    defaultValue: EnvConfig.appLocale,
   );
   static const appBaseUrl = String.fromEnvironment(
     'APP_BASE_URL',
@@ -10,16 +12,16 @@ class Env {
   );
   static const supabaseUrl = String.fromEnvironment(
     'SUPABASE_URL',
-    defaultValue: 'http://127.0.0.1:54321',
+    defaultValue: EnvConfig.supabaseUrl,
   );
   static const supabaseAnonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
-    defaultValue: '',
+    defaultValue: EnvConfig.supabaseAnonKey,
   );
   static const seasonId = int.fromEnvironment('SEASON_ID', defaultValue: 2026);
   static const sentryDsn = String.fromEnvironment(
     'SENTRY_DSN',
-    defaultValue: '',
+    defaultValue: EnvConfig.sentryDsn,
   );
   static const oauthRedirectUrl = String.fromEnvironment(
     'OAUTH_REDIRECT_URL',
@@ -31,23 +33,31 @@ class Env {
   );
   static const enablePremium = bool.fromEnvironment(
     'ENABLE_PREMIUM',
-    defaultValue: false,
+    defaultValue: EnvConfig.enablePremium,
   );
   static const revenueCatAppleApiKey = String.fromEnvironment(
     'REVENUECAT_APPLE_API_KEY',
-    defaultValue: '',
+    defaultValue: EnvConfig.revenueCatAppleApiKey,
   );
   static const revenueCatGoogleApiKey = String.fromEnvironment(
     'REVENUECAT_GOOGLE_API_KEY',
-    defaultValue: '',
+    defaultValue: EnvConfig.revenueCatGoogleApiKey,
+  );
+  static const premiumEntitlementId = String.fromEnvironment(
+    'PREMIUM_ENTITLEMENT_ID',
+    defaultValue: EnvConfig.premiumEntitlementId,
+  );
+  static const premiumOfferingId = String.fromEnvironment(
+    'PREMIUM_OFFERING_ID',
+    defaultValue: EnvConfig.premiumOfferingId,
   );
   static const premiumMonthlyProductId = String.fromEnvironment(
     'PREMIUM_MONTHLY_PRODUCT_ID',
-    defaultValue: 'gridcall_premium_monthly',
+    defaultValue: EnvConfig.premiumMonthlyProductId,
   );
   static const premiumAnnualProductId = String.fromEnvironment(
     'PREMIUM_ANNUAL_PRODUCT_ID',
-    defaultValue: 'gridcall_premium_annual',
+    defaultValue: EnvConfig.premiumAnnualProductId,
   );
   static const raceCardDebugRace = String.fromEnvironment(
     'RACE_CARD_DEBUG_RACE',
@@ -89,9 +99,7 @@ class Env {
       if (!appBaseUrl.startsWith('https://')) {
         errors.add('APP_BASE_URL production build icin HTTPS olmali.');
       }
-      if (sentryDsn.trim().isEmpty) {
-        errors.add('SENTRY_DSN production build icin bos olamaz.');
-      }
+      // Sentry opsiyoneldir; bos ise main() Sentry'siz baslatir.
     }
 
     if (errors.isNotEmpty) {

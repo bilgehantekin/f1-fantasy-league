@@ -24,8 +24,7 @@ class _LeaguesScreenState extends ConsumerState<LeaguesScreen> {
     final leagues = ref.watch(myLeaguesProvider);
     final tt = Theme.of(context).textTheme;
     final l = AppLocalizations.of(context);
-    final isPremium =
-        ref.watch(currentUserPremiumProvider).asData?.value ?? false;
+    final isPremium = ref.watch(effectiveIsPremiumProvider);
 
     return Scaffold(
       backgroundColor: AppColors.carbon,

@@ -2,10 +2,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 class LegalLinks {
   static final privacy = Uri.parse(
-    'https://github.com/bilgehantekin/f1-fantasy-league/blob/main/docs/privacy-policy.md',
+    'https://absorbing-muenster-0a7.notion.site/GridCall-Privacy-Policy-0092d80b8b344f19a917891dbc61bf9a',
   );
   static final terms = Uri.parse(
-    'https://github.com/bilgehantekin/f1-fantasy-league/blob/main/docs/terms-of-service.md',
+    'https://absorbing-muenster-0a7.notion.site/GridCall-Terms-of-Use-c03dc22dd514406db030141cfbd6b0a0',
   );
 
   const LegalLinks._();

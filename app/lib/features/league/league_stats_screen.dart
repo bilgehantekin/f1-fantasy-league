@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/error_messages.dart';
 import '../../core/supabase.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../shared/country_flags.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets/app_state.dart';
 import '../../shared/widgets/premium_stats_icon.dart';
@@ -14,11 +15,26 @@ import 'league_controller.dart';
 
 final leagueUserStatsProvider =
     FutureProvider.family<Map<String, dynamic>, String>((ref, leagueId) async {
-      final res = await supabase.rpc(
-        'league_user_overview_stats',
-        params: {'p_league_id': leagueId},
-      );
-      return Map<String, dynamic>.from(res as Map);
+      // The RPC server-side requires the entitlement row in user_entitlements,
+      // which is written by the RevenueCat → Supabase webhook. Right after a
+      // local purchase the row may not be there yet. Retry a few times so the
+      // screen doesn't flash an error while the webhook is in flight.
+      const maxAttempts = 6;
+      const delay = Duration(milliseconds: 800);
+      Object? lastError;
+      for (var i = 0; i < maxAttempts; i++) {
+        try {
+          final res = await supabase.rpc(
+            'league_user_overview_stats',
+            params: {'p_league_id': leagueId},
+          );
+          return Map<String, dynamic>.from(res as Map);
+        } catch (e) {
+          lastError = e;
+          if (i < maxAttempts - 1) await Future.delayed(delay);
+        }
+      }
+      throw lastError ?? StateError('league stats failed');
     });
 
 class LeagueStatsScreen extends ConsumerWidget {
@@ -30,8 +46,7 @@ class LeagueStatsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final premiumEnabled = ref.watch(isPremiumEnabledProvider);
-    final isPremium =
-        ref.watch(currentUserPremiumProvider).asData?.value ?? false;
+    final isPremium = ref.watch(effectiveIsPremiumProvider);
 
     return Scaffold(
       backgroundColor: PremiumColors.carbon,
@@ -99,7 +114,28 @@ class _LockedStats extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         if (onUpgrade != null)
-          FilledButton(onPressed: onUpgrade, child: Text(l.upgradeToPremium)),
+          SizedBox(
+            height: 50,
+            child: ElevatedButton(
+              onPressed: onUpgrade,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: PremiumColors.gold,
+                foregroundColor: PremiumColors.goldOnText,
+                elevation: 0,
+                side: BorderSide(color: PremiumColors.goldBorder(0.6)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text(
+                l.upgradeToPremium,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -123,6 +159,8 @@ class _StatsBody extends StatelessWidget {
     final memberCount = _asInt(stats['member_count']);
     final leaderGap = _asInt(stats['leader_gap']);
     final leagueAverage = _asDouble(stats['league_average_points']);
+    final leaderScore = _asInt(stats['leader_score']);
+    final lowestScore = _asInt(stats['lowest_score']);
     final best = rounds.isEmpty
         ? _roundFromMap(stats['best_weekend'], leagueAverage)
         : rounds.reduce((a, b) => a.you > b.you ? a : b);
@@ -205,6 +243,8 @@ class _StatsBody extends StatelessWidget {
           child: _PositionSummary(
             totalPoints: totalPoints,
             leagueAverage: leagueAverage,
+            leaderScore: leaderScore,
+            lowestScore: lowestScore,
           ),
         ),
       ],
@@ -785,6 +825,8 @@ class _FormCard extends StatelessWidget {
       ),
       child: Column(
         children: [
+          Text(flagFor(round.gp), style: const TextStyle(fontSize: 16)),
+          const SizedBox(height: 4),
           Text(
             round.short,
             maxLines: 1,
@@ -796,7 +838,7 @@ class _FormCard extends StatelessWidget {
               color: Color(0x8CFFFFFF),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             '${round.you}',
             style: TextStyle(
@@ -903,106 +945,133 @@ class _BestWorstCard extends StatelessWidget {
 class _PositionSummary extends StatelessWidget {
   final int totalPoints;
   final double leagueAverage;
+  final int leaderScore;
+  final int lowestScore;
 
   const _PositionSummary({
     required this.totalPoints,
     required this.leagueAverage,
+    required this.leaderScore,
+    required this.lowestScore,
   });
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final avg = leagueAverage <= 0 ? 1 : leagueAverage;
-    final max = (totalPoints > avg ? totalPoints : avg).ceil().clamp(1, 99999);
-    final progress = (totalPoints / max).clamp(0.0, 1.0);
-    final avgProgress = (avg / max).clamp(0.0, 1.0);
+    // Range = lowest scoring user → highest scoring user. When everyone has
+    // the same score (or nobody has scored) we collapse to a single point and
+    // pin the marker to the middle so the bar still looks balanced.
+    final lo = lowestScore.toDouble();
+    final hi = leaderScore.toDouble();
+    final range = hi - lo;
+    final flat = range <= 0;
+
+    double normalize(double value) {
+      if (flat) return 0.5;
+      return ((value - lo) / range).clamp(0.0, 1.0);
+    }
+
+    final youProgress = normalize(totalPoints.toDouble());
+    final avgProgress = normalize(leagueAverage);
     final delta = totalPoints - leagueAverage.round();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          height: 58,
+          height: 64,
           child: LayoutBuilder(
             builder: (context, constraints) {
               final width = constraints.maxWidth;
+              const barTop = 28.0;
+              const barHeight = 10.0;
               return Stack(
                 clipBehavior: Clip.none,
                 children: [
+                  // YOU label — always above the bar, horizontally centered
+                  // on the marker via FractionalTranslation(-0.5, 0).
                   Positioned(
-                    left: (width * progress - 14).clamp(0, width - 28),
+                    left: width * youProgress,
                     top: 6,
-                    child: Text(
-                      l.statsYouMarker,
-                      style: const TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w900,
-                        color: PremiumColors.gold,
-                        letterSpacing: 0.4,
+                    child: FractionalTranslation(
+                      translation: const Offset(-0.5, 0),
+                      child: Text(
+                        l.statsYouMarker,
+                        style: const TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          color: PremiumColors.gold,
+                          letterSpacing: 0.4,
+                        ),
                       ),
                     ),
                   ),
-                  Positioned(
-                    left: (width * avgProgress - 28).clamp(0, width - 56),
-                    top: 6,
-                    child: Text(
-                      l.statsLeagueAverageShort,
-                      style: const TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0x8CFFFFFF),
-                        letterSpacing: 0.4,
-                      ),
-                    ),
-                  ),
+                  // Full gradient bar (always end-to-end coloured)
                   Positioned(
                     left: 0,
                     right: 0,
-                    top: 28,
+                    top: barTop,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(99),
-                      child: Stack(
-                        children: [
-                          Container(height: 10, color: const Color(0x14FFFFFF)),
-                          FractionallySizedBox(
-                            widthFactor: progress,
-                            child: Container(
-                              height: 10,
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    PremiumColors.f1Red,
-                                    PremiumColors.gold,
-                                  ],
-                                ),
-                              ),
-                            ),
+                      child: Container(
+                        height: barHeight,
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              PremiumColors.f1Red,
+                              PremiumColors.gold,
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
+                  // League avg vertical line
                   Positioned(
                     left: (width * avgProgress - 1).clamp(0, width - 2),
-                    top: 22,
+                    top: barTop - 6,
                     child: Container(
                       width: 2,
-                      height: 22,
+                      height: barHeight + 12,
                       color: const Color(0x80FFFFFF),
                     ),
                   ),
+                  // YOU dot — colour samples the gradient at the user's
+                  // position so the marker blends with the bar underneath.
                   Positioned(
-                    left: (width * progress - 9).clamp(0, width - 18),
-                    top: 24,
+                    left: (width * youProgress - 9).clamp(0, width - 18),
+                    top: barTop - 4,
                     child: Container(
                       width: 18,
                       height: 18,
                       decoration: BoxDecoration(
-                        color: PremiumColors.gold,
+                        color: Color.lerp(
+                          PremiumColors.f1Red,
+                          PremiumColors.gold,
+                          youProgress,
+                        ),
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: PremiumColors.carbon,
                           width: 3,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // League avg label — always BELOW the bar so it never
+                  // collides with the YOU label, centered on the avg line.
+                  Positioned(
+                    left: width * avgProgress,
+                    top: barTop + barHeight + 6,
+                    child: FractionalTranslation(
+                      translation: const Offset(-0.5, 0),
+                      child: Text(
+                        l.statsLeagueAverageShort,
+                        style: const TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0x8CFFFFFF),
+                          letterSpacing: 0.4,
                         ),
                       ),
                     ),

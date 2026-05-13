@@ -113,17 +113,38 @@
   "favoriteLeague": "Favorite league",
   "unfavoriteLeague": "Unfavorite league",
   "favorites": "Favorites",
-  "detailedLeagueStats": "Detailed league stats",
+  "detailedLeagueStats": "Detailed League Stats",
   "lockedPremiumStats": "Detailed league stats are a Premium feature. Core standings and weekly summaries stay free.",
   "restorePurchases": "Restore purchases",
   "monthlyPlan": "Monthly",
   "annualPlan": "Annual",
   "monthlyPlanBody": "Flexible monthly access.",
-  "annualPlanBody": "Best value, about $2.50/month.",
-  "paywallHeroTitle": "Upgrade your GridCall season",
-  "paywallHeroBody": "Premium adds more league room, detailed league statistics, favorites, and a subtle member badge. Core predictions stay fair for everyone.",
+  "annualPlanBody": "Best value plan.",
+  "pricePerMonthShort": "~{price}/mo",
+  "@pricePerMonthShort": {
+    "placeholders": {
+      "price": { "type": "String" }
+    }
+  },
+  "manageSubscription": "Manage subscription",
+  "paywallHeroTitle": "Take your prediction leagues to the next level",
+  "paywallHeroBody": "Race in more leagues, unlock detailed league stats, and stand out in standings with a Premium badge.",
   "paywallBenefitsTitle": "What you get",
   "paywallChoosePlan": "Choose your plan",
+  "paywallBrandPremium": "PREMIUM",
+  "paywallPerYear": "/ yr",
+  "paywallPerMonth": "/ mo",
+  "paywallMonthlyCancelAnytime": "Cancel anytime",
+  "paywallPerMonthLong": "About {price} / month",
+  "@paywallPerMonthLong": {
+    "placeholders": { "price": { "type": "String" } }
+  },
+  "paywallStartMembership": "Start {plan} membership",
+  "@paywallStartMembership": {
+    "placeholders": { "plan": { "type": "String" } }
+  },
+  "paywallBestValueShort": "BEST VALUE",
+  "paywallFooterDisclaimer": "Payment is charged to your App Store account. Subscriptions auto-renew unless canceled. Manage in your App Store account settings.",
   "paywallFeatureLeagueLimit": "Join up to 10 active leagues",
   "paywallFeatureLeagueLimitBody": "Free accounts stay at 2 active leagues when premium limits are enabled.",
   "paywallFeatureDetailedStats": "Detailed league statistics",
@@ -132,11 +153,11 @@
   "paywallFeatureFavoritesBody": "Keep your most important leagues at the top of My Leagues.",
   "paywallFeatureBadge": "Premium badge",
   "paywallFeatureBadgeBody": "Show a subtle premium identity on your profile and league standings.",
-  "saveWithAnnual": "about $2.50/month",
+  "saveWithAnnual": "Save",
   "premiumUnavailableTitle": "Premium is not available right now",
   "premiumUnavailableBody": "Store products are not configured yet. Your free GridCall features still work.",
-  "purchaseCompleted": "Purchase completed. Premium will unlock after your entitlement is verified.",
-  "restoreCompleted": "Purchases restored. Premium will unlock after your entitlement is verified.",
+  "purchaseCompleted": "Purchase complete. Premium unlocked.",
+  "restoreCompleted": "Purchases restored. Premium unlocked.",
   "purchaseFailed": "Purchase could not be completed. Please try again later.",
   "averagePoints": "Average points",
   "predictionCount": "Predictions",
@@ -164,7 +185,7 @@
   "statsAverageShort": "Average",
   "statsPointsUnit": "points",
   "statsPerformanceTrend": "PERFORMANCE TREND",
-  "statsLeagueAverageShort": "League avg",
+  "statsLeagueAverageShort": "League Avg",
   "statsRecentWeekends": "RECENT WEEKENDS",
   "statsBestWorst": "BEST & WORST",
   "statsLeaguePosition": "YOUR LEAGUE POSITION",
@@ -172,7 +193,7 @@
   "statsNotEnoughDataBody": "Trend cards will appear after more race weekends are scored.",
   "statsBestShort": "Best",
   "statsWorstShort": "Worst",
-  "statsYouMarker": "YOU ▼",
+  "statsYouMarker": "YOU",
   "statsPoints": "{value} pts",
   "@statsPoints": {
     "placeholders": {
@@ -192,7 +213,7 @@
   "statsLeaderGapPrefix": "Leader is ",
   "statsLeaderGapSuffix": " ahead",
   "statsYouAreLeader": "You are leading",
-  "statsLeagueAvgAndPosition": "League avg: {average} · P{position}",
+  "statsLeagueAvgAndPosition": "League Avg: {average} · P{position}",
   "@statsLeagueAvgAndPosition": {
     "placeholders": {
       "average": {
@@ -374,6 +395,9 @@
   "refreshInviteCodeBody": "The old invite code will no longer work.",
   "leaveLeagueQuestion": "Do you want to leave the league?",
   "leaveLeagueBody": "You will need a new invite code to join again.",
+  "deleteLeague": "DELETE LEAGUE",
+  "deleteLeagueQuestion": "Are you sure you want to delete this league?",
+  "deleteLeagueBody": "The league, all memberships and predictions will be permanently deleted. This action cannot be undone.",
   "removeMemberQuestion": "Remove {username}?",
   "@removeMemberQuestion": {
     "placeholders": {
@@ -460,6 +484,7 @@
   "topScoringTeamHint": "Which team will score the most points?",
   "polePosition": "POLE",
   "polePositionHint": "Who will take Pole?",
+  "selectDriver": "Select driver",
   "dnfCount": "DNF COUNT",
   "safetyCarQuestion": "WILL THERE BE A SAFETY CAR?",
   "sprintWinner": "SPRINT WINNER",
@@ -675,12 +700,10 @@
   "leaguesUpper": "LEAGUES",
   "accountAndLegalUpper": "ACCOUNT & LEGAL",
   "signOut": "Sign out",
-  "requestAccountDeletion": "Request account deletion",
-  "deleteYourAccount": "Delete your account",
-  "accountDeletionBody": "Your account, predictions, league memberships, badges, and profile information will be permanently deleted within 30 days after you create this request. If you change your mind during this period, you can request cancellation by emailing bilgehan.2002@gmail.com.\n\nAfter the request is created, you will be signed out and your account will no longer be visible to other users.",
-  "noteOptional": "Note (optional)",
-  "deletionReasonHint": "You can write your reason for deletion",
-  "createRequest": "Create request",
+  "requestAccountDeletion": "Delete my account",
+  "deleteYourAccount": "Are you sure you want to delete your account?",
+  "accountDeletionBody": "Your account and all your data (predictions, league memberships, badges, profile) will be permanently deleted within 30 days. This action cannot be undone.\n\nOnce confirmed, you will be signed out and your account will no longer be visible to other users.",
+  "createRequest": "Delete my account",
   "accountDeletionScheduled": "Your account will be deleted on {date}.",
   "@accountDeletionScheduled": {
     "placeholders": {
@@ -759,6 +782,8 @@
   "badgeWeeklyChampion": "Weekly Champion",
   "badgePerfectWeek": "Perfect Week",
   "badgeThreeInRow": "Three in a Row",
+  "badgeJokerMaster": "Joker Master",
+  "badgeFastestCaller": "Fastest Lap Caller",
   "newLeague": "NEW LEAGUE",
   "createYourOwnLeague": "Create your own league",
   "enterCode": "ENTER CODE",
@@ -783,6 +808,7 @@
   "lockedUpper": "LOCKED",
   "picksOpenUpper": "PICKS OPEN",
   "timeLeftUntilPredictionsClose": "Time left until predictions close",
+  "predictionsNotYetOpen": "Predictions are not open yet",
   "mainPodiumPointsInfo": "names +5 / position +2 / perfect +3",
   "mainDnfPointsInfo": "exact +6 / +/-1 +3",
   "sprintPodiumPointsInfo": "names +4 / position +1 / perfect +2",

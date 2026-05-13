@@ -27,8 +27,7 @@ class ProfileScreen extends ConsumerWidget {
     final statsAsync = ref.watch(profileStatsProvider);
     final myBadgesAsync = ref.watch(myBadgesProvider);
     final allBadgesAsync = ref.watch(allBadgesProvider);
-    final isPremium =
-        ref.watch(currentUserPremiumProvider).asData?.value ?? false;
+    final isPremium = ref.watch(effectiveIsPremiumProvider);
     final l = AppLocalizations.of(context);
 
     return Scaffold(
@@ -120,6 +119,19 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 const PremiumUpsellCard(),
               ],
+              if (Env.enablePremium && isPremium) ...[
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.manage_accounts_outlined),
+                    label: Text(l.manageSubscription),
+                    onPressed: () => ref
+                        .read(premiumServiceProvider)
+                        .presentCustomerCenter(),
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               _SectionTitle(label: l.badgesUpper),
               myBadgesAsync.when(
@@ -132,7 +144,7 @@ class ProfileScreen extends ConsumerWidget {
                     data: (allBadges) => _BadgesCarousel(
                       allBadges: allBadges,
                       myBadges: myBadges,
-                      isPremium: p.isPremium,
+                      isPremium: isPremium,
                     ),
                   );
                 },
@@ -286,30 +298,13 @@ Future<void> _openLegal(BuildContext context, Uri uri) async {
 }
 
 Future<void> _confirmDeletionRequest(BuildContext context) async {
-  final reasonCtrl = TextEditingController();
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
       title: Text(AppLocalizations.of(context).deleteYourAccount),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            AppLocalizations.of(context).accountDeletionBody,
-            style: TextStyle(height: 1.4),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: reasonCtrl,
-            minLines: 2,
-            maxLines: 3,
-            decoration: InputDecoration(
-              labelText: AppLocalizations.of(context).noteOptional,
-              hintText: AppLocalizations.of(context).deletionReasonHint,
-            ),
-          ),
-        ],
+      content: Text(
+        AppLocalizations.of(context).accountDeletionBody,
+        style: const TextStyle(height: 1.4),
       ),
       actions: [
         TextButton(
@@ -327,14 +322,10 @@ Future<void> _confirmDeletionRequest(BuildContext context) async {
     ),
   );
 
-  if (confirmed != true) {
-    reasonCtrl.dispose();
-    return;
-  }
+  if (confirmed != true) return;
 
   try {
-    final result = await requestAccountDeletion(reason: reasonCtrl.text.trim());
-    reasonCtrl.dispose();
+    final result = await requestAccountDeletion();
     if (!context.mounted) return;
     final l = AppLocalizations.of(context);
     final scheduledMessage = result.scheduledFor != null
@@ -351,7 +342,6 @@ Future<void> _confirmDeletionRequest(BuildContext context) async {
     // router auth state değişimini görüp /auth'a yönlendirecek.
     await supabase.auth.signOut();
   } catch (e) {
-    reasonCtrl.dispose();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -369,15 +359,16 @@ String _formatDate(BuildContext context, DateTime date) {
   return DateFormat.yMd(locale).format(date.toLocal());
 }
 
-class _HeroProfile extends StatelessWidget {
+class _HeroProfile extends ConsumerWidget {
   final Profile profile;
   const _HeroProfile({required this.profile});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final initial = profile.username.isNotEmpty
         ? profile.username[0].toUpperCase()
         : '?';
+    final isPremium = ref.watch(effectiveIsPremiumProvider);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
@@ -402,8 +393,8 @@ class _HeroProfile extends StatelessWidget {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w900,
-              color: profile.isPremium ? const Color(0xFFFFD166) : Colors.white,
-              shadows: profile.isPremium
+              color: isPremium ? const Color(0xFFFFD166) : Colors.white,
+              shadows: isPremium
                   ? const [
                       Shadow(
                         color: Color(0xFF3A2A08),
@@ -414,7 +405,7 @@ class _HeroProfile extends StatelessWidget {
                   : null,
             ),
           ),
-          if (profile.isPremium) ...[
+          if (isPremium) ...[
             const SizedBox(height: 8),
             const PremiumBadge(),
           ],
@@ -606,11 +597,21 @@ class _BadgesCarouselState extends State<_BadgesCarousel> {
       icon: '💎',
       rarity: AppLocalizations.of(context).premium,
     );
-    final badges = [
-      if (widget.isPremium) premiumBadge,
-      ...earnedBadges,
-      ...widget.allBadges.where((badge) => !earnedBadgeIds.contains(badge.id)),
-    ];
+    // Premium rozeti kazanılmışsa kazanılan rozetlerin başında, kazanılmamışsa
+    // (free hesap) en sonda — kazanılmamış rozetlerle birlikte — gösterilir.
+    final badges = widget.isPremium
+        ? [
+            premiumBadge,
+            ...earnedBadges,
+            ...widget.allBadges
+                .where((badge) => !earnedBadgeIds.contains(badge.id)),
+          ]
+        : [
+            ...earnedBadges,
+            ...widget.allBadges
+                .where((badge) => !earnedBadgeIds.contains(badge.id)),
+            premiumBadge,
+          ];
     final premiumEarnedIds = {
       ...earnedBadgeIds,
       if (widget.isPremium) premiumBadge.id,
@@ -782,6 +783,8 @@ class _BadgeDisplay {
       'weekly_winner': 'badgeWeeklyChampion',
       'perfect_week': 'badgePerfectWeek',
       'three_in_row': 'badgeThreeInRow',
+      'joker_master': 'badgeJokerMaster',
+      'fastest_caller': 'badgeFastestCaller',
     };
 
     final isSprint = badge.code.startsWith('sprint_');
@@ -799,6 +802,8 @@ class _BadgeDisplay {
       'badgeWeeklyChampion' => l.badgeWeeklyChampion,
       'badgePerfectWeek' => l.badgePerfectWeek,
       'badgeThreeInRow' => l.badgeThreeInRow,
+      'badgeJokerMaster' => l.badgeJokerMaster,
+      'badgeFastestCaller' => l.badgeFastestCaller,
       _ => badge.name,
     };
 
@@ -806,12 +811,17 @@ class _BadgeDisplay {
   }
 }
 
-class _SeasonStats extends StatelessWidget {
+class _SeasonStats extends ConsumerWidget {
   final ProfileStats stats;
   const _SeasonStats({required this.stats});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Premium rozeti diğer rozetlerle birlikte profil karuselinde gösteriliyor
+    // ama DB'deki user_badges'a kaydedilmediği için stats.badgeCount'a düşmez.
+    // Toplam rozet sayısında dahil edilsin diye burada manuel ekliyoruz.
+    final isPremium = ref.watch(effectiveIsPremiumProvider);
+    final badgeCount = stats.badgeCount + (isPremium ? 1 : 0);
     final bestEvent = stats.bestEventName == null
         ? '-'
         : stats.bestEventMode == 'sprint'
@@ -845,7 +855,7 @@ class _SeasonStats extends StatelessWidget {
             ? '-'
             : '${stats.bestLeagueName} (${stats.bestLeagueScore})',
       ),
-      (AppLocalizations.of(context).badge, '${stats.badgeCount}'),
+      (AppLocalizations.of(context).badge, '$badgeCount'),
     ];
 
     return Container(

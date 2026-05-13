@@ -695,7 +695,7 @@ abstract class AppLocalizations {
   /// No description provided for @detailedLeagueStats.
   ///
   /// In en, this message translates to:
-  /// **'Detailed league stats'**
+  /// **'Detailed League Stats'**
   String get detailedLeagueStats;
 
   /// No description provided for @lockedPremiumStats.
@@ -731,19 +731,31 @@ abstract class AppLocalizations {
   /// No description provided for @annualPlanBody.
   ///
   /// In en, this message translates to:
-  /// **'Best value, about \$2.50/month.'**
+  /// **'Best value plan.'**
   String get annualPlanBody;
+
+  /// No description provided for @pricePerMonthShort.
+  ///
+  /// In en, this message translates to:
+  /// **'~{price}/mo'**
+  String pricePerMonthShort(String price);
+
+  /// No description provided for @manageSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage subscription'**
+  String get manageSubscription;
 
   /// No description provided for @paywallHeroTitle.
   ///
   /// In en, this message translates to:
-  /// **'Upgrade your GridCall season'**
+  /// **'Take your prediction leagues to the next level'**
   String get paywallHeroTitle;
 
   /// No description provided for @paywallHeroBody.
   ///
   /// In en, this message translates to:
-  /// **'Premium adds more league room, detailed league statistics, favorites, and a subtle member badge. Core predictions stay fair for everyone.'**
+  /// **'Race in more leagues, unlock detailed league stats, and stand out in standings with a Premium badge.'**
   String get paywallHeroBody;
 
   /// No description provided for @paywallBenefitsTitle.
@@ -757,6 +769,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose your plan'**
   String get paywallChoosePlan;
+
+  /// No description provided for @paywallBrandPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'PREMIUM'**
+  String get paywallBrandPremium;
+
+  /// No description provided for @paywallPerYear.
+  ///
+  /// In en, this message translates to:
+  /// **'/ yr'**
+  String get paywallPerYear;
+
+  /// No description provided for @paywallPerMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'/ mo'**
+  String get paywallPerMonth;
+
+  /// No description provided for @paywallMonthlyCancelAnytime.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel anytime'**
+  String get paywallMonthlyCancelAnytime;
+
+  /// No description provided for @paywallPerMonthLong.
+  ///
+  /// In en, this message translates to:
+  /// **'About {price} / month'**
+  String paywallPerMonthLong(String price);
+
+  /// No description provided for @paywallStartMembership.
+  ///
+  /// In en, this message translates to:
+  /// **'Start {plan} membership'**
+  String paywallStartMembership(String plan);
+
+  /// No description provided for @paywallBestValueShort.
+  ///
+  /// In en, this message translates to:
+  /// **'BEST VALUE'**
+  String get paywallBestValueShort;
+
+  /// No description provided for @paywallFooterDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment is charged to your App Store account. Subscriptions auto-renew unless canceled. Manage in your App Store account settings.'**
+  String get paywallFooterDisclaimer;
 
   /// No description provided for @paywallFeatureLeagueLimit.
   ///
@@ -809,7 +869,7 @@ abstract class AppLocalizations {
   /// No description provided for @saveWithAnnual.
   ///
   /// In en, this message translates to:
-  /// **'about \$2.50/month'**
+  /// **'Save'**
   String get saveWithAnnual;
 
   /// No description provided for @premiumUnavailableTitle.
@@ -827,13 +887,13 @@ abstract class AppLocalizations {
   /// No description provided for @purchaseCompleted.
   ///
   /// In en, this message translates to:
-  /// **'Purchase completed. Premium will unlock after your entitlement is verified.'**
+  /// **'Purchase complete. Premium unlocked.'**
   String get purchaseCompleted;
 
   /// No description provided for @restoreCompleted.
   ///
   /// In en, this message translates to:
-  /// **'Purchases restored. Premium will unlock after your entitlement is verified.'**
+  /// **'Purchases restored. Premium unlocked.'**
   String get restoreCompleted;
 
   /// No description provided for @purchaseFailed.
@@ -923,7 +983,7 @@ abstract class AppLocalizations {
   /// No description provided for @statsLeagueAverageShort.
   ///
   /// In en, this message translates to:
-  /// **'League avg'**
+  /// **'League Avg'**
   String get statsLeagueAverageShort;
 
   /// No description provided for @statsRecentWeekends.
@@ -971,7 +1031,7 @@ abstract class AppLocalizations {
   /// No description provided for @statsYouMarker.
   ///
   /// In en, this message translates to:
-  /// **'YOU ▼'**
+  /// **'YOU'**
   String get statsYouMarker;
 
   /// No description provided for @statsPoints.
@@ -1007,7 +1067,7 @@ abstract class AppLocalizations {
   /// No description provided for @statsLeagueAvgAndPosition.
   ///
   /// In en, this message translates to:
-  /// **'League avg: {average} · P{position}'**
+  /// **'League Avg: {average} · P{position}'**
   String statsLeagueAvgAndPosition(int average, int position);
 
   /// No description provided for @statsAheadOfLeagueAverage.
@@ -1664,6 +1724,24 @@ abstract class AppLocalizations {
   /// **'You will need a new invite code to join again.'**
   String get leaveLeagueBody;
 
+  /// No description provided for @deleteLeague.
+  ///
+  /// In en, this message translates to:
+  /// **'DELETE LEAGUE'**
+  String get deleteLeague;
+
+  /// No description provided for @deleteLeagueQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this league?'**
+  String get deleteLeagueQuestion;
+
+  /// No description provided for @deleteLeagueBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The league, all memberships and predictions will be permanently deleted. This action cannot be undone.'**
+  String get deleteLeagueBody;
+
   /// No description provided for @removeMemberQuestion.
   ///
   /// In en, this message translates to:
@@ -1909,6 +1987,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Who will take Pole?'**
   String get polePositionHint;
+
+  /// No description provided for @selectDriver.
+  ///
+  /// In en, this message translates to:
+  /// **'Select driver'**
+  String get selectDriver;
 
   /// No description provided for @dnfCount.
   ///
@@ -2459,37 +2543,25 @@ abstract class AppLocalizations {
   /// No description provided for @requestAccountDeletion.
   ///
   /// In en, this message translates to:
-  /// **'Request account deletion'**
+  /// **'Delete my account'**
   String get requestAccountDeletion;
 
   /// No description provided for @deleteYourAccount.
   ///
   /// In en, this message translates to:
-  /// **'Delete your account'**
+  /// **'Are you sure you want to delete your account?'**
   String get deleteYourAccount;
 
   /// No description provided for @accountDeletionBody.
   ///
   /// In en, this message translates to:
-  /// **'Your account, predictions, league memberships, badges, and profile information will be permanently deleted within 30 days after you create this request. If you change your mind during this period, you can request cancellation by emailing bilgehan.2002@gmail.com.\n\nAfter the request is created, you will be signed out and your account will no longer be visible to other users.'**
+  /// **'Your account and all your data (predictions, league memberships, badges, profile) will be permanently deleted within 30 days. This action cannot be undone.\n\nOnce confirmed, you will be signed out and your account will no longer be visible to other users.'**
   String get accountDeletionBody;
-
-  /// No description provided for @noteOptional.
-  ///
-  /// In en, this message translates to:
-  /// **'Note (optional)'**
-  String get noteOptional;
-
-  /// No description provided for @deletionReasonHint.
-  ///
-  /// In en, this message translates to:
-  /// **'You can write your reason for deletion'**
-  String get deletionReasonHint;
 
   /// No description provided for @createRequest.
   ///
   /// In en, this message translates to:
-  /// **'Create request'**
+  /// **'Delete my account'**
   String get createRequest;
 
   /// No description provided for @accountDeletionScheduled.
@@ -2690,6 +2762,18 @@ abstract class AppLocalizations {
   /// **'Three in a Row'**
   String get badgeThreeInRow;
 
+  /// No description provided for @badgeJokerMaster.
+  ///
+  /// In en, this message translates to:
+  /// **'Joker Master'**
+  String get badgeJokerMaster;
+
+  /// No description provided for @badgeFastestCaller.
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest Lap Caller'**
+  String get badgeFastestCaller;
+
   /// No description provided for @newLeague.
   ///
   /// In en, this message translates to:
@@ -2833,6 +2917,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Time left until predictions close'**
   String get timeLeftUntilPredictionsClose;
+
+  /// No description provided for @predictionsNotYetOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Predictions are not open yet'**
+  String get predictionsNotYetOpen;
 
   /// No description provided for @mainPodiumPointsInfo.
   ///

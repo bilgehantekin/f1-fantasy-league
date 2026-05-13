@@ -15,6 +15,8 @@ import '../../shared/widgets/app_state.dart';
 import '../../shared/widgets/countdown_tiles.dart';
 import '../../shared/widgets/driver_chip.dart';
 import '../../shared/widgets/driver_picker.dart';
+import '../../shared/widgets/race_card_new.dart';
+import '../calendar/calendar_controller.dart';
 import '../league/league_controller.dart';
 import 'domain/prediction_validator.dart';
 import 'prediction_controller.dart';
@@ -411,8 +413,28 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
                 final sprintDraft = race.hasSprint
                     ? _ensureSprintDraft(race.id, sprintExisting)
                     : null;
-                final mainLocked = race.isLocked;
-                final sprintLocked = race.isSprintLocked;
+                // Bir sonraki yarış değilse (ileri tarihli) tahmin
+                // yapılamaz — tahmin ekranı görünür ama kilitli moddadır.
+                // racesProvider henüz yüklenmediyse future-lock kararını
+                // erteliyoruz ki bir sonraki yarış için yanlış pozitif
+                // göstermeyelim.
+                final seasonRaces =
+                    ref.watch(racesProvider).asData?.value ?? const <Race>[];
+                final hasSeasonData = seasonRaces.isNotEmpty;
+                final isOpenWindow = !hasSeasonData ||
+                    isRaceOpenForPicksNow(race, seasonRaces);
+                final mainLocked = race.isLocked || !isOpenWindow;
+                final sprintLocked = race.isSprintLocked || !isOpenWindow;
+                // Future-locked: yarış zaman olarak henüz kilitli değil ama
+                // sıradaki yarış da bu değil (uzakta). Header'da geri sayım
+                // yerine "Tahminlere henüz açılmadı" göstermek için kullanıyoruz.
+                // Not: race.isSprintLocked sprint olmayan yarışlarda her
+                // zaman true döner; bu yüzden sadece sprint varsa kontrol et.
+                final timeLocked = race.isLocked ||
+                    (race.hasSprint && race.isSprintLocked);
+                final lockedFuture = hasSeasonData &&
+                    !isOpenWindow &&
+                    !timeLocked;
                 final activeMode = race.hasSprint
                     ? _mode
                     : _PredictionMode.main;
@@ -431,6 +453,7 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
                   locked: activeLocked,
                   mainLocked: mainLocked,
                   sprintLocked: sprintLocked,
+                  lockedFuture: lockedFuture,
                   saving: _saving,
                   copying: _copying,
                   recentlySaved: _recentlySaved,
@@ -464,6 +487,7 @@ class _PredictionBody extends StatelessWidget {
   final bool locked;
   final bool mainLocked;
   final bool sprintLocked;
+  final bool lockedFuture;
   final bool saving;
   final bool copying;
   final bool recentlySaved;
@@ -488,6 +512,7 @@ class _PredictionBody extends StatelessWidget {
     required this.locked,
     required this.mainLocked,
     required this.sprintLocked,
+    required this.lockedFuture,
     required this.saving,
     required this.copying,
     required this.recentlySaved,
@@ -645,6 +670,7 @@ class _PredictionBody extends StatelessWidget {
         joker: joker!,
         draft: draft,
         locked: locked,
+        drivers: drivers,
         onChanged: onChanged,
       )
     else
@@ -778,7 +804,12 @@ class _PredictionBody extends StatelessWidget {
           ListView(
             padding: const EdgeInsets.only(bottom: 80),
             children: [
-              _Header(race: race, locked: locked, mode: mode),
+              _Header(
+                race: race,
+                locked: locked,
+                lockedFuture: lockedFuture,
+                mode: mode,
+              ),
               if (race.hasSprint && showModeToggle) ...[
                 const SizedBox(height: 12),
                 _ModeToggle(
@@ -843,7 +874,7 @@ class _PredictionBody extends StatelessWidget {
                       tooltip: AppLocalizations.of(
                         context,
                       ).copyToOtherLeaguesTooltip,
-                      onPressed: copying ? null : onCopyToOtherLeagues,
+                      onPressed: locked || copying ? null : onCopyToOtherLeagues,
                       style: IconButton.styleFrom(
                         backgroundColor: const Color(0xFF1F1F2E),
                         foregroundColor: Colors.white,
@@ -902,8 +933,14 @@ class _PredictionBody extends StatelessWidget {
 class _Header extends StatelessWidget {
   final Race race;
   final bool locked;
+  final bool lockedFuture;
   final _PredictionMode mode;
-  const _Header({required this.race, required this.locked, required this.mode});
+  const _Header({
+    required this.race,
+    required this.locked,
+    required this.mode,
+    this.lockedFuture = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -955,8 +992,10 @@ class _Header extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            l.timeLeftUntilPredictionsClose,
-            style: TextStyle(
+            lockedFuture
+                ? l.predictionsNotYetOpen
+                : l.timeLeftUntilPredictionsClose,
+            style: const TextStyle(
               color: Color(0xB3FFFFFF),
               fontSize: 12,
               fontWeight: FontWeight.w800,
@@ -1733,14 +1772,25 @@ class _JokerCard extends StatelessWidget {
   final JokerQuestion joker;
   final Prediction draft;
   final bool locked;
+  final List<Driver> drivers;
   final void Function(Prediction) onChanged;
 
   const _JokerCard({
     required this.joker,
     required this.draft,
     required this.locked,
+    required this.drivers,
     required this.onChanged,
   });
+
+  Driver? _selectedDriver() {
+    final id = draft.jokerOption;
+    if (id == null) return null;
+    for (final d in drivers) {
+      if (d.id == id) return d;
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1819,47 +1869,65 @@ class _JokerCard extends StatelessWidget {
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final opt in joker.options)
-                  InkWell(
-                    onTap: locked
-                        ? null
-                        : () => onChanged(
-                            draft.copyWith(
-                              jokerOption: draft.jokerOption == opt
-                                  ? null
-                                  : opt,
+            if (joker.kind == JokerKind.driver)
+              DriverChipSlot(
+                driver: _selectedDriver(),
+                hint: l.selectDriver,
+                enabled: !locked,
+                onTap: () async {
+                  final d = await showDriverPicker(
+                    context,
+                    drivers: drivers,
+                    title: joker.text,
+                    selected: _selectedDriver(),
+                  );
+                  if (d != null) {
+                    onChanged(draft.copyWith(jokerOption: d.id));
+                  }
+                },
+              )
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final opt in joker.options)
+                    InkWell(
+                      onTap: locked
+                          ? null
+                          : () => onChanged(
+                              draft.copyWith(
+                                jokerOption: draft.jokerOption == opt
+                                    ? null
+                                    : opt,
+                              ),
                             ),
-                          ),
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: draft.jokerOption == opt
-                            ? const Color(0xFFE10600)
-                            : const Color(0xFF1F1F2E),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        opt,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
                           color: draft.jokerOption == opt
-                              ? Colors.white
-                              : const Color(0xCCFFFFFF), // white/80
+                              ? const Color(0xFFE10600)
+                              : const Color(0xFF1F1F2E),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          opt,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: draft.jokerOption == opt
+                                ? Colors.white
+                                : const Color(0xCCFFFFFF), // white/80
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              ],
-            ),
+                ],
+              ),
           ],
         ),
       ),
@@ -2157,13 +2225,13 @@ class _SprintDnfSlider extends StatelessWidget {
   }
 }
 
-class _RacePreviewBody extends StatelessWidget {
+class _RacePreviewBody extends ConsumerWidget {
   final Race race;
   final List<Driver> drivers;
   const _RacePreviewBody({required this.race, required this.drivers});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final byTeam = <String, List<Driver>>{};
     final teamOrder = <String>[];
@@ -2208,11 +2276,22 @@ class _RacePreviewBody extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [
-          _Header(
-            race: race,
-            locked: race.isLocked,
-            mode: _PredictionMode.main,
-          ),
+          Builder(builder: (context) {
+            final seasonRaces =
+                ref.watch(racesProvider).asData?.value ?? const <Race>[];
+            final hasSeasonData = seasonRaces.isNotEmpty;
+            final isOpenWindow = !hasSeasonData ||
+                isRaceOpenForPicksNow(race, seasonRaces);
+            final timeLocked = race.isLocked ||
+                (race.hasSprint && race.isSprintLocked);
+            return _Header(
+              race: race,
+              locked: timeLocked || !isOpenWindow,
+              lockedFuture:
+                  hasSeasonData && !isOpenWindow && !timeLocked,
+              mode: _PredictionMode.main,
+            );
+          }),
           const SizedBox(height: 12),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
@@ -2491,6 +2570,7 @@ List<Widget> buildReadOnlyMainPredictionSections({
         joker: joker,
         draft: prediction,
         locked: true,
+        drivers: drivers,
         onChanged: (_) {},
       ),
   ];
